@@ -1,0 +1,8 @@
+pytest==3.0.4
+mock==2.0.0
+
+# For lint make target
+flake8
+
+# For test-docstring make target
+testimony

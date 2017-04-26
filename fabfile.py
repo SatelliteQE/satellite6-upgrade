@@ -1,0 +1,40 @@
+"""Module which publish all satellite6 upgrade tasks"""
+
+from upgrade.runner import ( # flake8: noqa
+    product_upgrade,
+    setup_products_for_upgrade
+)
+from upgrade.satellite import (
+    satellite6_setup,
+    satellite6_upgrade,
+    satellite6_zstream_upgrade
+)
+from upgrade.helpers.docker import (
+    docker_execute_command,
+    generate_satellite_docker_clients_on_rhevm,
+    refresh_subscriptions_on_docker_clients,
+    remove_all_docker_containers
+)
+from upgrade.helpers.openstack import (
+    create_openstack_instance,
+    delete_openstack_instance,
+)
+from upgrade.helpers.rhevm import (
+    create_rhevm_instance,
+    delete_rhevm_instance,
+    wait_till_rhevm_instance_status
+)
+from upgrade.helpers.tasks import (
+    sync_capsule_repos_to_upgrade,
+    sync_tools_repos_to_upgrade,
+)
+from upgrade.helpers.tools import (
+    copy_ssh_key,
+    get_hostname_from_ip,
+    get_sat_cap_version,
+    host_pings,
+    reboot
+)
+from upgrade_tests.helpers.existence import (
+    set_datastore
+)

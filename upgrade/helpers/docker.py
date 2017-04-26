@@ -1,0 +1,103 @@
+import os
+import sys
+import time
+from automation_tools.bz import bz_bug_is_open
+from upgrade.helpers.logger import logger
+from fabric.api import run
+
+logger = logger()
+
+
+def generate_satellite_docker_clients_on_rhevm(client_os, clients_count):
+    """Generates satellite clients on docker as containers
+
+    :param string client_os: Client OS of which client to be generated
+        e.g: rhel6, rhel7
+    :param string clients_count: No of clients to generate
+
+    Environment Variables:
+
+    RHEV_SAT_HOST
+        The satellite hostname for which clients to be generated and
+        registered
+    RHEV_CLIENT_AK
+        The AK using which client will be registered to satellite
+    """
+    if int(clients_count) == 0:
+        logger.warning(
+            'Clients count to generate on Docker should be atleast 1 !')
+        sys.exit(1)
+    satellite_hostname = os.environ.get('RHEV_SAT_HOST')
+    ak = os.environ.get('RHEV_CLIENT_AK_{}'.format(client_os.upper()))
+    result = {}
+    for count in range(int(clients_count)):
+        if bz_bug_is_open('1405085'):
+            time.sleep(5)
+        hostname = '{0}dockerclient{1}'.format(count, client_os)
+        container_id = run(
+            'docker run -d -h {0} -v /dev/log:/dev/log -e "SATHOST={1}" '
+            '-e "AK={2}" upgrade:{3}'.format(
+                hostname, satellite_hostname, ak, client_os))
+        result[hostname] = container_id
+    return result
+
+
+def attach_subscription_to_host_from_content_host(
+        subscription_id, dockered_host=False, container_id=None):
+    """Attaches product subscription to content host from host itself
+
+    :param string subscription_id: The product uuid/pool_id of which the
+    subscription to be attached to content host
+    """
+    attach_command = 'subscription-manager attach --pool={0}'.format(
+        subscription_id)
+    if not dockered_host:
+        run(attach_command)
+    else:
+        docker_execute_command(container_id, attach_command)
+
+
+def refresh_subscriptions_on_docker_clients(container_ids):
+    """Refreshes subscription on docker containers which are satellite clients
+
+    :param list container_ids: The list of container ids onto which
+    subscriptions will be refreshed
+    """
+    if isinstance(container_ids, list):
+        for container_id in container_ids:
+            docker_execute_command(
+                container_id, 'subscription-manager refresh')
+            docker_execute_command(container_id, 'yum clean all', quiet=True)
+    else:
+        docker_execute_command(container_ids, 'subscription-manager refresh')
+        docker_execute_command(container_ids, 'yum clean all', quiet=True)
+
+
+def remove_all_docker_containers(only_running=True):
+    """Deletes docker containers from system forcefully
+
+    If only_running is set to true then only running containers will be deleted
+    else all running + stopped containers will be deleted
+
+    :param bool only_running: Whether to delete only running containers
+    """
+    if int(run('docker ps -q{} | wc -l'.format(
+            '' if only_running else 'a'))) > 0:
+        run('docker rm $(docker ps -q{}) -f'.format(
+            '' if only_running else 'a'))
+
+
+def docker_execute_command(container_id, command, quiet=False):
+    """Executes command on running docker container
+
+    :param string container_id: Running containers id to execute command
+    :param string command: Command to run on running container
+    :returns command output
+    """
+    if not isinstance(quiet, bool):
+        if quiet.lower() == 'false':
+            quiet = False
+        elif quiet.lower() == 'true':
+            quiet = True
+    return run(
+        'docker exec {0} {1}'.format(container_id, command), quiet=quiet)

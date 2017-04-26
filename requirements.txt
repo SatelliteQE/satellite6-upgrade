@@ -1,0 +1,2 @@
+# Get automation-tools from master
+git+https://github.com/SatelliteQE/automation-tools#egg=automation-tools

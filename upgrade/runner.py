@@ -21,6 +21,7 @@ from upgrade.satellite import (
     satellite6_upgrade,
     satellite6_zstream_upgrade
 )
+from upgrade_tests.helpers.existence import set_datastore
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import (
     check_necessary_env_variables_for_upgrade,
@@ -66,6 +67,9 @@ def setup_products_for_upgrade(product, os_version):
         'clients7': clients7
     }
     create_setup_dict(setups_dict)
+    if os.environ.get('RUN_EXISTANCE_TESTS', 'false').lower() == 'true':
+        logger.info('Setting up preupgrade datastore for existance tests')
+        set_datastore('preupgrade')
     return sat_host, cap_hosts, clients6, clients7
 
 

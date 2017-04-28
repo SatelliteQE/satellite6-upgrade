@@ -66,9 +66,6 @@ def satellite6_setup(os_version):
     # Set satellite hostname in fabric environment
     env['satellite_host'] = sat_host
     logger.info('Satellite {} is ready for Upgrade!'.format(sat_host))
-    if os.environ.get('RUN_EXISTANCE_TESTS', 'false').lower() == 'true':
-        logger.info('Setting up preupgrade datastore for existance tests')
-        set_datastore('preupgrade')
     return sat_host
 
 

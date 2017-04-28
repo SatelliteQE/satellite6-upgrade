@@ -16,13 +16,15 @@ post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'architecture'
+arc_name = compare_postupgrade(component, 'name')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('architecture', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", arc_name, ids=pytest_ids(arc_name))
 def test_positive_architectures_by_name(pre, post):
     """Test all architectures are existing after upgrade by names
 

@@ -239,3 +239,10 @@ def compare_postupgrade(component, attribute):
             postdata, component, search_key=test_case, attribute=attribute)
         entity_values.append((preupgrade_entiry, postupgrade_entity))
     return entity_values
+
+
+def pytest_ids(data):
+    """
+    """
+    ids = ["pre and post" for i in range(len(data))]
+    return ids

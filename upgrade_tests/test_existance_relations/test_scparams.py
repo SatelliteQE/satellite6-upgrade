@@ -16,13 +16,19 @@
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('sc-param', 'parameter')
-)
+# Required Data
+component = 'sc-param'
+scp_names = compare_postupgrade(component, 'parameter')
+scp_dval = compare_postupgrade(component, 'default value')
+scp_ovrde = compare_postupgrade(component, 'override')
+scp_pclass = compare_postupgrade(component, 'puppet class')
+
+
+# Tests
+@pytest.mark.parametrize("pre,post", scp_names, ids=pytest_ids(scp_names))
 def test_positive_smart_params_by_name(pre, post):
     """Test all smart parameters are existing after upgrade by names
 
@@ -34,10 +40,7 @@ def test_positive_smart_params_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('sc-param', 'default value')
-)
+@pytest.mark.parametrize("pre,post", scp_dval, ids=pytest_ids(scp_dval))
 def test_positive_smart_params_by_default_value(pre, post):
     """Test all smart parameters default values are retained after upgrade
 
@@ -49,10 +52,7 @@ def test_positive_smart_params_by_default_value(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('sc-param', 'override')
-)
+@pytest.mark.parametrize("pre,post", scp_ovrde, ids=pytest_ids(scp_ovrde))
 def test_positive_smart_params_by_override(pre, post):
     """Test all smart parameters override check is retained after upgrade
 
@@ -64,10 +64,7 @@ def test_positive_smart_params_by_override(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('sc-param', 'puppet class')
-)
+@pytest.mark.parametrize("pre,post", scp_pclass, ids=pytest_ids(scp_pclass))
 def test_positive_smart_params_by_puppet_class(pre, post):
     """Test all smart parameters associations with its puppet class is retained
     after upgrade

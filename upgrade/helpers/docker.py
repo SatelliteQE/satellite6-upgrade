@@ -8,12 +8,14 @@ from fabric.api import run
 logger = logger()
 
 
-def generate_satellite_docker_clients_on_rhevm(client_os, clients_count):
+def generate_satellite_docker_clients_on_rhevm(
+        client_os, clients_count, ak=None):
     """Generates satellite clients on docker as containers
 
     :param string client_os: Client OS of which client to be generated
         e.g: rhel6, rhel7
     :param string clients_count: No of clients to generate
+    :param string ak: Activation key name, to register clients
 
     Environment Variables:
 
@@ -28,7 +30,10 @@ def generate_satellite_docker_clients_on_rhevm(client_os, clients_count):
             'Clients count to generate on Docker should be atleast 1 !')
         sys.exit(1)
     satellite_hostname = os.environ.get('RHEV_SAT_HOST')
-    ak = os.environ.get('RHEV_CLIENT_AK_{}'.format(client_os.upper()))
+    if ak:
+        ak = ak
+    else:
+        ak = os.environ.get('RHEV_CLIENT_AK_{}'.format(client_os.upper()))
     result = {}
     for count in range(int(clients_count)):
         if bz_bug_is_open('1405085'):

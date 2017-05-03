@@ -16,13 +16,18 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'capsule'
+cap_features = compare_postupgrade(component, 'features')
+cap_name = compare_postupgrade(component, 'name')
+cap_url = compare_postupgrade(component, 'url')
 
 
+# Tests
 @pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('capsule', 'features')
-)
+    "pre,post", cap_features, ids=pytest_ids(cap_features))
 def test_positive_capsules_by_features(pre, post):
     """Test all features of each capsule are existing post upgrade
 
@@ -34,10 +39,7 @@ def test_positive_capsules_by_features(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('capsule', 'name')
-)
+@pytest.mark.parametrize("pre,post", cap_name, ids=pytest_ids(cap_name))
 def test_positive_capsules_by_name(pre, post):
     """Test all capsules are existing after upgrade by their names
 
@@ -48,10 +50,7 @@ def test_positive_capsules_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('capsule', 'url')
-)
+@pytest.mark.parametrize("pre,post", cap_url, ids=pytest_ids(cap_url))
 def test_positive_capsules_by_url(pre, post):
     """Test all capsules are existing after upgrade by their urls
 

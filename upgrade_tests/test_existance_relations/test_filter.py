@@ -16,13 +16,19 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('filter', 'resource type')
-)
+# Required Data
+component = 'filter'
+fil_rtype = compare_postupgrade(component, 'resource type')
+fil_search = compare_postupgrade(component, 'resource type')
+fil_unlimited = compare_postupgrade(component, 'unlimited?')
+fil_role = compare_postupgrade(component, 'role')
+fil_perm = compare_postupgrade(component, 'permissions')
+
+
+@pytest.mark.parametrize("pre,post", fil_rtype, ids=pytest_ids(fil_rtype))
 def test_positive_filters_by_resource_type(pre, post):
     """Test all filters of all roles are existing after upgrade by resource
     types
@@ -35,10 +41,7 @@ def test_positive_filters_by_resource_type(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('filter', 'search')
-)
+@pytest.mark.parametrize("pre,post", fil_search, ids=pytest_ids(fil_search))
 def test_positive_filters_by_search(pre, post):
     """Test all filters search criteria is existing after upgrade
 
@@ -51,9 +54,7 @@ def test_positive_filters_by_search(pre, post):
 
 
 @pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('filter', 'unlimited?')
-)
+    "pre,post", fil_unlimited, ids=pytest_ids(fil_unlimited))
 def test_positive_filters_by_unlimited_check(pre, post):
     """Test all filters unlimited criteria is existing after upgrade
 
@@ -65,10 +66,7 @@ def test_positive_filters_by_unlimited_check(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('filter', 'role')
-)
+@pytest.mark.parametrize("pre,post", fil_role, ids=pytest_ids(fil_role))
 def test_positive_filters_by_role(pre, post):
     """Test all filters association with role is existing after upgrade
 
@@ -80,10 +78,7 @@ def test_positive_filters_by_role(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('filter', 'permissions')
-)
+@pytest.mark.parametrize("pre,post", fil_perm, ids=pytest_ids(fil_perm))
 def test_positive_filters_by_permissions(pre, post):
     """Test all filters all permissions are existing after upgrade
 

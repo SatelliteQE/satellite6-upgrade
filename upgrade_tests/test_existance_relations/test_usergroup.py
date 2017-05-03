@@ -16,13 +16,15 @@ post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'user-group'
+ug_name = compare_postupgrade(component, 'name')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('user-group', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", ug_name, ids=pytest_ids(ug_name))
 def test_positive_usergroups_by_name(pre, post):
     """Test all usergroups are existing after upgrade by names
 

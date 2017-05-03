@@ -16,13 +16,15 @@ post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'medium'
+med_name = compare_postupgrade(component, 'name')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('medium', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", med_name, ids=pytest_ids(med_name))
 def test_positive_mediums_by_name(pre, post):
     """Test all OS mediums are existing after upgrade by names
 

@@ -16,13 +16,15 @@ post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'template'
+temp_name = compare_postupgrade(component, 'name')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('template', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", temp_name, ids=pytest_ids(temp_name))
 def test_positive_templates_by_name(pre, post):
     """Test all templates are existing after upgrade by names
 

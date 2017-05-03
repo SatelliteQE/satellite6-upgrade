@@ -16,10 +16,17 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'hostgroup'
+hg_name = compare_postupgrade(component, 'name')
+hg_os = compare_postupgrade(component, 'operating system')
+hg_lc = compare_postupgrade(component, 'environment')
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('hostgroup', 'name'))
+# Tests
+@pytest.mark.parametrize("pre,post", hg_name, ids=pytest_ids(hg_name))
 def test_positive_hostgroups_by_name(pre, post):
     """Test all hostgroups are existing post upgrade by their names
 
@@ -30,10 +37,7 @@ def test_positive_hostgroups_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('hostgroup', 'operating system')
-)
+@pytest.mark.parametrize("pre,post", hg_os, ids=pytest_ids(hg_os))
 def test_positive_hostgroups_by_os(pre, post):
     """Test OS associations of all hostgroups post upgrade
 
@@ -45,10 +49,7 @@ def test_positive_hostgroups_by_os(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('hostgroup', 'environment')
-)
+@pytest.mark.parametrize("pre,post", hg_lc, ids=pytest_ids(hg_lc))
 def test_positive_hostgroups_by_lc(pre, post):
     """Test LC associations of all hostgroups post upgrade
 

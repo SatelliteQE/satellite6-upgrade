@@ -16,13 +16,17 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'repository'
+repo_name = compare_postupgrade(component, 'name')
+repo_prod = compare_postupgrade(component, 'product')
+repo_ctype = compare_postupgrade(component, 'content type')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('repository', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", repo_name, ids=pytest_ids(repo_name))
 def test_positive_repositories_by_name(pre, post):
     """Test all repositories are existing after upgrade by names
 
@@ -33,10 +37,7 @@ def test_positive_repositories_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('repository', 'product')
-)
+@pytest.mark.parametrize("pre,post", repo_prod, ids=pytest_ids(repo_prod))
 def test_positive_repositories_by_product(pre, post):
     """Test all repositories association with products are existing after
     upgrade
@@ -49,10 +50,7 @@ def test_positive_repositories_by_product(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('repository', 'content type')
-)
+@pytest.mark.parametrize("pre,post", repo_ctype, ids=pytest_ids(repo_ctype))
 def test_positive_repositories_by_url(pre, post):
     """Test all repositories urls are existing after upgrade
 

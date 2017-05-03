@@ -16,13 +16,21 @@ its relations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'discovery'
+dis_name = compare_postupgrade(component, 'name')
+dis_mac = compare_postupgrade(component, 'mac')
+dis_cpus = compare_postupgrade(component, 'cpus')
+dis_mem = compare_postupgrade(component, 'memory')
+dis_disks = compare_postupgrade(component, 'disk count')
+dis_size = compare_postupgrade(component, 'disks size')
+dis_subnet = compare_postupgrade(component, 'subnet')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", dis_name, ids=pytest_ids(dis_name))
 def test_positive_discovery_by_name(pre, post):
     """Test all architectures are existing after upgrade by names
 
@@ -34,10 +42,7 @@ def test_positive_discovery_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery', 'mac')
-)
+@pytest.mark.parametrize("pre,post", dis_mac, ids=pytest_ids(dis_mac))
 def test_positive_discovery_by_mac(pre, post):
     """Test discovered hosts mac is retained after upgrade
 
@@ -48,10 +53,7 @@ def test_positive_discovery_by_mac(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery', 'cpus')
-)
+@pytest.mark.parametrize("pre,post", dis_cpus, ids=pytest_ids(dis_cpus))
 def test_positive_discovery_by_cpus(pre, post):
     """Test discovered hosts cpus are retained after upgrade
 
@@ -62,10 +64,7 @@ def test_positive_discovery_by_cpus(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery', 'memory')
-)
+@pytest.mark.parametrize("pre,post", dis_mem, ids=pytest_ids(dis_mem))
 def test_positive_discovery_by_memory(pre, post):
     """Test discovered hosts memory allocation is retained after upgrade
 
@@ -77,10 +76,7 @@ def test_positive_discovery_by_memory(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery', 'disk count')
-)
+@pytest.mark.parametrize("pre,post", dis_disks, ids=pytest_ids(dis_disks))
 def test_positive_discovery_by_disc_counts(pre, post):
     """Test discovered hosts disc counts are retained after upgrade
 
@@ -92,10 +88,7 @@ def test_positive_discovery_by_disc_counts(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery', 'disks size')
-)
+@pytest.mark.parametrize("pre,post", dis_size, ids=pytest_ids(dis_size))
 def test_positive_discovery_by_disc_size(pre, post):
     """Test discovered hosts disc size are retained after upgrade
 
@@ -107,10 +100,7 @@ def test_positive_discovery_by_disc_size(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery', 'subnet')
-)
+@pytest.mark.parametrize("pre,post", dis_subnet, ids=pytest_ids(dis_subnet))
 def test_positive_discovery_by_subnet(pre, post):
     """Test discovered hosts subnet is retained after upgrade
 

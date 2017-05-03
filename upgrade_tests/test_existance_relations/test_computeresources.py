@@ -16,13 +16,15 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'compute-resource'
+comp_name = compare_postupgrade(component, 'name')
+comp_provider = compare_postupgrade(component, 'provider')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('compute-resource', 'name')
-)
+@pytest.mark.parametrize("pre,post", comp_name, ids=pytest_ids(comp_name))
 def test_positive_compute_resources_by_name(pre, post):
     """Test all compute resources are existing post upgrade by their name
 
@@ -34,9 +36,7 @@ def test_positive_compute_resources_by_name(pre, post):
 
 
 @pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('compute-resource', 'provider')
-)
+    "pre,post", comp_provider, ids=pytest_ids(comp_provider))
 def test_positive_compute_resources_by_provider(pre, post):
     """Test all compute resources provider are existing post upgrade
 

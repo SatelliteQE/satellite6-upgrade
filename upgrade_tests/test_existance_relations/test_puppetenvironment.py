@@ -16,13 +16,15 @@ post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'environment'
+env_name = compare_postupgrade(component, 'name')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('environment', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", env_name, ids=pytest_ids(env_name))
 def test_positive_puppet_envs_by_name(pre, post):
     """Test all puppet envs are existing after upgrade by names
 

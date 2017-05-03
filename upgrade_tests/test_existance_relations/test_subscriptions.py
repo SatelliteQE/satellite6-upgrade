@@ -16,13 +16,20 @@ upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'subscription'
+sub_name = compare_postupgrade(component, 'name')
+sub_uuid = compare_postupgrade(component, 'uuid')
+sub_support = compare_postupgrade(component, 'support')
+sub_qntity = compare_postupgrade(component, 'quantity')
+sub_consume = compare_postupgrade(component, 'consumed')
+sub_edate = compare_postupgrade(component, 'end date')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('subscription', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", sub_name, ids=pytest_ids(sub_name))
 def test_positive_subscriptions_by_name(pre, post):
     """Test all subscriptions are existing after upgrade by names
 
@@ -34,10 +41,7 @@ def test_positive_subscriptions_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('subscription', 'uuid')
-)
+@pytest.mark.parametrize("pre,post", sub_uuid, ids=pytest_ids(sub_uuid))
 def test_positive_subscriptions_by_uuid(pre, post):
     """Test all subscriptions uuids are existing after upgrade
 
@@ -48,10 +52,7 @@ def test_positive_subscriptions_by_uuid(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('subscription', 'support')
-)
+@pytest.mark.parametrize("pre,post", sub_support, ids=pytest_ids(sub_support))
 def test_positive_subscriptions_by_support(pre, post):
     """Test all subscriptions support status is retained after upgrade
 
@@ -63,10 +64,7 @@ def test_positive_subscriptions_by_support(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('subscription', 'quantity')
-)
+@pytest.mark.parametrize("pre,post", sub_qntity, ids=pytest_ids(sub_qntity))
 def test_positive_subscriptions_by_quantity(pre, post):
     """Test all subscriptions quantities are retained after upgrade
 
@@ -78,10 +76,7 @@ def test_positive_subscriptions_by_quantity(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('subscription', 'consumed')
-)
+@pytest.mark.parametrize("pre,post", sub_consume, ids=pytest_ids(sub_consume))
 def test_positive_subscriptions_by_consumed(pre, post):
     """Test all subscriptions consumed status is retained after upgrade
 

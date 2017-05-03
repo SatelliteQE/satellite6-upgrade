@@ -16,10 +16,19 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'host'
+host_ip = compare_postupgrade(component, 'ip')
+host_mac = compare_postupgrade(component, 'mac')
+host_hg = compare_postupgrade(component, 'host group')
+host_os = compare_postupgrade(component, 'operating system')
+host_name = compare_postupgrade(component, 'name')
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('host', 'ip'))
+# Tests
+@pytest.mark.parametrize("pre,post", host_ip, ids=pytest_ids(host_ip))
 def test_positive_hosts_by_ip(pre, post):
     """Test ip associations of all hosts post upgrade
 
@@ -31,7 +40,7 @@ def test_positive_hosts_by_ip(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('host', 'mac'))
+@pytest.mark.parametrize("pre,post", host_mac, ids=pytest_ids(host_mac))
 def test_positive_hosts_by_mac(pre, post):
     """Test mac associations of all hosts post upgrade
 
@@ -43,7 +52,7 @@ def test_positive_hosts_by_mac(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('host', 'host group'))
+@pytest.mark.parametrize("pre,post", host_hg, ids=pytest_ids(host_hg))
 def test_positive_hosts_by_hostgroup(pre, post):
     """Test hostgroup associations of all hosts post upgrade
 
@@ -55,10 +64,7 @@ def test_positive_hosts_by_hostgroup(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('host', 'operating system')
-)
+@pytest.mark.parametrize("pre,post", host_os, ids=pytest_ids(host_os))
 def test_positive_hosts_by_operating_system(pre, post):
     """Test OS associations of all hosts post upgrade
 
@@ -70,10 +76,7 @@ def test_positive_hosts_by_operating_system(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('host', 'name')
-)
+@pytest.mark.parametrize("pre,post", host_name, ids=pytest_ids(host_name))
 def test_positive_hosts_by_name(pre, post):
     """Test all hosts are retained post upgrade by their name
 

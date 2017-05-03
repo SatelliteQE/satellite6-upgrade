@@ -312,3 +312,31 @@ def post_upgrade_test_tasks(sat_host):
     execute(lambda: run('sed -i -e \'/:level: / s/: .*/: '
                         'debug/\' /etc/foreman/settings.yaml'), host=sat_host)
     execute(lambda: run('katello-service restart'), host=sat_host)
+
+
+def katello_restart():
+    """Restarts the katello services"""
+    services = run('katello-service restart')
+    if services.return_code > 0:
+        logger.error('Unable to re-start the Satellite Services')
+        sys.exit(1)
+
+
+def check_capsule(capsule_name):
+    """Running capsule sync on external capsule"""
+    set_hammer_config()
+    capsules = hammer('capsule list')
+    cap_id = get_attribute_value(capsules, capsule_name, 'id')
+    check = hammer('capsule refresh-features --id {0}'.format(cap_id))
+    print check[u'message']
+    if check.return_code == 0:
+        logger.info('running capsule sync')
+        hammer('capsule content synchronize --id {0}'.format(cap_id))
+
+
+def check_ntpd():
+    """Check if ntpd is running else start the service"""
+    ntpd_check = run("service ntpd status", warn_only=True)
+    if ntpd_check.return_code > 0:
+        run("service ntpd start")
+        run("chkconfig ntpd on")

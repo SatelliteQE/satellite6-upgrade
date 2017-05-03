@@ -1,11 +1,20 @@
 import os
 import sys
 import time
+import thread
 
+from fabric.api import execute
 from ovirtsdk.api import API
 from ovirtsdk.infrastructure import errors
 from ovirtsdk.xml import params
 from upgrade.helpers.logger import logger
+from upgrade.helpers.tasks import (
+    check_necessary_env_variables_for_upgrade,
+    check_capsule,
+    check_ntpd,
+    katello_restart,
+)
+
 
 logger = logger()
 
@@ -179,3 +188,105 @@ def wait_till_rhevm_instance_status(instance_name, status, timeout=5):
             return True
         time.sleep(5)
     rhevm_client.disconnect()
+
+
+def create_rhevm_template(host, cluster, new_template, storage):
+    """ Creates template from Virtual machines
+
+    :param string host: The Virtual machine name of which, template is to be
+        created.
+    :param string cluster: The Cluster name of the RHEVM, in which the
+        template is to be created.
+    :param string new_template: The name of the template to be created.
+    :param string storage: The name of the storage domain, which will be
+        used to create template.
+    """
+    get_client = get_rhevm_client()
+    storage_domain = get_client.storagedomains.get(name=storage)
+    size = storage_domain.get_available() / 1024 / 1024 / 1024
+    vm = get_client.vms.get(host)
+    if size > 300 and vm:
+        try:
+            vm.stop()
+            logger.info('Waiting for VM to reach Down status')
+            wait_till_rhevm_instance_status(host, 'down')
+            logger.info('Template creation in Progress')
+            get_client.templates.add(
+                params.Template(name=new_template,
+                                vm=get_client.vms.get(host),
+                                cluster=get_client.clusters.get(cluster)))
+            wait_till_rhevm_instance_status(host, 'down')
+            if get_client.templates.get(new_template):
+                logger.info('{0} template is created successfully'.format(
+                                                                new_template))
+                get_client.disconnect()
+        except Exception as ex:
+            logger.error('Failed to Create Template from VM:\n%s' % str(ex))
+            get_client.disconnect()
+            # To ensure, if exception occurs in any thread to terminate the
+            # main thread
+            os._exit(1)
+    else:
+        os._exit(1)
+        get_client.disconnect()
+        logger.error('Low Storage cannot proceed or VM not found')
+
+
+# Fabric task
+def validate_and_create_product_templates():
+    """Task to do a sanity check on the satellite and capsule and then
+    create their templates after z-stream upgrade
+
+    Environment variables required to run upgrade on RHEVM Setup and will be
+    fetched from Jenkins:
+    ----------------------------------------------------------------------
+
+    RHEV_SAT_HOST
+        The rhevm satellite hostname to run upgrade on
+    RHEV_CAP_HOST
+        The rhevm capsule hostname to run upgrade on
+    RHEV_STORAGE
+        The storage domain on the rhevm used to create templates
+    RHEV_SAT_IMAGE
+        The satellite Image from which satellite instance will be created
+    RHEV_CAP_IMAGE
+        The capsule Image from which capsule instance will be created
+    RHEV_SAT_INSTANCE
+        The satellite instance name in rhevm of which template is to be
+        created, generally the upgraded box
+    RHEV_CAP_INSTANCE
+        The capsule instance name in rhevm of which template is to be
+        created, generally the upgraded box
+    """
+    # Get the instances name, specified in the jenkins job
+    sat_instance = os.environ.get('RHEV_SAT_INSTANCE')
+    cap_instance = os.environ.get('RHEV_CAP_INSTANCE')
+    cluster = 'Default'
+    storage = os.environ.get('RHEV_STORAGE')
+    if sat_instance and cap_instance:
+        sat_host = os.environ.get('RHEV_SAT_HOST')
+        new_sat_template = os.environ.get('RHEV_SAT_IMAGE') + "_new"
+        cap_host = os.environ.get('RHEV_CAP_HOST')
+        new_cap_template = os.environ.get('RHEV_CAP_IMAGE') + "_new"
+        if check_necessary_env_variables_for_upgrade('capsule'):
+            execute(check_ntpd, host=sat_host)
+            execute(katello_restart, host=sat_host)
+            execute(check_capsule, cap_host, host=sat_host)
+            execute(check_ntpd, host=cap_host)
+            execute(katello_restart, host=cap_host)
+            try:
+                thread.start_new_thread(create_rhevm_template,
+                                        (sat_instance,
+                                         cluster,
+                                         new_sat_template,
+                                         storage
+                                         ))
+                thread.start_new_thread(create_rhevm_template,
+                                        (cap_instance,
+                                         cluster,
+                                         new_cap_template,
+                                         storage
+                                         ))
+            except Exception as ex:
+                logger.error(
+                    'Failed to Create thread :\n%s' % str(ex))

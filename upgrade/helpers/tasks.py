@@ -31,7 +31,7 @@ from upgrade.helpers.logger import logger
 from upgrade.helpers.docker import (
     attach_subscription_to_host_from_content_host
 )
-from fabric.api import execute
+from fabric.api import execute, run
 
 logger = logger()
 
@@ -308,3 +308,7 @@ def post_upgrade_test_tasks(sat_host):
     execute(hammer, 'organization update --name "Default_Organization" '
             '--new-name "Default Organization" ',
             host=sat_host)
+    # Increase log level to DEBUG, to get better logs in foreman_debug
+    execute(lambda: run('sed -i -e \'/:level: / s/: .*/: '
+                        'debug/\' /etc/foreman/settings.yaml'), host=sat_host)
+    execute(lambda: run('katello-service restart'), host=sat_host)

@@ -97,8 +97,7 @@ attribute_keys['settings'] = 'name'
 
 
 def set_datastore(datastore):
-    """
-    Creates a file with all the satellite components data in json format
+    """Creates a file with all the satellite components data in json format
 
     Here data is a list representation of all satellite component properties
     in format:
@@ -135,8 +134,7 @@ def set_datastore(datastore):
 
 
 def get_datastore(datastore):
-    """
-    Fetches a json type data of all the satellite components from a file
+    """Fetches a json type data of all the satellite components from a file
 
     This file would be exported by set_datastore function in this module
 
@@ -158,8 +156,7 @@ def get_datastore(datastore):
 
 
 def find_datastore(datastore, component, attribute, search_key=None):
-    """
-    Returns a particular sat component property attribute or all attribute
+    """Returns a particular sat component property attribute or all attribute
     values of component property
 
     Particular property attribute if search key is provided
@@ -216,9 +213,8 @@ def find_datastore(datastore, component, attribute, search_key=None):
 
 
 def compare_postupgrade(component, attribute):
-    """
-    Returns the given component attribute value from preupgrade and postupgrade
-    datastore
+    """Returns the given component attribute value from preupgrade and
+    postupgrade datastore
 
     :param str component: The sat component name of which attribute value to
         fetch from datastore
@@ -242,7 +238,16 @@ def compare_postupgrade(component, attribute):
 
 
 def pytest_ids(data):
+    """Generates pytest ids for post upgrade existance tests
+
+    :param list/str data: The list of tests to pytest parametrized function
     """
-    """
-    ids = ["pre and post" for i in range(len(data))]
+    if isinstance(data, list):
+        ids = ["pre and post" for i in range(len(data))]
+    elif isinstance(data, str):
+        ids = ["pre and post"]
+    else:
+        raise TypeError(
+            'Wrong data type is provided to generate pytest ids. '
+            'Provide one of list/str.')
     return ids

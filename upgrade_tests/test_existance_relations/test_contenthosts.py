@@ -16,13 +16,16 @@ post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'content-host'
+ch_name = compare_postupgrade(component, 'name')
+ch_errata = compare_postupgrade(component, 'installable errata')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('content-host', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", ch_name, ids=pytest_ids(ch_name))
 def test_positive_contenthosts_by_name(pre, post):
     """Test all content hosts are existing after upgrade by names
 
@@ -34,10 +37,7 @@ def test_positive_contenthosts_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('content-host', 'installable errata')
-)
+@pytest.mark.parametrize("pre,post", ch_errata, ids=pytest_ids(ch_errata))
 def test_positive_installable_erratas_by_name(pre, post):
     """Test all content hosts installable erratas are existing after upgrade
 

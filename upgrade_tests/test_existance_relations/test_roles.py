@@ -15,10 +15,15 @@
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'role'
+role_name = compare_postupgrade(component, 'name')
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('role', 'name'))
+# Tests
+@pytest.mark.parametrize("pre,post", role_name, ids=pytest_ids(role_name))
 def test_positive_roles_by_name(pre, post):
     """Test all roles are existing post upgrade by their name
 

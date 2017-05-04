@@ -15,10 +15,15 @@
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'domain'
+dom_name = compare_postupgrade(component, 'name')
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('domain', 'name'))
+# Tests
+@pytest.mark.parametrize("pre,post", dom_name, ids=pytest_ids(dom_name))
 def test_positive_domains_by_name(pre, post):
     """Test all domains are existing post upgrade by their names
 

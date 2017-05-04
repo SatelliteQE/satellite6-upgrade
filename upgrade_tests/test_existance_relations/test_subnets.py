@@ -16,10 +16,17 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'subnet'
+sub_name = compare_postupgrade(component, 'name')
+sub_network = compare_postupgrade(component, 'network')
+sub_mask = compare_postupgrade(component, 'mask')
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('subnet', 'name'))
+# Tests
+@pytest.mark.parametrize("pre,post", sub_name, ids=pytest_ids(sub_name))
 def test_positive_subnets_by_name(pre, post):
     """Test all subnets are existing post upgrade by their name
 
@@ -30,7 +37,7 @@ def test_positive_subnets_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('subnet', 'network'))
+@pytest.mark.parametrize("pre,post", sub_network, ids=pytest_ids(sub_network))
 def test_positive_subnets_by_network(pre, post):
     """Test all subnets network ip's are existing post upgrade
 
@@ -41,7 +48,7 @@ def test_positive_subnets_by_network(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('subnet', 'mask'))
+@pytest.mark.parametrize("pre,post", sub_mask, ids=pytest_ids(sub_mask))
 def test_positive_subnets_by_mask(pre, post):
     """Test all subnets masks are existing post upgrade
 

@@ -16,13 +16,20 @@ its associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'discovery_rule'
+drule_name = compare_postupgrade(component, 'name')
+drule_prio = compare_postupgrade(component, 'priority')
+drule_search = compare_postupgrade(component, 'search')
+drule_hg = compare_postupgrade(component, 'host group')
+drule_hl = compare_postupgrade(component, 'hosts limit')
+drule_enable = compare_postupgrade(component, 'enabled')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery_rule', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", drule_name, ids=pytest_ids(drule_name))
 def test_positive_discovery_rules_by_name(pre, post):
     """Test all discovery rules are existing after upgrade by name
 
@@ -31,13 +38,11 @@ def test_positive_discovery_rules_by_name(pre, post):
     :expectedresults: All discovery rules should be retained post upgrade by
         names
     """
+    print pre if pre else "OMG"
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery_rule', 'priority')
-)
+@pytest.mark.parametrize("pre,post", drule_prio, ids=pytest_ids(drule_prio))
 def test_positive_discovery_rules_by_priority(pre, post):
     """Test all discovery rules priorities are existing after upgrade
 
@@ -50,9 +55,7 @@ def test_positive_discovery_rules_by_priority(pre, post):
 
 
 @pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery_rule', 'search')
-)
+    "pre,post", drule_search, ids=pytest_ids(drule_search))
 def test_positive_discovery_rules_by_search(pre, post):
     """Test all discovery rules search are existing after upgrade
 
@@ -64,10 +67,7 @@ def test_positive_discovery_rules_by_search(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery_rule', 'host group')
-)
+@pytest.mark.parametrize("pre,post", drule_hg, ids=pytest_ids(drule_hg))
 def test_positive_discovery_rules_by_hostgroup(pre, post):
     """Test all discovery rules hostgroup associations are existing after
     upgrade
@@ -80,10 +80,7 @@ def test_positive_discovery_rules_by_hostgroup(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery_rule', 'hosts limit')
-)
+@pytest.mark.parametrize("pre,post", drule_hl, ids=pytest_ids(drule_hl))
 def test_positive_discovery_rules_by_hostslimit(pre, post):
     """Test all discovery rules hosts limit are retained after upgrade
 
@@ -96,9 +93,7 @@ def test_positive_discovery_rules_by_hostslimit(pre, post):
 
 
 @pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('discovery_rule', 'enabled')
-)
+    "pre,post", drule_enable, ids=pytest_ids(drule_enable))
 def test_positive_discovery_rules_by_enablement(pre, post):
     """Test all discovery rules enablement and disablement is existing after
         upgrade

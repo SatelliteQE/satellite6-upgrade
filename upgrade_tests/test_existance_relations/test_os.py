@@ -15,10 +15,16 @@
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'os'
+os_title = compare_postupgrade(component, 'title')
+os_fam = compare_postupgrade(component, 'family')
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('os', 'title'))
+# Tests
+@pytest.mark.parametrize("pre,post", os_title, ids=pytest_ids(os_title))
 def test_positive_os_by_title(pre, post):
     """Test all OS are existing post upgrade by their title
 
@@ -29,7 +35,7 @@ def test_positive_os_by_title(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('os', 'family'))
+@pytest.mark.parametrize("pre,post", os_fam, ids=pytest_ids(os_fam))
 def test_positive_os_by_family(pre, post):
     """Test all OS are existing post upgrade by their families
 

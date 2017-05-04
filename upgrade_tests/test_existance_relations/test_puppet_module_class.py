@@ -16,13 +16,17 @@ existence post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component_class = 'puppet-class'
+pc_name = compare_postupgrade(component_class, 'name')
+component_module = 'puppet-module'
+pm_name = compare_postupgrade(component_module, 'name')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('puppet-class', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", pc_name, ids=pytest_ids(pc_name))
 def test_positive_puppet_classes_by_name(pre, post):
     """Test all puppet classes are existing after upgrade by names
 
@@ -34,10 +38,7 @@ def test_positive_puppet_classes_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('puppet-module', 'name')
-)
+@pytest.mark.parametrize("pre,post", pm_name, ids=pytest_ids(pm_name))
 def test_positive_puppet_modules_by_name(pre, post):
     """Test all puppet modules are existing after upgrade by names
 

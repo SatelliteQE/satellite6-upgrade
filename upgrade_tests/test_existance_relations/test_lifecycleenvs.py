@@ -16,13 +16,15 @@ post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'lifecycle-environment'
+lc_name = compare_postupgrade(component, 'name')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('lifecycle-environment', 'name')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", lc_name, ids=pytest_ids(lc_name))
 def test_positive_lifecycle_envs_by_name(pre, post):
     """Test all lifecycle envs are existing after upgrade by names
 

@@ -16,13 +16,18 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'content-view'
+cvs_repo = compare_postupgrade(component, 'repository ids')
+cvs_label = compare_postupgrade(component, 'label')
+cvs_composite = compare_postupgrade(component, 'composite')
+cvs_name = compare_postupgrade(component, 'name')
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('content-view', 'repository ids')
-)
+# Tests
+@pytest.mark.parametrize("pre,post", cvs_repo, ids=pytest_ids(cvs_repo))
 def test_positive_cvs_by_repository_ids(pre, post):
     """Test repository associations of all CVs post upgrade
 
@@ -34,10 +39,7 @@ def test_positive_cvs_by_repository_ids(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('content-view', 'label')
-)
+@pytest.mark.parametrize("pre,post", cvs_label, ids=pytest_ids(cvs_label))
 def test_positive_cvs_by_label(pre, post):
     """Test all CVs are existing after upgrade by their labels
 
@@ -49,9 +51,7 @@ def test_positive_cvs_by_label(pre, post):
 
 
 @pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('content-view', 'composite')
-)
+    "pre,post", cvs_composite, ids=pytest_ids(cvs_composite))
 def test_positive_cvs_by_composite_views(pre, post):
     """Test composite CV's are existing after upgrade
 
@@ -62,10 +62,7 @@ def test_positive_cvs_by_composite_views(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('content-view', 'name')
-)
+@pytest.mark.parametrize("pre,post", cvs_name, ids=pytest_ids(cvs_name))
 def test_positive_cvs_by_name(pre, post):
     """Test all CVs are existing after upgrade by their name
 

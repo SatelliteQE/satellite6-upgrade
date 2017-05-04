@@ -16,10 +16,18 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+# Required Data
+component = 'organization'
+org_id = compare_postupgrade(component, 'id')
+org_name = compare_postupgrade(component, 'name')
+org_label = compare_postupgrade(component, 'label')
+org_desc = compare_postupgrade(component, 'description')
 
 
-@pytest.mark.parametrize("pre,post", compare_postupgrade('organization', 'id'))
+# Tests
+@pytest.mark.parametrize("pre,post", org_id, ids=pytest_ids(org_id))
 def test_positive_organizations_by_id(pre, post):
     """Test all organizations are existing after upgrade by id's
 
@@ -30,10 +38,7 @@ def test_positive_organizations_by_id(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('organization', 'name')
-)
+@pytest.mark.parametrize("pre,post", org_name, ids=pytest_ids(org_name))
 def test_positive_organizations_by_name(pre, post):
     """Test all organizations are existing after upgrade by names
 
@@ -45,10 +50,7 @@ def test_positive_organizations_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('organization', 'label')
-)
+@pytest.mark.parametrize("pre,post", org_label, ids=pytest_ids(org_label))
 def test_positive_organizations_by_label(pre, post):
     """Test all organizations are existing after upgrade by labels
 
@@ -60,10 +62,7 @@ def test_positive_organizations_by_label(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('organization', 'description')
-)
+@pytest.mark.parametrize("pre,post", org_desc, ids=pytest_ids(org_desc))
 def test_positive_organizations_by_description(pre, post):
     """Test all organizations descriptions is retained post upgrade
 

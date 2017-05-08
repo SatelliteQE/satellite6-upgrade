@@ -26,7 +26,6 @@ components = {
         'medium',
         'organization',
         'os',
-        'partition-table',
         'puppet-class',
         'puppet-module',
         'role',
@@ -74,12 +73,10 @@ attribute_keys = dict.fromkeys(
         'organization',
         'os',
         'partition-table',
-        'product',
         'puppet-class',
         'puppet-module',
         'repository',
         'role',
-        'sc-param',
         'smart-variable',
         'subnet',
         'subscription',
@@ -90,10 +87,20 @@ attribute_keys = dict.fromkeys(
     ],
     'id'
  )
+
+# Attributes where 'name' as key to fetch component property data
+attribute_keys = dict.fromkeys(
+    [
+        'partition-table',
+        'product',
+        'sc-param',
+        'settings'
+    ],
+    'name'
+ )
 # Attributes with different or specific keys to fetch properties data
 # e.g for content-view there is content view id' and not 'id'
 attribute_keys['content-view'] = 'content view id'
-attribute_keys['settings'] = 'name'
 
 
 def set_datastore(datastore):

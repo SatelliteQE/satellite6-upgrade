@@ -36,6 +36,10 @@ def test_positive_cvs_by_repository_ids(pre, post):
     :expectedresults: Repositories associations of each CV should be retained
         post upgrade
     """
+    if ',' in pre:
+        pre = sorted([num.strip() for num in pre.split(',')])
+    if ',' in post:
+        post = sorted([num.strip() for num in post.split(',')])
     assert pre == post
 
 

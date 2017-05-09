@@ -101,3 +101,14 @@ def docker_execute_command(container_id, command, quiet=False):
             quiet = True
     return run(
         'docker exec {0} {1}'.format(container_id, command), quiet=quiet)
+
+
+def docker_cleanup_containers():
+    logger.info('Cleaning UP of Docker containers BEGINS')
+    logger.info('Stopping all the running docker containers')
+    run('docker ps -a | grep \'days ago\' | awk \'{print $1}\' | xargs '
+        '--no-run-if-empty docker stop')
+    logger.info('Removing all the docker containers')
+    run('docker ps -a | grep \'days ago\' | awk \'{print $1}\' | xargs '
+        '--no-run-if-empty docker rm ')
+    logger.info('Cleaning UP of Docker containers ENDS')

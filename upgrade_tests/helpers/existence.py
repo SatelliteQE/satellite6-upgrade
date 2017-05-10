@@ -26,6 +26,7 @@ components = {
         'medium',
         'organization',
         'os',
+        'partition-table',
         'puppet-class',
         'puppet-module',
         'role',
@@ -72,11 +73,11 @@ attribute_keys = dict.fromkeys(
         'medium',
         'organization',
         'os',
-        'partition-table',
         'puppet-class',
         'puppet-module',
         'repository',
         'role',
+        'sc-param',
         'smart-variable',
         'subnet',
         'subscription',
@@ -89,15 +90,14 @@ attribute_keys = dict.fromkeys(
  )
 
 # Attributes where 'name' as key to fetch component property data
-attribute_keys = dict.fromkeys(
+attribute_keys.update(dict.fromkeys(
     [
         'partition-table',
         'product',
-        'sc-param',
         'settings'
     ],
     'name'
- )
+ ))
 # Attributes with different or specific keys to fetch properties data
 # e.g for content-view there is content view id' and not 'id'
 attribute_keys['content-view'] = 'content view id'

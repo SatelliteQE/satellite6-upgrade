@@ -325,13 +325,19 @@ def katello_restart():
 def check_capsule(capsule_name):
     """Running capsule sync on external capsule"""
     set_hammer_config()
-    capsules = hammer('capsule list')
-    cap_id = get_attribute_value(capsules, capsule_name, 'id')
-    check = hammer('capsule refresh-features --id {0}'.format(cap_id))
-    print check[u'message']
-    if check.return_code == 0:
-        logger.info('running capsule sync')
-        hammer('capsule content synchronize --id {0}'.format(cap_id))
+    if os.environ.get('TO_VERSION') in ['6.2', '6.3']:
+        check = hammer('capsule refresh-features --name "{0}"'.
+                       format(capsule_name)
+                       )
+        print check[u'message']
+        if check.return_code == 0:
+            logger.info('Running Capsule sync')
+            hammer('capsule content synchronize --name "{0}"'.
+                   format(capsule_name)
+                   )
+    else:
+        logger.info('Running Capsule sync')
+        hammer('capsule content synchronize --name "{0}"'.format(capsule_name))
 
 
 def check_ntpd():

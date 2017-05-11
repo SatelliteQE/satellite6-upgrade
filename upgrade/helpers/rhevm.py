@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-import thread
 
 from fabric.api import execute
 from ovirtsdk.api import API
@@ -215,7 +214,7 @@ def create_rhevm_template(host, cluster, new_template, storage):
                 params.Template(name=new_template,
                                 vm=get_client.vms.get(host),
                                 cluster=get_client.clusters.get(cluster)))
-            wait_till_rhevm_instance_status(host, 'down')
+            wait_till_rhevm_instance_status(host, 'down', timeout=80)
             if get_client.templates.get(new_template):
                 logger.info('{0} template is created successfully'.format(
                                                                 new_template))
@@ -223,11 +222,8 @@ def create_rhevm_template(host, cluster, new_template, storage):
         except Exception as ex:
             logger.error('Failed to Create Template from VM:\n%s' % str(ex))
             get_client.disconnect()
-            # To ensure, if exception occurs in any thread to terminate the
-            # main thread
-            os._exit(1)
+
     else:
-        os._exit(1)
         get_client.disconnect()
         logger.error('Low Storage cannot proceed or VM not found')
 
@@ -275,18 +271,16 @@ def validate_and_create_product_templates():
             execute(check_ntpd, host=cap_host)
             execute(katello_restart, host=cap_host)
             try:
-                thread.start_new_thread(create_rhevm_template,
-                                        (sat_instance,
-                                         cluster,
-                                         new_sat_template,
-                                         storage
-                                         ))
-                thread.start_new_thread(create_rhevm_template,
-                                        (cap_instance,
-                                         cluster,
-                                         new_cap_template,
-                                         storage
-                                         ))
+                create_rhevm_template(sat_instance,
+                                      cluster,
+                                      new_sat_template,
+                                      storage
+                                      )
+                create_rhevm_template(cap_instance,
+                                      cluster,
+                                      new_cap_template,
+                                      storage
+                                      )
             except Exception as ex:
                 logger.error(
                     'Failed to Create thread :\n%s' % str(ex))

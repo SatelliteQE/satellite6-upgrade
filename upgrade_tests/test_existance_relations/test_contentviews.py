@@ -16,6 +16,7 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import run_to_upgrade
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -54,6 +55,7 @@ def test_positive_cvs_by_label(pre, post):
     assert pre == post
 
 
+@run_to_upgrade('6.2')
 @pytest.mark.parametrize(
     "pre,post", cvs_composite, ids=pytest_ids(cvs_composite))
 def test_positive_cvs_by_composite_views(pre, post):

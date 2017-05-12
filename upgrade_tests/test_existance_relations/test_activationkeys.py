@@ -28,7 +28,7 @@ aks_hl = compare_postupgrade(component, 'host limit')
 
 
 # Tests
-@pytest.mark.parametrize("pre,post", aks_cv, pytest_ids(aks_cv))
+@pytest.mark.parametrize("pre,post", aks_cv, ids=pytest_ids(aks_cv))
 def test_positive_aks_by_content_view(pre, post):
     """Test CV association of all AKs post upgrade
 
@@ -39,7 +39,7 @@ def test_positive_aks_by_content_view(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize("pre,post", aks_lc, pytest_ids(aks_lc))
+@pytest.mark.parametrize("pre,post", aks_lc, ids=pytest_ids(aks_lc))
 def test_positive_aks_by_lc(pre, post):
     """Test LC association of all AKs post upgrade
 
@@ -50,7 +50,7 @@ def test_positive_aks_by_lc(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize("pre,post", aks_name, pytest_ids(aks_name))
+@pytest.mark.parametrize("pre,post", aks_name, ids=pytest_ids(aks_name))
 def test_positive_aks_by_name(pre, post):
     """Test AKs are existing by their name post upgrade
 
@@ -61,7 +61,7 @@ def test_positive_aks_by_name(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize("pre,post", aks_hl, pytest_ids(aks_hl))
+@pytest.mark.parametrize("pre,post", aks_hl, ids=pytest_ids(aks_hl))
 def test_positive_aks_by_host_limit(pre, post):
     """Test host limit associations of all AKs post upgrade
 

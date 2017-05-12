@@ -88,10 +88,7 @@ def test_positive_subscriptions_by_consumed(pre, post):
     assert pre == post
 
 
-@pytest.mark.parametrize(
-    "pre,post",
-    compare_postupgrade('subscription', 'end date')
-)
+@pytest.mark.parametrize("pre,post", sub_edate, ids=pytest_ids(sub_edate))
 def test_positive_subscriptions_by_end_date(pre, post):
     """Test all subscriptions end date status is retained after upgrade
 

@@ -78,20 +78,6 @@ def refresh_subscriptions_on_docker_clients(container_ids):
         docker_execute_command(container_ids, 'yum clean all', quiet=True)
 
 
-def remove_all_docker_containers(only_running=True):
-    """Deletes docker containers from system forcefully
-
-    If only_running is set to true then only running containers will be deleted
-    else all running + stopped containers will be deleted
-
-    :param bool only_running: Whether to delete only running containers
-    """
-    if int(run('docker ps -q{} | wc -l'.format(
-            '' if only_running else 'a'))) > 0:
-        run('docker rm $(docker ps -q{}) -f'.format(
-            '' if only_running else 'a'))
-
-
 def docker_execute_command(container_id, command, quiet=False):
     """Executes command on running docker container
 

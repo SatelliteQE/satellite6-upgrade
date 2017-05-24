@@ -5,10 +5,7 @@ import json
 import time
 
 from automation_tools import manage_daemon
-from upgrade.helpers.docker import (
-    remove_all_docker_containers,
-    generate_satellite_docker_clients_on_rhevm
-)
+from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
 from upgrade.helpers.rhevm import (
     create_rhevm_instance,
     get_rhevm_client,
@@ -88,9 +85,6 @@ def dockerize(ak_name, distro):
     time.sleep(5)
     logger.info('Generating client on RHEL7 on Docker. '
                 'Please wait .....')
-    # First delete if any containers running
-    execute(
-        remove_all_docker_containers, only_running=False, host=docker_vm)
     # Generate Clients on RHEL 7
     time.sleep(30)
     clients = execute(

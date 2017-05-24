@@ -7,7 +7,6 @@ from upgrade.helpers.docker import (
     docker_execute_command,
     generate_satellite_docker_clients_on_rhevm,
     refresh_subscriptions_on_docker_clients,
-    remove_all_docker_containers
 )
 from upgrade.helpers.logger import logger
 from upgrade.helpers.rhevm import (
@@ -79,10 +78,6 @@ def satellite6_client_setup():
         time.sleep(5)
         logger.info('Generating {} clients on RHEL6 and RHEL7 on Docker. '
                     'Please wait .....'.format(clients_count))
-        # First delete if any containers running
-        execute(
-            remove_all_docker_containers, only_running=False, host=docker_vm)
-        time.sleep(5)
         # Generate Clients on RHEL 7 and RHEL 6
         clients6 = execute(
             generate_satellite_docker_clients_on_rhevm,

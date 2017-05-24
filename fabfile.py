@@ -13,7 +13,6 @@ from upgrade.helpers.docker import (
     docker_execute_command,
     generate_satellite_docker_clients_on_rhevm,
     refresh_subscriptions_on_docker_clients,
-    remove_all_docker_containers,
     docker_cleanup_containers
 )
 from upgrade.helpers.openstack import (

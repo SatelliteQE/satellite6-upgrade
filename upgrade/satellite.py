@@ -5,7 +5,6 @@ from upgrade_tests.helpers.existence import set_datastore
 from upgrade.helpers.tools import host_pings, reboot
 from automation_tools import (
     enable_ostree,
-    set_yum_debug_level,
     setup_satellite_firewall,
     subscribe,
     install_prerequisites
@@ -89,8 +88,6 @@ def satellite6_upgrade():
         logger.warning('Wrong Satellite Version Provided to upgrade to. '
                        'Provide one of 6.1, 6.2')
         sys.exit(1)
-    # Setting yum stdout log level to be less verbose
-    set_yum_debug_level()
     setup_satellite_firewall()
     run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')
     logger.info('Updating system packages ... ')
@@ -188,8 +185,6 @@ def satellite6_zstream_upgrade():
                        'FROM and TO versions are not same!')
         sys.exit(1)
     base_url = os.environ.get('BASE_URL')
-    # Setting yum stdout log level to be less verbose
-    set_yum_debug_level()
     setup_satellite_firewall()
     major_ver = distro_info()[1]
     # Following disables the old satellite repo and extra repos enabled

@@ -15,6 +15,7 @@
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import run_to_upgrade
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -25,6 +26,7 @@ sett_desc = compare_postupgrade(component, 'description')
 
 
 # Tests
+@run_to_upgrade('6.2')
 @pytest.mark.parametrize("pre,post", sett_name, ids=pytest_ids(sett_name))
 def test_positive_settings_by_name(pre, post):
     """Test all settings are existing post upgrade by their names
@@ -36,6 +38,7 @@ def test_positive_settings_by_name(pre, post):
     assert pre == post
 
 
+@run_to_upgrade('6.2')
 @pytest.mark.parametrize("pre,post", sett_value, ids=pytest_ids(sett_value))
 def test_positive_settings_by_value(pre, post):
     """Test all settings value are preserved post upgrade
@@ -47,6 +50,7 @@ def test_positive_settings_by_value(pre, post):
     assert pre == post
 
 
+@run_to_upgrade('6.2')
 @pytest.mark.parametrize("pre,post", sett_desc, ids=pytest_ids(sett_desc))
 def test_positive_settings_by_description(pre, post):
     """Test all settings descriptions are existing post upgrade

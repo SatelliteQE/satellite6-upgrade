@@ -16,6 +16,7 @@ and associations post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import run_to_upgrade
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -27,6 +28,7 @@ sv_pclass = compare_postupgrade(component, 'puppet class')
 
 
 # Tests
+@run_to_upgrade('6.2')
 @pytest.mark.parametrize("pre,post", sv_name, ids=pytest_ids(sv_name))
 def test_positive_smart_variables_by_name(pre, post):
     """Test all smart variables are existing after upgrade by names
@@ -39,6 +41,7 @@ def test_positive_smart_variables_by_name(pre, post):
     assert pre == post
 
 
+@run_to_upgrade('6.2')
 @pytest.mark.parametrize("pre,post", sv_dv, ids=pytest_ids(sv_dv))
 def test_positive_smart_variables_by_default_value(pre, post):
     """Test all smart variables default values are retained after upgrade
@@ -51,6 +54,7 @@ def test_positive_smart_variables_by_default_value(pre, post):
     assert pre == post
 
 
+@run_to_upgrade('6.2')
 @pytest.mark.parametrize("pre,post", sv_type, ids=pytest_ids(sv_type))
 def test_positive_smart_variables_by_type(pre, post):
     """Test all smart variables override check is retained after upgrade
@@ -63,6 +67,7 @@ def test_positive_smart_variables_by_type(pre, post):
     assert pre == post
 
 
+@run_to_upgrade('6.2')
 @pytest.mark.parametrize("pre,post", sv_pclass, ids=pytest_ids(sv_pclass))
 def test_positive_smart_variables_by_puppet_class(pre, post):
     """Test all smart variables associations with its puppet class is retained

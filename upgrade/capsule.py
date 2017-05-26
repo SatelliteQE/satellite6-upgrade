@@ -1,7 +1,7 @@
 import os
 import sys
 
-from automation_tools import set_yum_debug_level, setup_capsule_firewall
+from automation_tools import setup_capsule_firewall
 from automation_tools.repository import enable_repos, disable_repos
 from automation_tools.satellite6.capsule import generate_capsule_certs
 from automation_tools.utils import distro_info, update_packages
@@ -96,7 +96,6 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     logger.highlight('\n========== CAPSULE UPGRADE =================\n')
     from_version = os.environ.get('FROM_VERSION')
     to_version = os.environ.get('TO_VERSION')
-    set_yum_debug_level()
     setup_capsule_firewall()
     major_ver = distro_info()[1]
     # Re-register Capsule for 6.2
@@ -180,7 +179,6 @@ def satellite6_capsule_zstream_upgrade():
                        'FROM and TO versions are not same!')
         sys.exit(1)
     major_ver = distro_info()[1]
-    set_yum_debug_level()
     if os.environ.get('CAPSULE_URL'):
         disable_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
             major_ver, from_version))

@@ -5,13 +5,15 @@ existence post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -30,7 +32,7 @@ pm_name = compare_postupgrade(component_module, 'name')
 def test_positive_puppet_classes_by_name(pre, post):
     """Test all puppet classes are existing after upgrade by names
 
-    :id: 44e7617c-4092-42bd-9b28-907c034966f7
+    :id: upgrade-44e7617c-4092-42bd-9b28-907c034966f7
 
     :expectedresults: All puppet classes should be retained post upgrade by
         names
@@ -42,7 +44,7 @@ def test_positive_puppet_classes_by_name(pre, post):
 def test_positive_puppet_modules_by_name(pre, post):
     """Test all puppet modules are existing after upgrade by names
 
-    :id: 9749e8e0-8424-4825-9350-5475413eba8e
+    :id: upgrade-9749e8e0-8424-4825-9350-5475413eba8e
 
     :expectedresults: All puppet modules should be retained post upgrade by
         names

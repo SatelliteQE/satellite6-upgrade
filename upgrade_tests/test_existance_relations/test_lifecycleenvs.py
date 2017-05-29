@@ -5,13 +5,15 @@ post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -28,7 +30,7 @@ lc_name = compare_postupgrade(component, 'name')
 def test_positive_lifecycle_envs_by_name(pre, post):
     """Test all lifecycle envs are existing after upgrade by names
 
-    :id: 4bb9c13a-b573-4f03-b2b3-65592e275eb1
+    :id: upgrade-4bb9c13a-b573-4f03-b2b3-65592e275eb1
 
     :expectedresults: All lifecycle envs should be retained post upgrade by
         names

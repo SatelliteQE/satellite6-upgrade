@@ -5,13 +5,15 @@ post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -28,7 +30,7 @@ arc_name = compare_postupgrade(component, 'name')
 def test_positive_architectures_by_name(pre, post):
     """Test all architectures are existing after upgrade by names
 
-    :id: eb6d3728-6b0b-4cb7-888e-8d64a46e7beb
+    :id: upgrade-eb6d3728-6b0b-4cb7-888e-8d64a46e7beb
 
     :expectedresults: All architectures should be retained post upgrade by
         names

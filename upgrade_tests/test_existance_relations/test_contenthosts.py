@@ -5,13 +5,15 @@ post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -29,7 +31,7 @@ ch_errata = compare_postupgrade(component, 'installable errata')
 def test_positive_contenthosts_by_name(pre, post):
     """Test all content hosts are existing after upgrade by names
 
-    :id: aa92463b-e693-4c30-b0cb-e2cafdab1c7f
+    :id: upgrade-aa92463b-e693-4c30-b0cb-e2cafdab1c7f
 
     :expectedresults: All content hosts should be retained post upgrade by
         names
@@ -41,7 +43,7 @@ def test_positive_contenthosts_by_name(pre, post):
 def test_positive_installable_erratas_by_name(pre, post):
     """Test all content hosts installable erratas are existing after upgrade
 
-    :id: bc40b921-c39b-4cd0-9816-87b53d1af352
+    :id: upgrade-bc40b921-c39b-4cd0-9816-87b53d1af352
 
     :expectedresults: All chosts installable erratas should be retained post
         upgrade

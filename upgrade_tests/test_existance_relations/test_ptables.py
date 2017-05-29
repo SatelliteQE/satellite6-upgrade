@@ -5,13 +5,15 @@ post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -28,7 +30,7 @@ ptable_name = compare_postupgrade(component, 'name')
 def test_positive_partition_tables_by_name(pre, post):
     """Test all partition tables are existing after upgrade by names
 
-    :id: 7832ab52-75e5-4451-aee3-5b208ced0e67
+    :id: upgrade-7832ab52-75e5-4451-aee3-5b208ced0e67
 
     :expectedresults: All architectures should be retained post upgrade by
         names

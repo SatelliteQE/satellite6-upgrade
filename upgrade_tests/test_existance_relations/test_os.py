@@ -4,13 +4,15 @@
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -28,7 +30,7 @@ os_fam = compare_postupgrade(component, 'family')
 def test_positive_os_by_title(pre, post):
     """Test all OS are existing post upgrade by their title
 
-    :id: faf14fe0-cd2d-4c27-ad3a-eb631820eaa1
+    :id: upgrade-faf14fe0-cd2d-4c27-ad3a-eb631820eaa1
 
     :expectedresults: All OS should be retained post upgrade by their title
     """
@@ -39,7 +41,7 @@ def test_positive_os_by_title(pre, post):
 def test_positive_os_by_family(pre, post):
     """Test all OS are existing post upgrade by their families
 
-    :id: de83ceca-1dd5-4e20-a815-91d348b79e29
+    :id: upgrade-de83ceca-1dd5-4e20-a815-91d348b79e29
 
     :expectedresults: All OS should be retained post upgrade by their families
     """

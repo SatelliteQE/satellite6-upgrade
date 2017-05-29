@@ -4,13 +4,15 @@
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -31,7 +33,7 @@ sett_desc = compare_postupgrade(component, 'description')
 def test_positive_settings_by_name(pre, post):
     """Test all settings are existing post upgrade by their names
 
-    :id: 802b547a-d9b1-4537-ba38-65d67985a94f
+    :id: upgrade-802b547a-d9b1-4537-ba38-65d67985a94f
 
     :expectedresults: All settings should be retained post upgrade
     """
@@ -43,7 +45,7 @@ def test_positive_settings_by_name(pre, post):
 def test_positive_settings_by_value(pre, post):
     """Test all settings value are preserved post upgrade
 
-    :id: 5b60d8cb-aced-49e8-b4f5-42ea30892fce
+    :id: upgrade-5b60d8cb-aced-49e8-b4f5-42ea30892fce
 
     :expectedresults: All settings values should be retained post upgrade
     """
@@ -55,7 +57,7 @@ def test_positive_settings_by_value(pre, post):
 def test_positive_settings_by_description(pre, post):
     """Test all settings descriptions are existing post upgrade
 
-    :id: 3b5ccd81-cb0e-4bdd-a10f-972ad29f7ac6
+    :id: upgrade-3b5ccd81-cb0e-4bdd-a10f-972ad29f7ac6
 
     :expectedresults: All settings descriptions should be retained post upgrade
     """

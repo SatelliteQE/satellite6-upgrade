@@ -5,13 +5,15 @@ post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -28,7 +30,7 @@ temp_name = compare_postupgrade(component, 'name')
 def test_positive_templates_by_name(pre, post):
     """Test all templates are existing after upgrade by names
 
-    :id: fce33637-8e7b-4ccf-a9fb-47f0e0607f83
+    :id: upgrade-fce33637-8e7b-4ccf-a9fb-47f0e0607f83
 
     :expectedresults: All templates should be retained post upgrade by names
     """

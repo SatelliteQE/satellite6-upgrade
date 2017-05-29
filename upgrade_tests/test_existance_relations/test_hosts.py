@@ -5,13 +5,15 @@ associations post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -32,7 +34,7 @@ host_name = compare_postupgrade(component, 'name')
 def test_positive_hosts_by_ip(pre, post):
     """Test ip associations of all hosts post upgrade
 
-    :id: 3b4f8315-8490-42bc-8afa-4a6c267558d7
+    :id: upgrade-3b4f8315-8490-42bc-8afa-4a6c267558d7
 
     :expectedresults: IP of each host should be associated to its respective
         host post upgrade
@@ -44,7 +46,7 @@ def test_positive_hosts_by_ip(pre, post):
 def test_positive_hosts_by_mac(pre, post):
     """Test mac associations of all hosts post upgrade
 
-    :id: 526af1dd-f2a1-4a66-a0d2-fe5c1ade165d
+    :id: upgrade-526af1dd-f2a1-4a66-a0d2-fe5c1ade165d
 
     :expectedresults: MAC of each host should be associated to its respective
         host post upgrade
@@ -56,7 +58,7 @@ def test_positive_hosts_by_mac(pre, post):
 def test_positive_hosts_by_hostgroup(pre, post):
     """Test hostgroup associations of all hosts post upgrade
 
-    :id: 75d861ad-d8b5-4051-a584-b06ac63fd444
+    :id: upgrade-75d861ad-d8b5-4051-a584-b06ac63fd444
 
     :expectedresults: HostGroup of each host should be associated to its
         respective host post upgrade
@@ -68,7 +70,7 @@ def test_positive_hosts_by_hostgroup(pre, post):
 def test_positive_hosts_by_operating_system(pre, post):
     """Test OS associations of all hosts post upgrade
 
-    :id: 13c93f4b-0a46-4c74-aefa-136484bd8999
+    :id: upgrade-13c93f4b-0a46-4c74-aefa-136484bd8999
 
     :expectedresults: OS of each host should be associated to its respective
         host post upgrade
@@ -80,7 +82,7 @@ def test_positive_hosts_by_operating_system(pre, post):
 def test_positive_hosts_by_name(pre, post):
     """Test all hosts are retained post upgrade by their name
 
-    :id: 2421fe0d-370d-4191-af36-1565f7c088bd
+    :id: upgrade-2421fe0d-370d-4191-af36-1565f7c088bd
 
     :expectedresults: All hosts should be retained post upgrade by their names
     """

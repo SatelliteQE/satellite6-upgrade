@@ -5,13 +5,15 @@ associations post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -28,7 +30,7 @@ comp_provider = compare_postupgrade(component, 'provider')
 def test_positive_compute_resources_by_name(pre, post):
     """Test all compute resources are existing post upgrade by their name
 
-    :id: 24f05707-4547-458c-bb7e-96be35d3f043
+    :id: upgrade-24f05707-4547-458c-bb7e-96be35d3f043
 
     :expectedresults: All compute resources should be retained post upgrade
     """
@@ -40,7 +42,7 @@ def test_positive_compute_resources_by_name(pre, post):
 def test_positive_compute_resources_by_provider(pre, post):
     """Test all compute resources provider are existing post upgrade
 
-    :id: f3429be3-505e-44ff-a4fb-4adc940e8b67
+    :id: upgrade-f3429be3-505e-44ff-a4fb-4adc940e8b67
 
     :expectedresults: All compute resources provider should be retained post
         upgrade

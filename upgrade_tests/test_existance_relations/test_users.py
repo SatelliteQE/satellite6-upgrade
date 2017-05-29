@@ -5,13 +5,15 @@ associations post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -30,7 +32,7 @@ user_email = compare_postupgrade(component, 'email')
 def test_positive_users_by_name(pre, post):
     """Test all users are existing post upgrade by their name
 
-    :id: 1accdb79-7dd6-4cf7-904a-b179e108ba2d
+    :id: upgrade-1accdb79-7dd6-4cf7-904a-b179e108ba2d
 
     :expectedresults: All users should be retained post upgrade
     """
@@ -41,7 +43,7 @@ def test_positive_users_by_name(pre, post):
 def test_positive_users_by_login(pre, post):
     """Test all users login name are existing post upgrade
 
-    :id: 1b8cba29-38e7-4d65-a8b2-4f5abab511dd
+    :id: upgrade-1b8cba29-38e7-4d65-a8b2-4f5abab511dd
 
     :expectedresults: All users login name should be retained post upgrade
     """
@@ -52,7 +54,7 @@ def test_positive_users_by_login(pre, post):
 def test_positive_users_by_email(pre, post):
     """Test all users email are existing post upgrade
 
-    :id: 45d267e9-a714-4fc1-952d-fa2ddd1e8231
+    :id: upgrade-45d267e9-a714-4fc1-952d-fa2ddd1e8231
 
     :expectedresults: All users email should be retained post upgrade
     """

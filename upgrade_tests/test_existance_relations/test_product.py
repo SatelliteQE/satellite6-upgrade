@@ -5,13 +5,15 @@ post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -29,7 +31,7 @@ prod_repo = compare_postupgrade(component, 'repositories')
 def test_positive_products_by_name(pre, post):
     """Test all products are existing after upgrade by names
 
-    :id: 3dea1ee4-ed57-4341-957a-d9b1813ff4db
+    :id: upgrade-3dea1ee4-ed57-4341-957a-d9b1813ff4db
 
     :expectedresults: All products should be retained post upgrade by names
     """
@@ -41,7 +43,7 @@ def test_positive_products_by_repositories(pre, post):
     """Test all products association with their repositories are existing after
     upgrade
 
-    :id: cb3b838b-d69d-4de9-9ebb-bbc6143ecdbf
+    :id: upgrade-cb3b838b-d69d-4de9-9ebb-bbc6143ecdbf
 
     :expectedresults: Repositories of all products should be retained post
         upgrade

@@ -5,13 +5,15 @@ associations post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -32,7 +34,7 @@ cvs_name = compare_postupgrade(component, 'name')
 def test_positive_cvs_by_repository_ids(pre, post):
     """Test repository associations of all CVs post upgrade
 
-    :id: c8da27df-7d96-44b7-ab2a-d23a56ea2b2b
+    :id: upgrade-c8da27df-7d96-44b7-ab2a-d23a56ea2b2b
 
     :expectedresults: Repositories associations of each CV should be retained
         post upgrade
@@ -48,7 +50,7 @@ def test_positive_cvs_by_repository_ids(pre, post):
 def test_positive_cvs_by_label(pre, post):
     """Test all CVs are existing after upgrade by their labels
 
-    :id: 9a541a98-c4b1-417c-9bfd-c65aadd72afb
+    :id: upgrade-9a541a98-c4b1-417c-9bfd-c65aadd72afb
 
     :expectedresults: All CVs should be retained post upgrade
     """
@@ -61,7 +63,7 @@ def test_positive_cvs_by_label(pre, post):
 def test_positive_cvs_by_composite_views(pre, post):
     """Test composite CV's are existing after upgrade
 
-    :id: 554632f2-0e5b-44c8-9a80-5463302af22f
+    :id: upgrade-554632f2-0e5b-44c8-9a80-5463302af22f
 
     :expectedresults: All composite CVs should be retained post upgrade
     """
@@ -72,7 +74,7 @@ def test_positive_cvs_by_composite_views(pre, post):
 def test_positive_cvs_by_name(pre, post):
     """Test all CVs are existing after upgrade by their name
 
-    :id: 7ad53fb0-f05c-4eea-bd6c-db6c35ea8841
+    :id: upgrade-7ad53fb0-f05c-4eea-bd6c-db6c35ea8841
 
     :expectedresults: All CVs should be retained post upgrade by their name
     """

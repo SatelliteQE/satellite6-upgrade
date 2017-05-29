@@ -5,13 +5,15 @@ associations post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -32,7 +34,7 @@ aks_hl = compare_postupgrade(component, 'host limit')
 def test_positive_aks_by_content_view(pre, post):
     """Test CV association of all AKs post upgrade
 
-    :id: 37804d7c-3667-45f3-8039-891908372ce7
+    :id: upgrade-37804d7c-3667-45f3-8039-891908372ce7
 
     :expectedresults: CV of all AKs should be retained post upgrade
     """
@@ -43,7 +45,7 @@ def test_positive_aks_by_content_view(pre, post):
 def test_positive_aks_by_lc(pre, post):
     """Test LC association of all AKs post upgrade
 
-    :id: 16dc1ae8-f30d-45c3-8289-f0f0736ca603
+    :id: upgrade-16dc1ae8-f30d-45c3-8289-f0f0736ca603
 
     :expectedresults: LC of all AKs should be retained post upgrade
     """
@@ -54,7 +56,7 @@ def test_positive_aks_by_lc(pre, post):
 def test_positive_aks_by_name(pre, post):
     """Test AKs are existing by their name post upgrade
 
-    :id: 31d079e2-a457-4b5a-b371-b0f70432bf1d
+    :id: upgrade-31d079e2-a457-4b5a-b371-b0f70432bf1d
 
     :expectedresults: AKs should be existing by their names post upgrade
     """
@@ -65,7 +67,7 @@ def test_positive_aks_by_name(pre, post):
 def test_positive_aks_by_host_limit(pre, post):
     """Test host limit associations of all AKs post upgrade
 
-    :id: cee32f2a-d4f4-4cf8-91da-aaed426f1942
+    :id: upgrade-cee32f2a-d4f4-4cf8-91da-aaed426f1942
 
     :expectedresults: Subscription consumptions by hosts of all AKs should be
         retained post upgrade

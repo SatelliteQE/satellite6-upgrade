@@ -5,13 +5,15 @@ post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -28,7 +30,7 @@ env_name = compare_postupgrade(component, 'name')
 def test_positive_puppet_envs_by_name(pre, post):
     """Test all puppet envs are existing after upgrade by names
 
-    :id: d144094d-48fd-450b-8570-bd53758e090f
+    :id: upgrade-d144094d-48fd-450b-8570-bd53758e090f
 
     :expectedresults: All puppet envs should be retained post upgrade by names
     """

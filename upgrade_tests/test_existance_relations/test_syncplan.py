@@ -5,13 +5,15 @@ association post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -31,7 +33,7 @@ sp_enable = compare_postupgrade(component, 'enabled')
 def test_positive_syncplans_by_name(pre, post):
     """Test all sync plans are existing after upgrade by names
 
-    :id: 8030bff2-455e-4b1a-8b62-0596465ef2da
+    :id: upgrade-8030bff2-455e-4b1a-8b62-0596465ef2da
 
     :expectedresults: All sync plans should be retained post upgrade by names
     """
@@ -42,7 +44,7 @@ def test_positive_syncplans_by_name(pre, post):
 def test_positive_syncplans_by_start_date(pre, post):
     """Test all sync plans start date is retained after upgrade
 
-    :id: 8106ddf2-701c-4c58-8246-b0122195fa5d
+    :id: upgrade-8106ddf2-701c-4c58-8246-b0122195fa5d
 
     :expectedresults: All sync plans start date should be retained post upgrade
     """
@@ -53,7 +55,7 @@ def test_positive_syncplans_by_start_date(pre, post):
 def test_positive_syncplans_by_interval(pre, post):
     """Test all sync plans interval time is retained after upgrade
 
-    :id: 058eeba9-9a4d-44c5-a759-48c3199b70f0
+    :id: upgrade-058eeba9-9a4d-44c5-a759-48c3199b70f0
 
     :expectedresults: All sync plans interval time should be retained post
         upgrade
@@ -65,7 +67,7 @@ def test_positive_syncplans_by_interval(pre, post):
 def test_positive_syncplans_by_enablement(pre, post):
     """Test all sync plans enablement and disablement is retained after upgrade
 
-    :id: a90e8c93-74b5-49f8-9c08-4fba7903635c
+    :id: upgrade-a90e8c93-74b5-49f8-9c08-4fba7903635c
 
     :expectedresults: All sync plans enablement and disablement should be
         retained post upgrade

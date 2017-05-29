@@ -4,13 +4,15 @@
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -27,7 +29,7 @@ role_name = compare_postupgrade(component, 'name')
 def test_positive_roles_by_name(pre, post):
     """Test all roles are existing post upgrade by their name
 
-    :id: 0ee07ffb-ae2b-4b98-ad0a-5a0db568fc1e
+    :id: upgrade-0ee07ffb-ae2b-4b98-ad0a-5a0db568fc1e
 
     :expectedresults: All roles should be retained post upgrade
     """

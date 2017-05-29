@@ -4,13 +4,15 @@
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -27,7 +29,7 @@ dom_name = compare_postupgrade(component, 'name')
 def test_positive_domains_by_name(pre, post):
     """Test all domains are existing post upgrade by their names
 
-    :id: 0f00b7c4-da85-437d-beae-19a0c50ae9d0
+    :id: upgrade-0f00b7c4-da85-437d-beae-19a0c50ae9d0
 
     :expectedresults: All domains should be retained post upgrade
     """

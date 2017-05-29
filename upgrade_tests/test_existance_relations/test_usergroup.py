@@ -5,13 +5,15 @@ post upgrade
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -28,7 +30,7 @@ ug_name = compare_postupgrade(component, 'name')
 def test_positive_usergroups_by_name(pre, post):
     """Test all usergroups are existing after upgrade by names
 
-    :id: 62e8bbca-25f5-403c-b868-7f0bc11ff341
+    :id: upgrade-62e8bbca-25f5-403c-b868-7f0bc11ff341
 
     :expectedresults: All user groups should be retained post upgrade by names
     """

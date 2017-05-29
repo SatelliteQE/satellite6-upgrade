@@ -4,13 +4,15 @@
 
 :CaseAutomation: Automated
 
-:CaseLevel: Acceptance
+:CaseLevel: System
 
 :CaseComponent: CLI
 
-:TestType: NonFunctional
+:TestType: nonfunctional
 
 :CaseImportance: High
+
+:SubType1: installability
 
 :Upstream: No
 """
@@ -27,7 +29,7 @@ gpg_name = compare_postupgrade(component, 'name')
 def test_positive_gpg_keys_by_name(pre, post):
     """Test all gpg keys are existing after upgrade by names
 
-    :id: 23b96c3e-2510-4886-91e6-9864f0d5e3e5
+    :id: upgrade-23b96c3e-2510-4886-91e6-9864f0d5e3e5
 
     :expectedresults: All gpg keys should be retained post upgrade by names
     """

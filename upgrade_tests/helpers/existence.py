@@ -4,6 +4,7 @@ post upgrade
 
 import json
 import os
+import pytest
 from upgrade.helpers.tools import csv_reader
 
 # Components for which the post upgrade existence will be validated,
@@ -103,6 +104,60 @@ attribute_keys.update(dict.fromkeys(
 attribute_keys['content-view'] = 'content view id'
 
 
+def _find_on_list_of_dicts(lst, data_key, all_=False):
+    """Returns the value of a particular key in a dictionary from the list of
+    dictionaries, when 'all' is set to false.
+
+    When 'all' is set to true, returns the list of values of given key from all
+    the dictionaries in list.
+
+    :param list lst: A list of dictionaries
+    :param str data_key: A key name of which data to be retrieved from given
+        list of dictionaries
+    :param bool all: Fetches all the values of key in list of dictionaries if
+        True, else Fetches only single and first value of a key in list of
+        dictionaries
+    :returns the list of values or a value of a given data_key depends on
+        'all' parameter
+
+    """
+    dct_values = [dct.get(data_key) for dct in lst]
+    if all_:
+        return dct_values
+    for v in dct_values:
+        if v is not None:
+            return v
+
+    raise KeyError(
+        'Unable to find data for key \'{0}\' in satellite.'.format(
+            data_key))
+
+
+def _find_on_list_of_dicts_using_search_key(lst_of_dct, search_key, attr):
+    """Returns the value of attr key in a dictionary from the list of
+    dictionaries with the help of search_key.
+
+    To retrieve the value search key and the attribute should be in the
+    same dictionary
+
+    :param list lst_of_dct: A list of dictionaries
+    :param str search_key: A value of any unique key in dictionary in list of
+        dictionary.
+        The value will be used to fetch another keys value from same dictionary
+    :param str attr: The key name in dictionary in which search_key exists in
+        list of dictionaries
+    :returns the value of given attr key from a dictionary where search_key
+        exists as value of another key
+
+    """
+    for single_dict in lst_of_dct:
+        for k, v in single_dict.items():
+            if search_key == v:
+                return single_dict.get(
+                    attr, '{} attribute missing'.format(attr))
+    return '{} entity missing'.format(search_key)
+
+
 def set_datastore(datastore):
     """Creates a file with all the satellite components data in json format
 
@@ -190,33 +245,13 @@ def find_datastore(datastore, component, attribute, search_key=None):
     search_key = search_key.lower() if search_key is not None else search_key
     attribute = attribute.lower() if attribute is not None else attribute
     # Fetching Process
-    for i in range(len(datastore)):
-        if component in datastore[i].keys():
-            comp_data = datastore[i][component]
-            break
-    else:
-        raise KeyError(
-            'Unable to find given component \'{0}\' data in satellite.'.format(
-                component))
+    comp_data = _find_on_list_of_dicts(datastore, component)
     if isinstance(comp_data, list):
         if (search_key is None) and attribute:
-            attr_values = []
-            for j in range(len(comp_data)):
-                if attribute in comp_data[j].keys():
-                    attr_values.append(comp_data[j][attribute])
-            return attr_values
+            return _find_on_list_of_dicts(comp_data, attribute, all_=True)
         if all([search_key, attribute]):
-            key_index = None
-            for k in range(len(comp_data)):
-                if search_key in comp_data[k].values():
-                    key_index = k
-                    return comp_data[key_index][attribute]
-                    break
-            else:
-                raise KeyError(
-                    'Unable to find search_key \'{0}\' in component \'{1}\' '
-                    'to get \'{2}\' value.'.format(
-                        search_key, component, attribute))
+            return _find_on_list_of_dicts_using_search_key(
+                comp_data, search_key, attribute)
 
 
 def compare_postupgrade(component, attribute):
@@ -254,11 +289,21 @@ def compare_postupgrade(component, attribute):
     entity_values = []
     for test_case in find_datastore(
             predata, component, attribute=attribute_keys[component]):
-        preupgrade_entiry = find_datastore(
+        preupgrade_entity = find_datastore(
             predata, component, search_key=test_case, attribute=pre_attr)
         postupgrade_entity = find_datastore(
             postdata, component, search_key=test_case, attribute=post_attr)
-        entity_values.append((preupgrade_entiry, postupgrade_entity))
+        if 'missing' in preupgrade_entity or 'missing' in postupgrade_entity:
+            culprit = preupgrade_entity if 'missing' in preupgrade_entity \
+                else postupgrade_entity
+            culprit_ver = ' in preupgrade version' if 'missing' \
+                in preupgrade_entity else ' in postupgrade version'
+            entity_values.append(
+                pytest.mark.xfail(
+                    (preupgrade_entity, postupgrade_entity),
+                    reason=culprit+culprit_ver))
+        else:
+            entity_values.append((preupgrade_entity, postupgrade_entity))
     return entity_values
 
 

@@ -26,7 +26,7 @@ component = 'activation-key'
 aks_cv = compare_postupgrade(component, 'content view')
 aks_lc = compare_postupgrade(component, 'lifecycle environment')
 aks_name = compare_postupgrade(component, 'name')
-aks_hl = compare_postupgrade(component, 'host limit')
+aks_hl = compare_postupgrade(component, ('consumed', 'host limit'))
 
 
 # Tests

@@ -223,13 +223,31 @@ def compare_postupgrade(component, attribute):
     """Returns the given component attribute value from preupgrade and
     postupgrade datastore
 
+    If the attribute is tuple then items in tuple should follow the satellite
+    versions order. Like 1st item for 6.1, 2nd for 6.2 and so on.
+    e.g ('id','uuid') here 'id' is in 6.1 and 'uuid' in 6.2.
+
     :param str component: The sat component name of which attribute value to
         fetch from datastore
-    :param str attribute: The component attribute/property name
-        e.g 'ip' of host, 'features' of capsule
+    :param str/tuple attribute: String if component attribute name is same in
+        pre and post upgrade versions. Tuple if component attribute name is
+        different in pre and post upgrade versions.
+        e.g 'ip' of host (if string)
+        e.g ('id','uuid') of subscription (if tuple)
     :returns tuple: The tuple containing two items, first attribute value
         before upgrade and second attribute value of post upgrade
     """
+    sat_vers = ['6.1', '6.2']
+    from_ver = os.environ.get('FROM_VERSION')
+    to_ver = os.environ.get('TO_VERSION')
+    if isinstance(attribute, tuple):
+        pre_attr = attribute[sat_vers.index(from_ver)]
+        post_attr = attribute[sat_vers.index(to_ver)]
+    elif isinstance(attribute, str):
+        pre_attr = post_attr = attribute
+    else:
+        raise TypeError('Wrong attribute type provided in test. Please provide'
+                        'one of string/tuple.')
     # Getting preupgrade and postupgrade data
     predata = get_datastore('preupgrade')
     postdata = get_datastore('postupgrade')
@@ -237,9 +255,9 @@ def compare_postupgrade(component, attribute):
     for test_case in find_datastore(
             predata, component, attribute=attribute_keys[component]):
         preupgrade_entiry = find_datastore(
-            predata, component, search_key=test_case, attribute=attribute)
+            predata, component, search_key=test_case, attribute=pre_attr)
         postupgrade_entity = find_datastore(
-            postdata, component, search_key=test_case, attribute=attribute)
+            postdata, component, search_key=test_case, attribute=post_attr)
         entity_values.append((preupgrade_entiry, postupgrade_entity))
     return entity_values
 

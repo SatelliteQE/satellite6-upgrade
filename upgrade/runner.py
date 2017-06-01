@@ -50,27 +50,28 @@ def setup_products_for_upgrade(product, os_version):
     :param string os_version: The os version on which product is installed
         e.g: rhel6, rhel7
     """
-    sat_host = cap_hosts = clients6 = clients7 = None
-    logger.info('Setting up Satellite ....')
-    sat_host = satellite6_setup(os_version)
-    if product == 'capsule' or product == 'n-1' or product == 'longrun':
-        logger.info('Setting up Capsule ....')
-        cap_hosts = satellite6_capsule_setup(
-            sat_host, os_version, False if product == 'n-1' else True)
-    if product == 'client' or product == 'longrun':
-        logger.info('Setting up Clients ....')
-        clients6, clients7 = satellite6_client_setup()
-    setups_dict = {
-        'sat_host': sat_host,
-        'capsule_hosts': cap_hosts,
-        'clients6': clients6,
-        'clients7': clients7
-    }
-    create_setup_dict(setups_dict)
-    if os.environ.get('RUN_EXISTANCE_TESTS', 'false').lower() == 'true':
-        logger.info('Setting up preupgrade datastore for existance tests')
-        set_datastore('preupgrade')
-    return sat_host, cap_hosts, clients6, clients7
+    if check_necessary_env_variables_for_upgrade(product):
+        sat_host = cap_hosts = clients6 = clients7 = None
+        logger.info('Setting up Satellite ....')
+        sat_host = satellite6_setup(os_version)
+        if product == 'capsule' or product == 'n-1' or product == 'longrun':
+            logger.info('Setting up Capsule ....')
+            cap_hosts = satellite6_capsule_setup(
+                sat_host, os_version, False if product == 'n-1' else True)
+        if product == 'client' or product == 'longrun':
+            logger.info('Setting up Clients ....')
+            clients6, clients7 = satellite6_client_setup()
+        setups_dict = {
+            'sat_host': sat_host,
+            'capsule_hosts': cap_hosts,
+            'clients6': clients6,
+            'clients7': clients7
+        }
+        create_setup_dict(setups_dict)
+        if os.environ.get('RUN_EXISTANCE_TESTS', 'false').lower() == 'true':
+            logger.info('Setting up preupgrade datastore for existance tests')
+            set_datastore('preupgrade')
+        return sat_host, cap_hosts, clients6, clients7
 
 
 def product_upgrade(product):

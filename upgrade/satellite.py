@@ -78,15 +78,15 @@ def satellite6_upgrade():
         URL for the compose repository
     TO_VERSION
         Satellite version to upgrade to and enable repos while upgrading.
-        e.g '6.1','6.2'
+        e.g '6.1','6.2', '6.3'
     """
     logger.highlight('\n========== SATELLITE UPGRADE =================\n')
     to_version = os.environ.get('TO_VERSION')
     rhev_sat_host = os.environ.get('RHEV_SAT_HOST')
     base_url = os.environ.get('BASE_URL')
-    if to_version not in ['6.1', '6.2']:
+    if to_version not in ['6.1', '6.2', '6.3']:
         logger.warning('Wrong Satellite Version Provided to upgrade to. '
-                       'Provide one of 6.1, 6.2')
+                       'Provide one of 6.1, 6.2, 6.3')
         sys.exit(1)
     setup_satellite_firewall()
     run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')

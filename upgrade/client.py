@@ -157,6 +157,14 @@ def satellite6_client_upgrade(os_version, clients):
             clients,
             host=docker_vm
         )
+        # Fetching katello-agent version post upgrade
+        # Giving 1 minute for docker clients to upgrade katello-agent
+        time.sleep(60)
+        client_vers = docker_clients_katello_agent_version(clients)
+        for hostname, version in client_vers.items():
+            logger.highlight(
+                'The katello-agent on client {0} upgraded '
+                'to version {1}'.format(hostname, version))
 
 
 def user_clients_upgrade(old_repo, clients):
@@ -181,7 +189,7 @@ def docker_clients_upgrade(old_repo, clients):
 
     :param string old_repo: The old tools repo to disable before updating
         katello-agent package
-    :param dict clients: The dictonary containing client_name as key and
+    :param dict clients: The dictionary containing client_name as key and
         container_id as value
     """
     for hostname, container in clients.items():
@@ -191,7 +199,19 @@ def docker_clients_upgrade(old_repo, clients):
             container, 'subscription-manager repos --disable {}'.format(
                 old_repo))
         docker_execute_command(container, 'yum update -y katello-agent', True)
+
+
+def docker_clients_katello_agent_version(clients):
+    """Determines and returns the katello-agent version on docker clients
+
+    :param dict clients: The dictionary containing client_name as key and
+        container_id as value
+    :returns dict: The dict of docker clients hostname as key and
+        its katello-agent version as value
+    """
+    clients_dict = {}
+    for hostname, container in clients.items():
         pst = katello_agent_version_filter(
             docker_execute_command(container, 'rpm -q katello-agent'))
-        logger.highlight(
-            'katello-agent on {0} upgraded to {1}'.format(hostname, pst))
+        clients_dict[hostname] = pst
+    return clients_dict

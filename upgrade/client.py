@@ -160,7 +160,11 @@ def satellite6_client_upgrade(os_version, clients):
         # Fetching katello-agent version post upgrade
         # Giving 1 minute for docker clients to upgrade katello-agent
         time.sleep(60)
-        client_vers = docker_clients_katello_agent_version(clients)
+        client_vers = execute(
+            docker_clients_katello_agent_version,
+            clients,
+            host=docker_vm
+        )[docker_vm]
         for hostname, version in client_vers.items():
             logger.highlight(
                 'The katello-agent on client {0} upgraded '

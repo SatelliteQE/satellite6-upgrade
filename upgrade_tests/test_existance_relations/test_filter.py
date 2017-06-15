@@ -24,7 +24,7 @@ from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 # Required Data
 component = 'filter'
 fil_rtype = compare_postupgrade(component, 'resource type')
-fil_search = compare_postupgrade(component, 'resource type')
+fil_search = compare_postupgrade(component, 'search')
 fil_unlimited = compare_postupgrade(component, 'unlimited?')
 fil_role = compare_postupgrade(component, 'role')
 fil_perm = compare_postupgrade(component, 'permissions')

@@ -114,6 +114,10 @@ def sync_capsule_repos_to_upgrade(capsules):
     set_hammer_config()
     cv_name, env_name = hammer_determine_cv_and_env_from_ak(
         activation_key, '1')
+    # Fix dead pulp tasks
+    if os_ver == '6':
+        run('for i in pulp_resource_manager pulp_workers pulp_celerybeat; '
+            'do service $i restart; done')
     # If custom capsule repo is not given then
     # enable capsule repo from Redhat Repositories
     product_name = 'capsule6_latest' if capsule_repo \

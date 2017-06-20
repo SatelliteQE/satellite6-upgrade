@@ -184,7 +184,7 @@ def satellite6_capsule_zstream_upgrade():
             major_ver, from_version))
     # Check what repos are set
     run('yum repolist')
-    if from_version == '6.1' and major_ver == '6':
+    if from_version == '6.1' and major_ver == 6:
         enable_repos('rhel-server-rhscl-{0}-rpms'.format(major_ver))
     if from_version == '6.0':
         # Stop katello services, except mongod

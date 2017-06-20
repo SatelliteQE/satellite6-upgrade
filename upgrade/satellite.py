@@ -160,7 +160,7 @@ def satellite6_upgrade():
     hammer('ping')
     run('katello-service status', warn_only=True)
     # Enable ostree feature only for rhel7 and sat6.2
-    if to_version == '6.2' and major_ver == '7':
+    if to_version == '6.2' and major_ver == 7:
         enable_ostree(sat_version='6.2')
     if os.environ.get('RUN_EXISTANCE_TESTS', 'false').lower() == 'true':
         logger.info('Setting up postupgrade datastore for existance tests..')

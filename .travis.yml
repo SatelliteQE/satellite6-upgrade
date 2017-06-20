@@ -8,3 +8,4 @@ install:
 script:
     - make lint
     - make test-docstrings
+    - py.test --cov=upgrade_tests/helpers upgrade_tests/helpers/coverme.py

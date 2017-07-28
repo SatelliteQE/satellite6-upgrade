@@ -34,6 +34,7 @@ from upgrade.helpers.tools import (
     get_hostname_from_ip,
     get_sat_cap_version,
     host_pings,
+    host_ssh_availability_check,
     reboot
 )
 from upgrade_tests.helpers.existence import (

@@ -15,7 +15,10 @@ from upgrade.helpers.tasks import (
     sync_capsule_repos_to_upgrade
 )
 from upgrade.helpers.tools import (
-    copy_ssh_key, reboot
+    copy_ssh_key,
+    reboot,
+    host_pings,
+    host_ssh_availability_check
 )
 
 logger = logger()
@@ -57,6 +60,16 @@ def satellite6_capsule_setup(sat_host, os_version, upgradable_capsule=True):
         execute(delete_rhevm_instance, cap_instance)
         logger.info('Turning on Capsule Instance ....')
         execute(create_rhevm_instance, cap_instance, cap_image)
+        non_responsive_host = []
+        for cap_host in cap_hosts:
+            if not host_pings(cap_host):
+                non_responsive_host.append(cap_host)
+        if non_responsive_host:
+            logger.warning(str(non_responsive_host) + ' these are '
+                                                      'non-responsive hosts')
+            sys.exit(1)
+        else:
+            execute(host_ssh_availability_check, cap_host)
         execute(lambda: run('katello-service restart'), host=cap_hosts)
     env['capsule_hosts'] = cap_hosts
     if ',' in cap_hosts:

@@ -61,21 +61,21 @@ def satellite6_capsule_setup(sat_host, os_version, upgradable_capsule=True):
         logger.info('Turning on Capsule Instance ....')
         execute(create_rhevm_instance, cap_instance, cap_image)
         non_responsive_host = []
+        env['capsule_hosts'] = cap_hosts
+        if ',' in cap_hosts:
+            cap_hosts = [cap.strip() for cap in cap_hosts.split(',')]
+        else:
+            cap_hosts = [cap_hosts]
         for cap_host in cap_hosts:
             if not host_pings(cap_host):
                 non_responsive_host.append(cap_host)
+            else:
+                execute(host_ssh_availability_check, cap_host)
+                execute(lambda: run('katello-service restart'), host=cap_host)
         if non_responsive_host:
             logger.warning(str(non_responsive_host) + ' these are '
                                                       'non-responsive hosts')
             sys.exit(1)
-        else:
-            execute(host_ssh_availability_check, cap_host)
-        execute(lambda: run('katello-service restart'), host=cap_hosts)
-    env['capsule_hosts'] = cap_hosts
-    if ',' in cap_hosts:
-        cap_hosts = [cap.strip() for cap in cap_hosts.split(',')]
-    else:
-        cap_hosts = [cap_hosts]
     copy_ssh_key(sat_host, cap_hosts)
     # Dont run capsule upgrade requirements for n-1 capsule
     if upgradable_capsule:

@@ -68,11 +68,12 @@ def copy_ssh_key(from_host, to_hosts):
             ), host=to_host)
 
 
-def host_pings(host, timeout=15):
+def host_pings(host, timeout=15, ip_addr=False):
     """This ensures the given IP/hostname pings succesfully.
 
     :param host: A string. The IP or hostname of host.
     :param int timeout: The polling timeout in minutes.
+    :param Boolean ip_addr: To return the ip address of the host
 
     """
     timeup = time.time() + int(timeout) * 60
@@ -86,10 +87,41 @@ def host_pings(host, timeout=15):
         output = command.communicate()[0]
         # Checking the return code of ping is 0
         if time.time() > timeup:
-            logger.warning('The timout for pinging the host {0} has '
+            logger.warning('The timeout for pinging the host {0} has '
                            'reached!'.format(host))
             return False
         if int(output.split()[-1]) == 0:
+            if ip_addr:
+                ip = output[output.find("(") + 1:output.find(")")]
+                return True, ip
+            return True
+        else:
+            time.sleep(5)
+
+
+def host_ssh_availability_check(host, timeout=7):
+    """This ensures the given host has ssh up and running..
+
+    :param host: A string. The IP or hostname of host.
+    :param int timeout: The polling timeout in minutes.
+
+    """
+    _, ip = host_pings(host, timeout=1, ip_addr=True)
+    timeup = time.time() + int(timeout) * 60
+    while True:
+        command = subprocess.Popen(
+            'nc -vn {0} 22 <<< \'\''.format(ip),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+        output = command.communicate()[1]
+        print output
+        # Checking the return code of ping is 0
+        if time.time() > timeup:
+            logger.warning('SSH timed out for host {0} '.format(host))
+            return False
+        if output.__contains__('seconds'):
             return True
         else:
             time.sleep(5)

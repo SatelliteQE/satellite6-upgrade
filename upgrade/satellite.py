@@ -2,7 +2,11 @@ import os
 import sys
 
 from upgrade_tests.helpers.existence import set_datastore
-from upgrade.helpers.tools import host_pings, reboot
+from upgrade.helpers.tools import (
+    host_pings,
+    host_ssh_availability_check,
+    reboot
+)
 from automation_tools import (
     enable_ostree,
     setup_satellite_firewall,
@@ -56,6 +60,7 @@ def satellite6_setup(os_version):
         execute(create_rhevm_instance, sat_instance, sat_image)
         if not host_pings(sat_host):
             sys.exit(1)
+        execute(host_ssh_availability_check, sat_host)
         # start's/enables/install's ntp
         # Check that hostname and localhost resolve correctly
         execute(install_prerequisites, host=sat_host)

@@ -191,8 +191,6 @@ def product_upgrade(product):
                 # Generate foreman debug on satellite after upgrade
                 execute(foreman_debug, 'satellite_{}'.format(sat_host),
                         host=sat_host)
-                # Execute tasks as post upgrade tier1 tests are dependent
-                post_upgrade_test_tasks(sat_host)
                 if product == 'capsule' or product == 'longrun':
                     # Wait for 6 minutes to get satellite ready after upgrading
                     # to 6.3, So that capsule will connect to satellite.
@@ -249,6 +247,8 @@ def product_upgrade(product):
                     clients7 = setup_dict['clients7']
                     satellite6_client_upgrade('rhel6', clients6)
                     satellite6_client_upgrade('rhel7', clients7)
+                # Execute tasks as post upgrade tier1 tests are dependent
+                post_upgrade_test_tasks(sat_host, cap_host)
         except Exception:
             # Generate foreman debug on failed satellite upgrade
             execute(foreman_debug, 'satellite_{}'.format(sat_host),

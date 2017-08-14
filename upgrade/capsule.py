@@ -153,13 +153,6 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     # Copying the capsule cert to capsule
     execute(lambda: run("scp -o 'StrictHostKeyChecking no' {0}-certs.tar "
                         "root@{0}:/home/".format(cap_host)), host=sat_host)
-    # Rebooting the system to see possible errors
-    if os.environ.get('RHEV_CAP_HOST'):
-        reboot(120)
-        if from_version == '6.0':
-            # Stopping the services again which started in reboot
-            run('for i in qpidd pulp_workers pulp_celerybeat '
-                'pulp_resource_manager httpd; do service $i stop; done')
     setup_capsule_firewall()
     preup_time = datetime.now().replace(microsecond=0)
     if to_version == '6.1':
@@ -171,6 +164,9 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     postup_time = datetime.now().replace(microsecond=0)
     logger.highlight('Time taken for Capsule Upgrade - {}'.format(
         str(postup_time-preup_time)))
+    # Rebooting the capsule for kernel update if any
+    reboot(160)
+    # Check if Capsule upgrade is success
     run('katello-service status', warn_only=True)
 
 
@@ -208,13 +204,6 @@ def satellite6_capsule_zstream_upgrade():
     postyum_time = datetime.now().replace(microsecond=0)
     logger.highlight('Time taken for capsule packages update - {}'.format(
         str(postyum_time-preyum_time)))
-    # Rebooting the system to see possible errors
-    if os.environ.get('RHEV_CAP_HOST'):
-        reboot(120)
-        if from_version == '6.0':
-            # Stopping the services again which started in reboot
-            run('for i in qpidd pulp_workers pulp_celerybeat '
-                'pulp_resource_manager httpd; do service $i stop; done')
     setup_capsule_firewall()
     preup_time = datetime.now().replace(microsecond=0)
     if to_version == '6.0':
@@ -226,4 +215,7 @@ def satellite6_capsule_zstream_upgrade():
     postup_time = datetime.now().replace(microsecond=0)
     logger.highlight('Time taken for Capsule Upgrade - {}'.format(
         str(postup_time-preup_time)))
+    # Rebooting the capsule for kernel update if any
+    reboot(160)
+    # Check if Capsule upgrade is success
     run('katello-service status', warn_only=True)

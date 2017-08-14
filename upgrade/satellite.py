@@ -87,7 +87,6 @@ def satellite6_upgrade():
     """
     logger.highlight('\n========== SATELLITE UPGRADE =================\n')
     to_version = os.environ.get('TO_VERSION')
-    rhev_sat_host = os.environ.get('RHEV_SAT_HOST')
     base_url = os.environ.get('BASE_URL')
     if to_version not in ['6.1', '6.2', '6.3']:
         logger.warning('Wrong Satellite Version Provided to upgrade to. '
@@ -97,9 +96,6 @@ def satellite6_upgrade():
     run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')
     logger.info('Updating system packages ... ')
     update_packages(quiet=True)
-    # Rebooting the system to see possible errors
-    if rhev_sat_host:
-        reboot(160)
     # Setting Satellite to_version Repos
     major_ver = distro_info()[1]
     # Following disables the old satellite repo and extra repos enabled
@@ -141,16 +137,6 @@ def satellite6_upgrade():
     postyum_time = datetime.now().replace(microsecond=0)
     logger.highlight('Time taken for satellite packages update - {}'.format(
         str(postyum_time-preyum_time)))
-    # Rebooting the system again for possible errors
-    # Only for RHEV based satellite and not for personal one
-    if rhev_sat_host:
-        reboot(160)
-        if to_version == '6.1':
-            # Stop the service again which started in restart
-            # This step is not required with 6.2 upgrade as installer itself
-            # stop all the services before upgrade
-            run('katello-service stop')
-            run('service-wait mongod start')
     # Running Upgrade
     preup_time = datetime.now().replace(microsecond=0)
     if to_version == '6.1':
@@ -160,8 +146,10 @@ def satellite6_upgrade():
     postup_time = datetime.now().replace(microsecond=0)
     logger.highlight('Time taken for Satellite Upgrade - {}'.format(
         str(postup_time-preup_time)))
-    # Test the Upgrade is successful
     set_hammer_config()
+    # Rebooting the satellite for kernel update if any
+    reboot(180)
+    # Test the Upgrade is successful
     hammer('ping')
     run('katello-service status', warn_only=True)
     # Enable ostree feature only for rhel7 and sat6.2
@@ -231,15 +219,6 @@ def satellite6_zstream_upgrade():
     postyum_time = datetime.now().replace(microsecond=0)
     logger.highlight('Time taken for system and satellite packages update - '
                      '{}'.format(str(postyum_time-preyum_time)))
-    # Rebooting the system to check the possible issues if kernal is updated
-    if os.environ.get('RHEV_SAT_HOST'):
-        reboot(120)
-        if to_version == '6.1':
-            # Stop the service again which started in restart
-            # This step is not required with 6.2 upgrade as installer itself
-            # stop all the services before upgrade
-            run('katello-service stop')
-            run('service-wait mongod start')
     # Running Upgrade
     preup_time = datetime.now().replace(microsecond=0)
     if to_version == '6.1':
@@ -249,6 +228,8 @@ def satellite6_zstream_upgrade():
     postup_time = datetime.now().replace(microsecond=0)
     logger.highlight('Time taken for Satellite Upgrade - {}'.format(
         str(postup_time-preup_time)))
+    # Rebooting the satellite for kernel update if any
+    reboot(180)
     # Test the Upgrade is successful
     set_hammer_config()
     hammer('ping')

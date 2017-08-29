@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 from automation_tools import setup_capsule_firewall
 from automation_tools.repository import enable_repos, disable_repos
@@ -121,6 +122,8 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
             'CAPSULE_AK') else os.environ.get('RHEV_CAPSULE_AK')
         run('subscription-manager register --org="Default_Organization" '
             '--activationkey={0} --force'.format(ak_name))
+    run('subscription-manager refresh')
+    time.sleep(3)
     disable_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
         major_ver, from_version))
     if from_version == '6.1' and major_ver == '6':
@@ -188,6 +191,8 @@ def satellite6_capsule_zstream_upgrade():
                        'FROM and TO versions are not same!')
         sys.exit(1)
     major_ver = distro_info()[1]
+    run('subscription-manager refresh')
+    time.sleep(3)
     if os.environ.get('CAPSULE_URL'):
         disable_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
             major_ver, from_version))

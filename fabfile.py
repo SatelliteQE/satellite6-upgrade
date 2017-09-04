@@ -31,6 +31,7 @@ from upgrade.helpers.tasks import (
 )
 from upgrade.helpers.tools import (
     copy_ssh_key,
+    disable_old_repos,
     get_hostname_from_ip,
     get_sat_cap_version,
     host_pings,

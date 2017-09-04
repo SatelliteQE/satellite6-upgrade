@@ -127,6 +127,26 @@ def host_ssh_availability_check(host, timeout=7):
             time.sleep(5)
 
 
+def disable_old_repos(repo_name, timeout=1):
+    """This ensures that the repo is disable and the command doesn't timeout
+
+    :param repo_name: Repo ID of the repo to be disable
+    :param int timeout: The polling timeout in minutes.
+    """
+    timeup = time.time() + int(timeout) * 60
+    while True:
+        run('subscription-manager refresh')
+        repos = run('subscription-manager repos --list | grep \'Repo ID\'')
+        if time.time() > timeup:
+            logger.warning('There is no {0} repo to disable'.format(repo_name))
+            return False
+        if repos.__contains__(repo_name):
+            run('subscription-manager repos --disable {0}'.format(repo_name))
+            return True
+        else:
+            time.sleep(5)
+
+
 def get_hostname_from_ip(ip, timeout=3):
     """Retrives the hostname by logging into remote machine by IP.
     Specially for the systems who doesnt support reverse DNS.

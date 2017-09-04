@@ -1,9 +1,8 @@
 import os
 import sys
-import time
 
 from automation_tools import setup_capsule_firewall
-from automation_tools.repository import enable_repos, disable_repos
+from automation_tools.repository import enable_repos
 from automation_tools.satellite6.capsule import generate_capsule_certs
 from automation_tools.utils import distro_info, update_packages
 from datetime import datetime
@@ -17,6 +16,7 @@ from upgrade.helpers.tasks import (
 )
 from upgrade.helpers.tools import (
     copy_ssh_key,
+    disable_old_repos,
     reboot,
     host_pings,
     host_ssh_availability_check
@@ -122,9 +122,7 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
             'CAPSULE_AK') else os.environ.get('RHEV_CAPSULE_AK')
         run('subscription-manager register --org="Default_Organization" '
             '--activationkey={0} --force'.format(ak_name))
-    run('subscription-manager refresh')
-    time.sleep(3)
-    disable_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
+    disable_old_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
         major_ver, from_version))
     if from_version == '6.1' and major_ver == '6':
         enable_repos('rhel-server-rhscl-{0}-rpms'.format(major_ver))
@@ -191,10 +189,8 @@ def satellite6_capsule_zstream_upgrade():
                        'FROM and TO versions are not same!')
         sys.exit(1)
     major_ver = distro_info()[1]
-    run('subscription-manager refresh')
-    time.sleep(3)
     if os.environ.get('CAPSULE_URL'):
-        disable_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
+        disable_old_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
             major_ver, from_version))
     # Check what repos are set
     run('yum repolist')

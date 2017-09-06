@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 
 from automation_tools import manage_daemon
@@ -58,6 +59,12 @@ def satellite6_client_setup():
                 sync_tools_repos_to_upgrade, 'rhel7', clients7, host=sat_host)
     # Run upgrade on Docker Containers
     if not all([clients6, clients7]):
+        if not clients_count:
+            logger.warning('Clients Count is not set, please set and rerun !')
+            sys.exit(1)
+        elif int(clients_count) < 2:
+            logger.warning('Clients Count should be atleast 2, please rerun !')
+            sys.exit(1)
         # Check if the VM containing docker images is up, else turn on
         rhevm_client = get_rhevm_client()
         instance_name = 'sat6-docker-upgrade'

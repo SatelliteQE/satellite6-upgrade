@@ -112,12 +112,12 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     to_version = os.environ.get('TO_VERSION')
     setup_capsule_firewall()
     major_ver = distro_info()[1]
-    # Re-register Capsule for 6.2
+    # Re-register Capsule for 6.2 and 6.3
     # AS per host unification feature: if there is a host registered where the
     # Host and Content Host are in different organizations (e.g. host not in
     # org, and content host in one), the content host will be unregistered as
     # part of the upgrade process.
-    if to_version == '6.2':
+    if to_version in ['6.2', '6.3']:
         ak_name = os.environ.get('CAPSULE_AK') if os.environ.get(
             'CAPSULE_AK') else os.environ.get('RHEV_CAPSULE_AK')
         run('subscription-manager register --org="Default_Organization" '

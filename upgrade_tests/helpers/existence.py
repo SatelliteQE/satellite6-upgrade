@@ -299,9 +299,7 @@ def compare_postupgrade(component, attribute):
             culprit_ver = ' in preupgrade version' if 'missing' \
                 in preupgrade_entity else ' in postupgrade version'
             entity_values.append(
-                pytest.mark.xfail(
-                    (preupgrade_entity, postupgrade_entity),
-                    reason=culprit+culprit_ver))
+                pytest.fail(culprit+culprit_ver))
         else:
             entity_values.append((preupgrade_entity, postupgrade_entity))
     return entity_values

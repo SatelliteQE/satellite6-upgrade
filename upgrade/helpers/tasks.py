@@ -308,10 +308,15 @@ def post_upgrade_test_tasks(sat_host):
             host=sat_host
         )
     execute(setup_alternate_capsule_ports, host=sat_host)
-    # Update the Default Organization name, which was updated in 6.2
-    execute(hammer, 'organization update --name "Default_Organization" '
-            '--new-name "Default Organization" ',
-            host=sat_host)
+    if os.environ.get('TO_VERSION') not in ['6.0', '6.1']:
+        # Update the Default Organization name, which was updated in 6.2
+        execute(hammer, 'organization update --name "Default_Organization" '
+                '--new-name "Default Organization" ',
+                host=sat_host)
+        # Update the Default Location name, which was updated in 6.2
+        execute(hammer, 'location update --name "Default_Location" '
+                        '--new-name "Default Location" ',
+                host=sat_host)
     # Increase log level to DEBUG, to get better logs in foreman_debug
     execute(lambda: run('sed -i -e \'/:level: / s/: .*/: '
                         'debug/\' /etc/foreman/settings.yaml'), host=sat_host)

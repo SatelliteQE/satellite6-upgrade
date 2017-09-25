@@ -132,6 +132,9 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
         # Stop katello services, except mongod
         run('for i in qpidd pulp_workers pulp_celerybeat '
             'pulp_resource_manager httpd; do service $i stop; done')
+    else:
+        # Stop katello services
+        run('katello-service stop')
     run('yum clean all', warn_only=True)
     logger.info('Updating system and capsule packages ... ')
     preyum_time = datetime.now().replace(microsecond=0)
@@ -160,8 +163,6 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
         run('capsule-installer --upgrade --certs-tar '
             '/home/{0}-certs.tar'.format(cap_host))
     else:
-        # Stop katello services and then run upgrade
-        run('katello-service stop')
         run('satellite-installer --scenario capsule --upgrade '
             '--certs-tar /home/{0}-certs.tar'.format(cap_host))
     postup_time = datetime.now().replace(microsecond=0)
@@ -200,6 +201,9 @@ def satellite6_capsule_zstream_upgrade():
         # Stop katello services, except mongod
         run('for i in qpidd pulp_workers pulp_celerybeat '
             'pulp_resource_manager httpd; do service $i stop; done')
+    else:
+        # Stop katello services
+        run('katello-service stop')
     run('yum clean all', warn_only=True)
     logger.info('Updating system and capsule packages ... ')
     preyum_time = datetime.now().replace(microsecond=0)
@@ -209,8 +213,6 @@ def satellite6_capsule_zstream_upgrade():
         str(postyum_time-preyum_time)))
     setup_capsule_firewall()
     preup_time = datetime.now().replace(microsecond=0)
-    # Stop katello services
-    run('katello-service stop')
     if to_version == '6.0':
         run('katello-installer --upgrade')
     elif to_version == '6.1':

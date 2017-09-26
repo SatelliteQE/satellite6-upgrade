@@ -28,7 +28,8 @@ setup(
         'pytest',
         'python-bugzilla==1.2.2',
         'python-novaclient',
-        'requests'
+        'requests',
+        'robozilla'
     ],
     license='GNU GPL v3.0',
     classifiers=(

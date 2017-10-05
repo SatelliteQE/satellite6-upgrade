@@ -272,7 +272,7 @@ def compare_postupgrade(component, attribute):
     :returns tuple: The tuple containing two items, first attribute value
         before upgrade and second attribute value of post upgrade
     """
-    sat_vers = ['6.1', '6.2']
+    sat_vers = ['6.1', '6.2', '6.3']
     from_ver = os.environ.get('FROM_VERSION')
     to_ver = os.environ.get('TO_VERSION')
     if isinstance(attribute, tuple):

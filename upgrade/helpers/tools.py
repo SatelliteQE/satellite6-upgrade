@@ -106,7 +106,7 @@ def host_ssh_availability_check(host, timeout=7):
     :param int timeout: The polling timeout in minutes.
 
     """
-    _, ip = host_pings(host, timeout=1, ip_addr=True)
+    _, ip = host_pings(host, timeout=timeout, ip_addr=True)
     timeup = time.time() + int(timeout) * 60
     while True:
         command = subprocess.Popen(

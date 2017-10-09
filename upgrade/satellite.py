@@ -149,6 +149,7 @@ def satellite6_upgrade():
     set_hammer_config()
     # Rebooting the satellite for kernel update if any
     reboot(180)
+    host_ssh_availability_check(env.get('satellite_host'))
     # Test the Upgrade is successful
     hammer('ping')
     run('katello-service status', warn_only=True)
@@ -230,6 +231,7 @@ def satellite6_zstream_upgrade():
         str(postup_time-preup_time)))
     # Rebooting the satellite for kernel update if any
     reboot(180)
+    host_ssh_availability_check(env.get('satellite_host'))
     # Test the Upgrade is successful
     set_hammer_config()
     hammer('ping')

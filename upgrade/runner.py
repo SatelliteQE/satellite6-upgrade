@@ -210,7 +210,7 @@ def product_upgrade(product):
                                             cap_host, sat_host, host=cap_host)
                                 elif from_version == to_version:
                                     execute(satellite6_capsule_zstream_upgrade,
-                                            host=cap_host)
+                                            cap_host, host=cap_host)
                                 upgraded = execute(
                                     get_sat_cap_version, 'cap', host=cap_host
                                     )[cap_host]

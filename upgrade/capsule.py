@@ -175,12 +175,16 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
         str(postup_time-preup_time)))
     # Rebooting the capsule for kernel update if any
     reboot(160)
+    host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
     run('katello-service status', warn_only=True)
 
 
-def satellite6_capsule_zstream_upgrade():
+def satellite6_capsule_zstream_upgrade(cap_host):
     """Upgrades Capsule to its latest zStream version
+
+    :param string cap_host: Capsule hostname onto which the capsule upgrade
+    will run
 
     Note: For zstream upgrade both 'To' and 'From' version should be same
 
@@ -229,5 +233,6 @@ def satellite6_capsule_zstream_upgrade():
         str(postup_time-preup_time)))
     # Rebooting the capsule for kernel update if any
     reboot(160)
+    host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
     run('katello-service status', warn_only=True)

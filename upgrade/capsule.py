@@ -164,9 +164,9 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
             '/home/{0}-certs.tar'.format(cap_host))
     elif to_version == '6.3':
         run('satellite-installer --scenario capsule --upgrade '
-            '--foreman-proxy-content-certs-tar /home/{0}-certs.tar '
-            '--certs-update-all --certs-regenerate true '
-            '--certs-deploy true'.format(cap_host))
+            '--certs-tar /home/{0}-certs.tar '
+            '--certs-update-all --regenerate true '
+            '--deploy true'.format(cap_host))
     else:
         run('satellite-installer --scenario capsule --upgrade '
             '--certs-tar /home/{0}-certs.tar'.format(cap_host))

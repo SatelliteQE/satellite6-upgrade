@@ -18,6 +18,8 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
+
+from robozilla.decorators import pytest_skip_if_bug_open
 from upgrade_tests.helpers.common import run_to_upgrade
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
@@ -30,6 +32,7 @@ cvs_name = compare_postupgrade(component, 'name')
 
 
 # Tests
+@pytest_skip_if_bug_open('bugzilla', 1461026)
 @pytest.mark.parametrize("pre,post", cvs_repo, ids=pytest_ids(cvs_repo))
 def test_positive_cvs_by_repository_ids(pre, post):
     """Test repository associations of all CVs post upgrade

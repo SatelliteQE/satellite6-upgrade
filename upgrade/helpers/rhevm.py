@@ -9,7 +9,7 @@ from ovirtsdk.xml import params
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import (
     check_necessary_env_variables_for_upgrade,
-    check_capsule,
+    capsule_sync,
     check_ntpd,
     katello_restart,
 )
@@ -267,7 +267,7 @@ def validate_and_create_product_templates():
         if check_necessary_env_variables_for_upgrade('capsule'):
             execute(check_ntpd, host=sat_host)
             execute(katello_restart, host=sat_host)
-            execute(check_capsule, cap_host, host=sat_host)
+            execute(capsule_sync, cap_host, host=sat_host)
             execute(check_ntpd, host=cap_host)
             execute(katello_restart, host=cap_host)
             try:

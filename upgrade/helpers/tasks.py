@@ -294,10 +294,11 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
                 '1', tools_product, host)
 
 
-def post_upgrade_test_tasks(sat_host):
+def post_upgrade_test_tasks(sat_host, cap_host=None):
     """Run set of tasks for post upgrade tests
 
     :param string sat_host: Hostname to run the tasks on
+    :param list cap_host: Capsule hosts to run sync on
     """
     # Execute tasks as post upgrade tests are dependent
     certificate_url = os.environ.get('FAKE_MANIFEST_CERT_URL')
@@ -321,6 +322,25 @@ def post_upgrade_test_tasks(sat_host):
     execute(lambda: run('sed -i -e \'/:level: / s/: .*/: '
                         'debug/\' /etc/foreman/settings.yaml'), host=sat_host)
     execute(lambda: run('katello-service restart'), host=sat_host)
+    # Execute capsule sync task , after the upgrade is completed
+    if cap_host:
+        execute(capsule_sync, cap_host, host=sat_host)
+
+
+def capsule_sync(cap_host):
+    """Run Capsule Sync as a part of job
+
+    :param list cap_host: List of capsules to perform sync
+    """
+    set_hammer_config()
+    if os.environ.get('TO_VERSION') in ['6.2', '6.3']:
+        logger.info('Refreshing features for capsule host {0}'.
+                    format(cap_host))
+        print hammer('capsule refresh-features --name "{0}"'.
+                     format(cap_host))
+    logger.info('Running Capsule sync for capsule host {0}'.
+                format(cap_host))
+    print hammer('capsule content synchronize --name {0}'.format(cap_host))
 
 
 def katello_restart():
@@ -329,24 +349,6 @@ def katello_restart():
     if services.return_code > 0:
         logger.error('Unable to re-start the Satellite Services')
         sys.exit(1)
-
-
-def check_capsule(capsule_name):
-    """Running capsule sync on external capsule"""
-    set_hammer_config()
-    if os.environ.get('TO_VERSION') in ['6.2', '6.3']:
-        check = hammer('capsule refresh-features --name "{0}"'.
-                       format(capsule_name)
-                       )
-        print check[u'message']
-        if check.return_code == 0:
-            logger.info('Running Capsule sync')
-            hammer('capsule content synchronize --name "{0}"'.
-                   format(capsule_name)
-                   )
-    else:
-        logger.info('Running Capsule sync')
-        hammer('capsule content synchronize --name "{0}"'.format(capsule_name))
 
 
 def check_ntpd():

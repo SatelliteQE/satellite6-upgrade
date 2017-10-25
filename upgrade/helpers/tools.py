@@ -29,8 +29,8 @@ def reboot(halt_time=300):
     logger.info('Rebooting the host, please wait .... ')
     try:
         run('reboot', warn_only=True)
-    except:
-        pass
+    except Exception as e:
+        logger.info(e)
     time.sleep(halt_time)
 
 
@@ -166,7 +166,9 @@ def get_hostname_from_ip(ip, timeout=3):
             output = execute(lambda: run('hostname'), host=ip)
             logger.info('Hostname determined as: {0}'.format(output[ip]))
             break
-        except:
+        except Exception as e:
+            logger.info('Fetching hostname from ip {0} is '
+                        'failed due to: {1}'.format(ip, e))
             time.sleep(5)
     return output[ip]
 

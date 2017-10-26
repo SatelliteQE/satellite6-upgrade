@@ -27,6 +27,7 @@ from automation_tools.satellite6.hammer import (
     hammer_repository_synchronize,
     set_hammer_config
 )
+from robozilla.decorators import bz_bug_is_open
 from upgrade.helpers.logger import logger
 from upgrade.helpers.docker import (
     attach_subscription_to_host_from_content_host
@@ -311,13 +312,24 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     execute(setup_alternate_capsule_ports, host=sat_host)
     if os.environ.get('TO_VERSION') not in ['6.0', '6.1']:
         # Update the Default Organization name, which was updated in 6.2
+        logger.info("Update the Default Organization name, which was updated "
+                    "in 6.2")
         execute(hammer, 'organization update --name "Default_Organization" '
                 '--new-name "Default Organization" ',
                 host=sat_host)
         # Update the Default Location name, which was updated in 6.2
+        logger.info("Update the Default Location name, which was updated in "
+                    "6.2")
         execute(hammer, 'location update --name "Default_Location" '
                         '--new-name "Default Location" ',
                 host=sat_host)
+        if bz_bug_is_open(1502505):
+            logger.info(
+                "Update the default_location_puppet_content value with "
+                "updated location name.Refer BZ:1502505")
+            execute(hammer, 'settings set --name '
+                            '"default_location_puppet_content" --value '
+                            '"Default Location"')
     # Increase log level to DEBUG, to get better logs in foreman_debug
     execute(lambda: run('sed -i -e \'/:level: / s/: .*/: '
                         'debug/\' /etc/foreman/settings.yaml'), host=sat_host)

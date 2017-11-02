@@ -21,6 +21,7 @@ class VersionError(Exception):
 #
 # Note: The variants should be listed from 6.1 onwards
 _entity_varients = {
+    # Filter component variants
     'filter': [
         ['lookupkey', 'variablelookupkey'],
         ['(miscellaneous)', 'foremanopenscap::arfreport'],
@@ -31,6 +32,71 @@ _entity_varients = {
          'view_provisioning_templates, create_provisioning_templates, '
          'edit_provisioning_templates, destroy_provisioning_templates, '
          'deploy_provisioning_templates']
+    ],
+    # Setting Component variants
+    'settings': [
+        # Value Variants
+        ['immediate', 'immediate', 'on_demand'],
+        ['', '', '/etc/pki/katello/certs/katello-apache.crt'],
+        ['', '', '/etc/pki/katello/private/katello-apache.key'],
+        ['false', 'false', 'true'],
+        ['["lo", "usb*", "vnet*", "macvtap*"]',
+         '["lo", "usb*", "vnet*", "macvtap*"]',
+         '["lo", "usb*", "vnet*", "macvtap*", "_vdsmdummy_",'
+         ' "veth*", "docker*"]'],
+        # Description Variants
+        ['fact name to use for primary interface detection and hostname',
+         'fact name to use for primary interface detection and hostname',
+         'fact name to use for primary interface detection'],
+        ['automatically reboot discovered host during provisioning',
+         'automatically reboot discovered host during provisioning',
+         'automatically reboot or kexec discovered host during provisioning'],
+        ['default provisioning template for new atomic operating systems',
+         'default provisioning template for new atomic operating systems',
+         'default provisioning template for new atomic operating systems '
+         'created from synced content'],
+        ['default finish template for new operating systems',
+         'default finish template for new operating systems',
+         'default finish template for new operating systems created '
+         'from synced content'],
+        ['default ipxe template for new operating systems',
+         'default ipxe template for new operating systems',
+         'default ipxe template for new operating systems created from '
+         'synced content'],
+        ['default kexec template for new operating systems',
+         'default kexec template for new operating systems',
+         'default kexec template for new operating systems created '
+         'from synced content'],
+        ['default provisioning template for new operating systems',
+         'default provisioning template for new operating systems',
+         'default provisioning template for operating systems created'
+         ' from synced content'],
+        ['default partitioning table for new operating systems',
+         'default partitioning table for new operating systems',
+         'default partitioning table for new operating systems created'
+         ' from synced content'],
+        ['default pxelinux template for new operating systems',
+         'default pxelinux template for new operating systems',
+         'default pxelinux template for new operating systems created'
+         ' from synced content'],
+        ['default user data for new operating systems',
+         'default user data for new operating systems',
+         'default user data for new operating systems created from '
+         'synced content'],
+        ['when unregistering host via subscription-manager, also delete '
+         'server-side host record',
+         'when unregistering host via subscription-manager, also delete'
+         ' server-side host record',
+         'when unregistering a host via subscription-manager, also delete'
+         ' the host record. managed resources linked to host such as virtual'
+         ' machines and dns records may also be deleted.'],
+        ['private key that foreman will use to encrypt websockets',
+         'private key that foreman will use to encrypt websockets',
+         'private key file that foreman will use to encrypt websockets']
+    ],
+    # Subscription component Variants
+    'subscription': [
+        ['-1', '-1', 'unlimited']
     ]
 }
 
@@ -54,7 +120,7 @@ def assert_varients(component, pre, post):
         Else compares the actual preupgrade and postupgrade values and returns
         True/False accordingly
     """
-    supported_versions = ['6.1', '6.2']
+    supported_versions = ['6.1', '6.2', '6.3']
     from_version = os.environ.get('FROM_VERSION')
     to_version = os.environ.get('TO_VERSION')
 

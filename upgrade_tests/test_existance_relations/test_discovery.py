@@ -17,6 +17,7 @@ its relations post upgrade
 
 :Upstream: No
 """
+import os
 import pytest
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
@@ -29,6 +30,7 @@ dis_mem = compare_postupgrade(component, 'memory')
 dis_disks = compare_postupgrade(component, 'disk count')
 dis_size = compare_postupgrade(component, 'disks size')
 dis_subnet = compare_postupgrade(component, 'subnet')
+to_version = os.environ.get('TO_VERSION')
 
 
 # Tests
@@ -111,4 +113,6 @@ def test_positive_discovery_by_subnet(pre, post):
     :expectedresults: All discovered hosts subnet should be retained post
         upgrade
     """
+    if to_version == '6.3':
+        post = post.split(' (')[0]
     assert pre == post

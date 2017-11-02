@@ -19,7 +19,7 @@
 import pytest
 from upgrade_tests.helpers.common import run_to_upgrade
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
-
+from upgrade_tests.helpers.variants import assert_varients
 # Required Data
 component = 'settings'
 sett_name = compare_postupgrade(component, 'name')
@@ -49,7 +49,7 @@ def test_positive_settings_by_value(pre, post):
 
     :expectedresults: All settings values should be retained post upgrade
     """
-    assert pre == post
+    assert assert_varients(component, pre, post)
 
 
 @run_to_upgrade('6.2')
@@ -61,4 +61,4 @@ def test_positive_settings_by_description(pre, post):
 
     :expectedresults: All settings descriptions should be retained post upgrade
     """
-    assert pre == post
+    assert assert_varients(component, pre, post)

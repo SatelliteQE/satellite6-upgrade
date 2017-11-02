@@ -20,6 +20,7 @@ upgrade
 import os
 import pytest
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+from upgrade_tests.helpers.variants import assert_varients
 
 # Required Data
 component = 'subscription'
@@ -76,7 +77,7 @@ def test_positive_subscriptions_by_quantity(pre, post):
     :expectedresults: All subscriptions quantities should be retained post
         upgrade
     """
-    assert pre == post
+    assert assert_varients(component, pre, post)
 
 
 @pytest.mark.parametrize("pre,post", sub_consume, ids=pytest_ids(sub_consume))
@@ -103,4 +104,9 @@ def test_positive_subscriptions_by_end_date(pre, post):
     from_ver = os.environ.get('FROM_VERSION')
     if from_ver == '6.1':
         post = post.split('t')[0]
+    if from_ver == '6.2':
+        splited_pre = pre.split('t')
+        pre = ' '.join(
+            [splited_pre[0].replace('-', '/'), splited_pre[1].split('.')[0]]
+        )
     assert pre == post

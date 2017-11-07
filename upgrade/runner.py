@@ -4,11 +4,9 @@ Many commands are affected by environment variables. Unless stated otherwise,
 all environment variables are required.
 """
 import os
-import time
 
 from automation_tools import foreman_debug
 from automation_tools.satellite6.log import LogAnalyzer
-from robozilla.decorators import bz_bug_is_open
 from upgrade.capsule import (
     satellite6_capsule_setup,
     satellite6_capsule_upgrade,
@@ -192,12 +190,6 @@ def product_upgrade(product):
                 execute(foreman_debug, 'satellite_{}'.format(sat_host),
                         host=sat_host)
                 if product == 'capsule' or product == 'longrun':
-                    # Wait for 6 minutes to get satellite ready after upgrading
-                    # to 6.3, So that capsule will connect to satellite.
-                    # The issue is observed in 6.3 and bz 1493046 is raised
-                    if to_version == '6.3':
-                        if bz_bug_is_open(1493046):
-                            time.sleep(370)
                     cap_hosts = setup_dict['capsule_hosts']
                     for cap_host in cap_hosts:
                         try:
@@ -231,6 +223,9 @@ def product_upgrade(product):
                                         'Unable to fetch previous version but '
                                         'after upgrade capsule is {}.'.format(
                                             upgraded))
+                                # Execute tasks as post upgrade tier1 tests
+                                # are dependent
+                                post_upgrade_test_tasks(sat_host, cap_host)
                                 # Generate foreman debug on capsule postupgrade
                                 execute(
                                     foreman_debug,
@@ -247,8 +242,6 @@ def product_upgrade(product):
                     clients7 = setup_dict['clients7']
                     satellite6_client_upgrade('rhel6', clients6)
                     satellite6_client_upgrade('rhel7', clients7)
-                # Execute tasks as post upgrade tier1 tests are dependent
-                post_upgrade_test_tasks(sat_host, cap_host)
         except Exception:
             # Generate foreman debug on failed satellite upgrade
             execute(foreman_debug, 'satellite_{}'.format(sat_host),

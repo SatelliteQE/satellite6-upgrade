@@ -1,107 +1,107 @@
 """Helper functions and variables to test entity existence and associations
 post upgrade
 """
-
+import csv
 import json
 import os
 import pytest
-from upgrade.helpers.tools import csv_reader
 
-# Components for which the post upgrade existence will be validated,
-# org_not_required - The components where org is not required to get the
-# data about
-# org_required - The components where org is required to get the data about
-components = {
-    'org_not_required':
-    [
-        'architecture',
-        'capsule',
-        'compute-resource',
-        'discovery',
-        'discovery_rule',
-        'domain',
-        'environment',
-        'filter',
-        'host',
-        'hostgroup',
-        'medium',
-        'organization',
-        'os',
-        'partition-table',
-        'puppet-class',
-        'puppet-module',
-        'role',
-        'sc-param',
-        'settings',
-        'smart-variable',
-        'subnet',
-        'user',
-        'template',
-        'user-group'
-    ],
-    'org_required':
-    [
-        'activation-key',
-        'content-view',
-        'content-host',
-        'gpg',
-        'lifecycle-environment',
-        'product',
-        'repository',
-        'subscription',
-        'sync-plan'
-    ]
-}
+from automation_tools.satellite6.hammer import (
+    hammer,
+    set_hammer_config
+)
+from fabric.api import env, execute
+from nailgun.config import ServerConfig
+from upgrade_tests.helpers.constants import api_const, cli_const
 
 
-# Attributes where 'id' as key to fetch component property data
-attribute_keys = dict.fromkeys(
-    [
-        'activation-key',
-        'architecture',
-        'capsule',
-        'content-host',
-        'compute-resource',
-        'discovery',
-        'discovery_rule',
-        'domain',
-        'environment',
-        'filter',
-        'gpg',
-        'host',
-        'hostgroup',
-        'lifecycle-environment',
-        'medium',
-        'organization',
-        'os',
-        'puppet-class',
-        'puppet-module',
-        'repository',
-        'role',
-        'sc-param',
-        'smart-variable',
-        'subnet',
-        'subscription',
-        'sync-plan',
-        'template',
-        'user',
-        'user-group'
-    ],
-    'id'
- )
+class IncorrectEndpointException(Exception):
+    """Raise exception on wrong or No endpoint provided"""
 
-# Attributes where 'name' as key to fetch component property data
-attribute_keys.update(dict.fromkeys(
-    [
-        'partition-table',
-        'product',
-        'settings'
-    ],
-    'name'
- ))
-# Attributes with different or specific keys to fetch properties data
-# e.g for content-view there is content view id' and not 'id'
-attribute_keys['content-view'] = 'content view id'
+
+def csv_reader(component, subcommand):
+    """
+    Reads all component entities data using hammer csv output and returns the
+    dict representation of all the entities.
+
+    Representation: {component_name:
+    [{comp1_name:comp1, comp1_id:1}, {comp2_name:comp2, comp2_ip:192.168.0.1}]
+    }
+    e.g:
+    {'host':[{name:host1.ab.com, id:10}, {name:host2.xz.com, ip:192.168.0.1}]}
+
+    :param string component: Satellite component name. e.g host, capsule
+    :param string subcommand: subcommand for above component. e.g list, info
+    :returns dict: The dict repr of hammer csv output of given command
+    """
+    comp_dict = {}
+    entity_list = []
+    sat_host = env.get('satellite_host')
+    set_hammer_config()
+    data = execute(
+        hammer, '{0} {1}'.format(component, subcommand), 'csv', host=sat_host
+    )[sat_host]
+    csv_read = csv.DictReader(str(data.encode('utf-8')).lower().split('\n'))
+    for row in csv_read:
+        entity_list.append(row)
+    comp_dict[component] = entity_list
+    return comp_dict
+
+
+def set_api_server_config(user=None, passwd=None, verify=None):
+    """Sets ServerConfig configuration required by nailgun to read entities
+
+    :param str user: The web username of satellite user
+        'admin' by default if not provided
+    :param str passwd: The web password of satellite user
+        'changeme' by default if not provided
+    :param bool verify: The ssl verification to connect to satellite host
+        False by default if not provided
+    """
+    auth = (
+        'admin' if not user else user,
+        'changeme' if not passwd else passwd
+    )
+    url = 'https://{}'.format(env.get('satellite_host'))
+    verify = False if not verify else verify
+    ServerConfig(auth=auth, url=url, verify=verify)
+
+
+def api_reader(component):
+    """Reads each entity data of all components using nailgun helpers and returns
+    the dict representation of all the entities
+
+    Representation: {component_name:
+    [{comp1_name:comp1, comp1_id:1},
+     {comp2_name:comp2, comp2_networks:[
+            {'id':1, name:'abc','type':'ipv4'},
+            {'id':18, name:'xyz','type':'ipv6'}]
+        }]
+    }
+
+    e.g:
+    {'host':
+    [{name:host1.ab.com, id:10},
+     {name:host2.xz.com, networks:[
+            {'id':1, name:'abc','type':'ipv4'},
+            {'id':18, name:'xyz','type':'ipv6'}]
+        }]
+     }
+
+    :param string component: Satellite component name. e.g host, capsule
+    :returns dict: The dict repr of entities data of all components
+    """
+    set_api_server_config()
+    comp_data = {}
+    comp_entity_data = []
+    comp_entity_list = api_const.api_components()[component][0].read_all()
+    for unique_id in comp_entity_list.results:
+        single_entity_info = api_const.api_components(
+            unique_id['id']
+        )[component][1].read_json()
+        comp_entity_data.append(single_entity_info)
+    comp_data[component] = comp_entity_data
+    return comp_data
 
 
 def _find_on_list_of_dicts(lst, data_key, all_=False):
@@ -152,14 +152,15 @@ def _find_on_list_of_dicts_using_search_key(lst_of_dct, search_key, attr):
     """
     for single_dict in lst_of_dct:
         for k, v in single_dict.items():
-            if search_key == v:
+            if search_key == str(v):
                 return single_dict.get(
                     attr, '{} attribute missing'.format(attr))
     return '{} entity missing'.format(search_key)
 
 
-def set_datastore(datastore):
-    """Creates a file with all the satellite components data in json format
+def set_datastore(datastore, endpoint):
+    """Creates an endpoint file with all the satellite components data in json
+    format
 
     Here data is a list representation of all satellite component properties
     in format:
@@ -172,31 +173,45 @@ def set_datastore(datastore):
 
     :param str datastore: A file name without extension where all sat component
     data will be exported
+    :param str endpoint: An endpoints of satellite to get the data and create
+    datastore. It has to be either cli or api.
 
     Environment Variable:
 
     ORGANIZATION:
-        The organization to which the components are associated
+        The organization to which the components are associated, if endpoint
+        is CLI
         Optional, by default 'Default_Organization'
 
     """
-    org = os.environ.get('ORGANIZATION', 'Default_Organization')
-    nonorged_comps_data = [
-        csv_reader(
-            component, 'list') for component in components['org_not_required']
-    ]
-    orged_comps_data = [
-        csv_reader(
-            component, 'list --organization {}'.format(org)
-            ) for component in components['org_required']
-    ]
-    all_comps_data = nonorged_comps_data + orged_comps_data
-    with open('{}'.format(datastore), 'w') as ds:
+    allowed_ends = ['cli', 'api']
+    if endpoint not in allowed_ends:
+        raise IncorrectEndpointException(
+            'Endpoints has to be one of {}'.format(allowed_ends))
+    if endpoint == 'cli':
+        org = os.environ.get('ORGANIZATION', 'Default_Organization')
+        nonorged_comps_data = [
+            csv_reader(
+                component, 'list') for component in cli_const.components[
+                'org_not_required']]
+        orged_comps_data = [
+            csv_reader(
+                component, 'list --organization {}'.format(org)
+                ) for component in cli_const.components['org_required']
+        ]
+        all_comps_data = nonorged_comps_data + orged_comps_data
+    if endpoint == 'api':
+        api_comps = api_const.api_components().keys()
+        all_comps_data = [
+            api_reader(component) for component in api_comps
+        ]
+    with open('{0}_{1}'.format(datastore, endpoint), 'w') as ds:
         json.dump(all_comps_data, ds)
 
 
-def get_datastore(datastore):
-    """Fetches a json type data of all the satellite components from a file
+def get_datastore(datastore, endpoint):
+    """Fetches a json type data of all the satellite components from an
+    endpoint file
 
     This file would be exported by set_datastore function in this module
 
@@ -211,9 +226,14 @@ def get_datastore(datastore):
 
     :param str datastore: A file name from where all sat component data will
     be imported
-
+    :param str endpoint: An endpoint of satellite to select the correct
+        datastore file. It has to be either cli or api.
     """
-    with open('{}'.format(datastore)) as ds:
+    allowed_ends = ['cli', 'api']
+    if endpoint not in allowed_ends:
+        raise IncorrectEndpointException(
+            'Endpoints has to be one of {}'.format(allowed_ends))
+    with open('{0}_{1}'.format(datastore, endpoint)) as ds:
         return json.load(ds)
 
 
@@ -275,25 +295,27 @@ def compare_postupgrade(component, attribute):
     sat_vers = ['6.1', '6.2', '6.3']
     from_ver = os.environ.get('FROM_VERSION')
     to_ver = os.environ.get('TO_VERSION')
+    endpoint = os.environ.get('ENDPOINT')
     if isinstance(attribute, tuple):
         pre_attr = attribute[sat_vers.index(from_ver)]
         post_attr = attribute[sat_vers.index(to_ver)]
     elif isinstance(attribute, str):
         pre_attr = post_attr = attribute
     else:
-        raise TypeError('Wrong attribute type provided in test. Please provide'
-                        'one of string/tuple.')
+        raise TypeError('Wrong attribute type provided in test. '
+                        'Please provide one of string/tuple.')
     # Getting preupgrade and postupgrade data
-    predata = get_datastore('preupgrade')
-    postdata = get_datastore('postupgrade')
+    predata = get_datastore('preupgrade', endpoint)
+    postdata = get_datastore('postupgrade', endpoint)
     entity_values = []
-    for test_case in find_datastore(
-            predata, component, attribute=attribute_keys[component]):
+    atr = 'id' if endpoint == 'api' else cli_const.attribute_keys[component]
+    for test_case in find_datastore(predata, component, atr):
         preupgrade_entity = find_datastore(
-            predata, component, search_key=test_case, attribute=pre_attr)
+            predata, component, search_key=str(test_case), attribute=pre_attr)
         postupgrade_entity = find_datastore(
-            postdata, component, search_key=test_case, attribute=post_attr)
-        if 'missing' in preupgrade_entity or 'missing' in postupgrade_entity:
+            postdata, component, search_key=str(test_case), attribute=post_attr
+        )
+        if 'missing' in str(preupgrade_entity) or 'missing' in str(postupgrade_entity): # noqa
             culprit = preupgrade_entity if 'missing' in preupgrade_entity \
                 else postupgrade_entity
             culprit_ver = ' in preupgrade version' if 'missing' \

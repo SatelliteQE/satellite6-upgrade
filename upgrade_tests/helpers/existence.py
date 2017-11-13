@@ -64,7 +64,7 @@ def set_api_server_config(user=None, passwd=None, verify=None):
     )
     url = 'https://{}'.format(env.get('satellite_host'))
     verify = False if not verify else verify
-    ServerConfig(auth=auth, url=url, verify=verify)
+    ServerConfig(auth=auth, url=url, verify=verify).save()
 
 
 def api_reader(component):
@@ -91,11 +91,10 @@ def api_reader(component):
     :param string component: Satellite component name. e.g host, capsule
     :returns dict: The dict repr of entities data of all components
     """
-    set_api_server_config()
     comp_data = {}
     comp_entity_data = []
-    comp_entity_list = api_const.api_components()[component][0].read_all()
-    for unique_id in comp_entity_list.results:
+    comp_entity_list = api_const.api_components()[component][0].search_json()
+    for unique_id in comp_entity_list['results']:
         single_entity_info = api_const.api_components(
             unique_id['id']
         )[component][1].read_json()
@@ -201,6 +200,7 @@ def set_datastore(datastore, endpoint):
         ]
         all_comps_data = nonorged_comps_data + orged_comps_data
     if endpoint == 'api':
+        set_api_server_config()
         api_comps = api_const.api_components().keys()
         all_comps_data = [
             api_reader(component) for component in api_comps

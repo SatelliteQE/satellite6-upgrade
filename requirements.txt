@@ -5,3 +5,7 @@ robozilla
 
 # Get automation-tools from master
 git+https://github.com/SatelliteQE/automation-tools#egg=automation-tools
+
+# Get nailgun from master
+git+https://github.com/SatelliteQE/nailgun.git#egg=nailgun
+

@@ -70,7 +70,8 @@ def setup_products_for_upgrade(product, os_version):
         create_setup_dict(setups_dict)
         if os.environ.get('RUN_EXISTANCE_TESTS', 'false').lower() == 'true':
             logger.info('Setting up preupgrade datastore for existance tests')
-            set_datastore('preupgrade')
+            set_datastore('preupgrade', 'cli')
+            set_datastore('preupgrade', 'api')
         return sat_host, cap_hosts, clients6, clients7
 
 

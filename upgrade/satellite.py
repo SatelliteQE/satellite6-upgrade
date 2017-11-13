@@ -158,7 +158,8 @@ def satellite6_upgrade():
         enable_ostree(sat_version='6.2')
     if os.environ.get('RUN_EXISTANCE_TESTS', 'false').lower() == 'true':
         logger.info('Setting up postupgrade datastore for existance tests..')
-        set_datastore('postupgrade')
+        set_datastore('postupgrade', 'cli')
+        set_datastore('postupgrade', 'api')
 
 
 def satellite6_zstream_upgrade():

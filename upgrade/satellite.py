@@ -1,7 +1,6 @@
 import os
 import sys
 
-from upgrade_tests.helpers.existence import set_datastore
 from upgrade.helpers.tools import (
     host_pings,
     host_ssh_availability_check,
@@ -156,10 +155,6 @@ def satellite6_upgrade():
     # Enable ostree feature only for rhel7 and sat6.2
     if to_version == '6.2' and major_ver == 7:
         enable_ostree(sat_version='6.2')
-    if os.environ.get('RUN_EXISTANCE_TESTS', 'false').lower() == 'true':
-        logger.info('Setting up postupgrade datastore for existance tests..')
-        set_datastore('postupgrade', 'cli')
-        set_datastore('postupgrade', 'api')
 
 
 def satellite6_zstream_upgrade():
@@ -237,6 +232,3 @@ def satellite6_zstream_upgrade():
     set_hammer_config()
     hammer('ping')
     run('katello-service status', warn_only=True)
-    if os.environ.get('RUN_EXISTANCE_TESTS', 'false').lower() == 'true':
-        logger.info('Setting up postupgrade datastore for existance tests')
-        set_datastore('postupgrade')

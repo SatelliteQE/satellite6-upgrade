@@ -10,8 +10,9 @@ from automation_tools.satellite6.hammer import (
     hammer,
     set_hammer_config
 )
-from fabric.api import env, execute
+from fabric.api import execute
 from nailgun.config import ServerConfig
+from upgrade.helpers.tools import get_setup_data
 from upgrade_tests.helpers.constants import api_const, cli_const
 
 
@@ -36,7 +37,7 @@ def csv_reader(component, subcommand):
     """
     comp_dict = {}
     entity_list = []
-    sat_host = env.get('satellite_host')
+    sat_host = get_setup_data()['sat_host']
     set_hammer_config()
     data = execute(
         hammer, '{0} {1}'.format(component, subcommand), 'csv', host=sat_host
@@ -58,11 +59,12 @@ def set_api_server_config(user=None, passwd=None, verify=None):
     :param bool verify: The ssl verification to connect to satellite host
         False by default if not provided
     """
+    sat_host = get_setup_data()['sat_host']
     auth = (
         'admin' if not user else user,
         'changeme' if not passwd else passwd
     )
-    url = 'https://{}'.format(env.get('satellite_host'))
+    url = 'https://{}'.format(sat_host)
     verify = False if not verify else verify
     ServerConfig(auth=auth, url=url, verify=verify).save()
 

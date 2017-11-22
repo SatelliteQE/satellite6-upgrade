@@ -10,6 +10,7 @@ from automation_tools import (
     setup_alternate_capsule_ports,
     setup_fake_manifest_certificate,
 )
+from automation_tools import setup_foreman_discovery
 from automation_tools.satellite6.hammer import (
     attach_subscription_to_host_from_satellite,
     get_attribute_value,
@@ -309,8 +310,9 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
             certificate_url,
             host=sat_host
         )
+    sat_version = os.environ.get('TO_VERSION')
     execute(setup_alternate_capsule_ports, host=sat_host)
-    if os.environ.get('TO_VERSION') not in ['6.0', '6.1']:
+    if sat_version not in ['6.0', '6.1']:
         # Update the Default Organization name, which was updated in 6.2
         logger.info("Update the Default Organization name, which was updated "
                     "in 6.2")
@@ -337,6 +339,17 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     # Execute capsule sync task , after the upgrade is completed
     if cap_host:
         execute(capsule_sync, cap_host, host=sat_host)
+    # Execute task for template changes required for discovery feature
+    execute(
+        setup_foreman_discovery,
+        sat_version=sat_version,
+        host=sat_host
+    )
+    # Removing the original manifest from Default Organization (Org-id 1),
+    # to allow test-cases to utilize the same manifest.
+    logger.info("Removing the Original Manifest from Default Organization")
+    execute(hammer, 'subscription delete-manifest --organization-id 1',
+            host=sat_host)
 
 
 def capsule_sync(cap_host):

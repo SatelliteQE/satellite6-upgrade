@@ -219,9 +219,6 @@ def product_upgrade(product):
                                         'Unable to fetch previous version but '
                                         'after upgrade capsule is {}.'.format(
                                             upgraded))
-                                # Execute tasks as post upgrade tier1 tests
-                                # are dependent
-                                post_upgrade_test_tasks(sat_host, cap_host)
                                 # Generate foreman debug on capsule postupgrade
                                 execute(
                                     foreman_debug,
@@ -238,6 +235,10 @@ def product_upgrade(product):
                     clients7 = setup_dict['clients7']
                     satellite6_client_upgrade('rhel6', clients6)
                     satellite6_client_upgrade('rhel7', clients7)
+                if product == 'longrun':
+                    # Execute tasks as post upgrade tier1 tests
+                    # are dependent
+                    post_upgrade_test_tasks(sat_host, cap_host)
         except Exception:
             # Generate foreman debug on failed satellite upgrade
             execute(foreman_debug, 'satellite_{}'.format(sat_host),

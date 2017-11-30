@@ -30,10 +30,7 @@ def generate_satellite_docker_clients_on_rhevm(
             'Clients count to generate on Docker should be atleast 1 !')
         sys.exit(1)
     satellite_hostname = os.environ.get('RHEV_SAT_HOST')
-    if ak:
-        ak = ak
-    else:
-        ak = os.environ.get('RHEV_CLIENT_AK_{}'.format(client_os.upper()))
+    ak = ak or os.environ.get('RHEV_CLIENT_AK_{}'.format(client_os.upper()))
     result = {}
     for count in range(int(clients_count)):
         if bz_bug_is_open('1405085'):

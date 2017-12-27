@@ -25,6 +25,7 @@ from unittest2.case import TestCase
 
 from upgrade.helpers.docker import (
     docker_execute_command,
+    docker_wait_until_repo_list,
     refresh_subscriptions_on_docker_clients
 )
 from upgrade_tests import post_upgrade, pre_upgrade
@@ -160,7 +161,8 @@ class ScenarioBug1429201(TestCase):
         time.sleep(5)
         # Creating a rhel7 vm and subscribing to AK
         container_ids = dockerize(self.ak_name, 'rhel7')
-        time.sleep(30)  # Subscription manager needs time to register
+        # Subscription manager needs time to register
+        docker_wait_until_repo_list(container_ids.values()[0])
         result = execute(
             docker_execute_command,
             container_ids.values()[0],
@@ -265,7 +267,8 @@ class ScenarioBug1429201(TestCase):
                 container_ids.values(),
                 host=self.docker_vm
                 )
-        time.sleep(30)  # Subscription manager needs time to register
+        # Subscription manager needs time to register
+        docker_wait_until_repo_list(container_ids.values()[0])
         result_fail = execute(
             docker_execute_command,
             container_ids.values()[0],

@@ -105,3 +105,26 @@ def docker_cleanup_containers():
     run('docker ps -a | grep \'days ago\' | awk \'{print $1}\' | xargs '
         '--no-run-if-empty docker rm ')
     logger.info('Cleaning UP of Docker containers ENDS')
+
+
+def docker_wait_until_repo_list(container_id, timeout=5):
+    """Waits until the ak is attached and repo's are listed
+
+    :param string container_id: ID of the docker container
+    :param int timeout: The polling timeout in minutes.
+    """
+    timeup = time.time() + int(timeout) * 60
+    while True:
+        result = docker_execute_command(
+            container_id,
+            'yum repolist | grep repolist'
+        )
+        result = int(result.splitlines()[0].split(':')[1].strip())
+        if time.time() > timeup:
+            logger.warning('There are no repos on {0} or timeup of {1} mins '
+                           'has occured'.format(container_id, timeout))
+            return False
+        if result > 0:
+            return True
+        else:
+            time.sleep(5)

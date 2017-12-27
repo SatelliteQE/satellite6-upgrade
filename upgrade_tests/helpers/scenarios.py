@@ -63,7 +63,11 @@ def dockerize(ak_name=None, distro=None):
 
     DOCKER_VM
         The Docker VM IP/Hostname on rhevm to create clients
+    RHEV_CLIENT_AK
+        The AK using which client will be registered to satellite
     """
+    ak_name = ak_name or os.environ.get(
+        'RHEV_CLIENT_AK_{}'.format(distro.upper()))
     docker_vm = os.environ.get('DOCKER_VM')
     # Check if the VM containing docker images is up, else turn on
     rhevm_client = get_rhevm_client()

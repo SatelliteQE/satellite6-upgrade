@@ -2,6 +2,7 @@ import os
 import sys
 import time
 from automation_tools.bz import bz_bug_is_open
+from fauxfactory import gen_string
 from upgrade.helpers.logger import logger
 from fabric.api import run
 
@@ -39,7 +40,8 @@ def generate_satellite_docker_clients_on_rhevm(
         # If custom activation key is passed, it will be used to create custom
         # docker clients for scenario tests and we will require to set distinct
         # hostname for those content hosts
-        host_title = 'scenarioclient' if custom_ak else 'dockerclient'
+        host_title = 'scenarioclient{0}'.format(
+            gen_string('alpha')) if custom_ak else 'dockerclient'
         hostname = '{0}{1}{2}'.format(count, host_title, client_os)
         container_id = run(
             'docker run -d -h {0} -v /dev/log:/dev/log -e "SATHOST={1}" '

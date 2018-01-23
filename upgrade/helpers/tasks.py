@@ -345,11 +345,12 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
         sat_version=sat_version,
         host=sat_host
     )
+    # Commenting out until GH issue:#135
     # Removing the original manifest from Default Organization (Org-id 1),
     # to allow test-cases to utilize the same manifest.
-    logger.info("Removing the Original Manifest from Default Organization")
-    execute(hammer, 'subscription delete-manifest --organization-id 1',
-            host=sat_host)
+    # logger.info("Removing the Original Manifest from Default Organization")
+    # execute(hammer, 'subscription delete-manifest --organization-id 1',
+    #         host=sat_host)
 
 
 def capsule_sync(cap_host):

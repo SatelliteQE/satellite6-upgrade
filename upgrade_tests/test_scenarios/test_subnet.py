@@ -15,10 +15,10 @@
 :Upstream: No
 """
 
-from upgrade_tests import pre_upgrade, post_upgrade
+from upgrade_tests import pre_upgrade, post_upgrade, stubbed
 
 
-class scenario_positive_create_parameters_in_existing_subnet:
+class Test_Create_Parameter_Existing_Subnet():
     """Parameters can be created in existing subnet post upgrade
 
     :id: 319317d5-70f0-40f3-bc33-d8846432dea2
@@ -40,6 +40,7 @@ class scenario_positive_create_parameters_in_existing_subnet:
     """
 
     @pre_upgrade
+    @stubbed
     def test_pre_create_parameter_in_existing_subnet(self):
         """Create parameter in preupgrade version
 
@@ -53,6 +54,7 @@ class scenario_positive_create_parameters_in_existing_subnet:
         """
 
     @post_upgrade
+    @stubbed
     def test_post_create_parameter_in_existing_subnet(self):
         """Parameter can be added to existing subnet post upgrade
 

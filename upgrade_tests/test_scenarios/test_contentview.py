@@ -21,7 +21,6 @@ import time
 from automation_tools.satellite6 import hammer
 from fabric.api import env, execute, run, task
 from fauxfactory import gen_alpha
-from unittest2.case import TestCase
 
 from upgrade.helpers.docker import (
     docker_execute_command,
@@ -39,7 +38,7 @@ from upgrade_tests.helpers.scenarios import (
 )
 
 
-class ScenarioBug1429201(TestCase):
+class Test_ScenarioBug_1429201():
     """This Class will serve as a whole scenario with pre-upgrade and
     post-upgrade test-case.
     Scenario test to verify if we can create a custom repository and consume it

@@ -133,6 +133,10 @@ def delete_rhevm_instance(instance_name, timeout=5):
                     'in RHEV to delete!'.format(instance_name))
     else:
         logger.info('Deleting instance {0} from RHEVM.'.format(instance_name))
+        if rhevm_client.vms.get(name=instance_name).get_delete_protected():
+            logger.warning('The instance {0} is under delete protection and '
+                           'cannot be deleted.'.format(instance_name))
+            sys.exit(1)
         if rhevm_client.vms.get(
                 name=instance_name).get_status().get_state() == 'up':
             rhevm_client.vms.get(name=instance_name).shutdown()

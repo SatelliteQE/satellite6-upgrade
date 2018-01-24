@@ -1,6 +1,9 @@
 """API and CLI upgrade Tests Constants"""
 from nailgun import entities
 
+# FAKE REPOS
+FAKE_REPO_ZOO3 = 'http://inecas.fedorapeople.org/fakerepos/zoo3/'
+
 
 class cli_const:
     """The constants required to run CLI tests"""

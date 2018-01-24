@@ -48,7 +48,7 @@ def get_entity_data(scenario_name):
     return entity_data
 
 
-def dockerize(ak_name=None, distro=None):
+def dockerize(ak_name=None, distro=None, org_label=None):
     """Creates Docker Container's of specified distro and subscribes them to
     given AK
 
@@ -96,6 +96,7 @@ def dockerize(ak_name=None, distro=None):
         distro,
         1,
         ak_name,
+        org_label,
         host=docker_vm,
     )[docker_vm]
     return clients

@@ -19,7 +19,6 @@ import time
 
 from fabric.api import execute
 from nailgun import entities
-from unittest2.case import TestCase
 from upgrade.helpers.docker import docker_execute_command
 from upgrade_tests import post_upgrade, pre_upgrade
 from upgrade_tests.helpers.scenarios import (
@@ -29,7 +28,7 @@ from upgrade_tests.helpers.scenarios import (
 )
 
 
-class Scenario_preupgrade_client_package_installation(TestCase):
+class Test_Preupgrade_Client_Package_Installation():
     """The test class contains pre and post upgrade scenarios to test if the
     package can be installed on preupgrade client remotely
 
@@ -131,7 +130,7 @@ class Scenario_preupgrade_client_package_installation(TestCase):
         self.assertIn(self.package_name, installed_package)
 
 
-class Scenario_postupgrade_client_package_installation(TestCase):
+class Test_Postupgrade_Client_Package_Installation():
     """The test class contains post-upgrade scenarios to test if the package
     can be installed on postupgrade client remotely
 

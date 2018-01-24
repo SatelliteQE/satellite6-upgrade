@@ -15,10 +15,10 @@
 :Upstream: No
 """
 
-from upgrade_tests import pre_upgrade, post_upgrade
+from upgrade_tests import pre_upgrade, post_upgrade, stubbed
 
 
-class scenario_positive_existing_overridden_filter:
+class Test_Existing_Overridden_Filter():
     """Filter associated with taxonomies becomes overridden filter post upgrade
 
     :id: e8ecf446-375e-45fa-8e2c-558a40a7d8d0
@@ -39,6 +39,7 @@ class scenario_positive_existing_overridden_filter:
     """
 
     @pre_upgrade
+    @stubbed
     def test_pre_existing_overriden_filter(self):
         """Role with taxonomies associated filter can be created
 
@@ -53,6 +54,7 @@ class scenario_positive_existing_overridden_filter:
         """
 
     @post_upgrade
+    @stubbed
     def test_post_existing_overriden_filter(self):
         """Filter associated with taxonomies becomes overridden filter post
         upgrade
@@ -70,7 +72,7 @@ class scenario_positive_existing_overridden_filter:
         """
 
 
-class scenario_positive_builtin_roles_locked:
+class Test_Builtin_Roles_Locked():
     """Builtin roles in satellite gets locked post upgrade
 
     :id: a856ca29-cb0d-4707-9b3b-90be822dd386
@@ -87,6 +89,7 @@ class scenario_positive_builtin_roles_locked:
     """
 
     @post_upgrade
+    @stubbed
     def test_post_builtin_roles_are_cloned(self):
         """Builtin roles in satellite gets locked post upgrade
 
@@ -99,7 +102,7 @@ class scenario_positive_builtin_roles_locked:
         """
 
 
-class scenario_positive_new_organization_admin_role:
+class Test_New_Organization_Admin_Role():
     """New Organization Admin role creates post upgrade
 
     :id: 5765b8e2-5810-4cb7-86ac-a93f36de1dd9
@@ -121,6 +124,7 @@ class scenario_positive_new_organization_admin_role:
     """
 
     @post_upgrade
+    @stubbed
     def test_post_builtin_roles_are_cloned(self):
         """New Organization Admin role creates post upgrade
 

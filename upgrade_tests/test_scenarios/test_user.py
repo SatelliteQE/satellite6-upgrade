@@ -14,11 +14,10 @@
 
 :Upstream: No
 """
+from upgrade_tests import pre_upgrade, post_upgrade, stubbed
 
-from upgrade_tests import pre_upgrade, post_upgrade
 
-
-class scenario_positive_create_sshkey_in_existing_users:
+class Test_Create_Sshkey_Existing_Users:
     """SSH Key can be created in existing user post upgrade
 
     :id: e4338daa-272a-42e3-be45-77e1caea607f
@@ -36,6 +35,7 @@ class scenario_positive_create_sshkey_in_existing_users:
     """
 
     @pre_upgrade
+    @stubbed
     def test_pre_create_sshkey_in_existing_user(self):
         """Create User in preupgrade version
 
@@ -46,6 +46,7 @@ class scenario_positive_create_sshkey_in_existing_users:
         """
 
     @post_upgrade
+    @stubbed
     def test_post_create_sshkey_in_existing_user(self):
         """SSH key can be added to existing user post upgrade
 
@@ -55,7 +56,7 @@ class scenario_positive_create_sshkey_in_existing_users:
         """
 
 
-class scenario_positive_existing_user_passwordless_access_to_host:
+class Test_Existing_User_Passwordless_Access_To_Host():
     """Existing user can password-less access to provisioned host
 
     :id: d2d94447-5fc7-49cc-840e-06568d8a5141
@@ -77,6 +78,7 @@ class scenario_positive_existing_user_passwordless_access_to_host:
     """
 
     @pre_upgrade
+    @stubbed
     def test_pre_existing_user_passwordless_access_to_host(self):
         """Create User in preupgrade version
 
@@ -87,6 +89,7 @@ class scenario_positive_existing_user_passwordless_access_to_host:
         """
 
     @post_upgrade
+    @stubbed
     def test_post_existing_user_passwordless_access_to_host(self):
         """Existing user can passwordless access to provisioned host
 

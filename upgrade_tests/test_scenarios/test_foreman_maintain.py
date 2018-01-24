@@ -15,11 +15,10 @@
 :Upstream: No
 """
 
-from unittest2.case import TestCase
-from upgrade_tests import post_upgrade, pre_upgrade
+from upgrade_tests import post_upgrade, pre_upgrade, stubbed
 
 
-class ScenarioForemanMaintain(TestCase):
+class Test_ForemanMaintain():
     """The test class contains pre-upgrade and post-upgrade scenarios to test
     foreman-maintain utility
 
@@ -34,6 +33,7 @@ class ScenarioForemanMaintain(TestCase):
     """
 
     @pre_upgrade
+    @stubbed
     def test_pre_foreman_maintain_upgrade_list_versions(self):
         """Pre-upgrade scenario that tests list of versions
         satellite can upgrade.
@@ -48,6 +48,7 @@ class ScenarioForemanMaintain(TestCase):
          """
 
     @post_upgrade
+    @stubbed
     def test_post_foreman_maintain_upgrade_list_versions(self):
         """Post-upgrade scenario that tests list of versions
         satellite can upgrade.

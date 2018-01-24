@@ -18,7 +18,6 @@ import os
 
 from automation_tools.satellite6 import hammer
 from fabric.api import env, execute, run
-from unittest2.case import TestCase
 
 from upgrade_tests import post_upgrade, pre_upgrade
 from upgrade_tests.helpers.scenarios import (
@@ -29,7 +28,7 @@ from upgrade_tests.helpers.scenarios import (
 )
 
 
-class Scenario_capsule_sync(TestCase):
+class Test_Capsule_Sync():
     """The test class contains pre-upgrade and post-upgrade scenarios to test if
     package added to satellite preupgrade is synced to capsule post upgrade.
 
@@ -159,7 +158,7 @@ class Scenario_capsule_sync(TestCase):
         self.assertEqual('0', result)
 
 
-class Scenario_capsule_sync_2(TestCase):
+class Test_Capsule_Sync_2():
     """
     The test class contains pre-upgrade and post-upgrade scenarios to test if
     package added postupgrade in satellite is snyced to capsule post upgrade.

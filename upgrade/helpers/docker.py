@@ -10,13 +10,15 @@ logger = logger()
 
 
 def generate_satellite_docker_clients_on_rhevm(
-        client_os, clients_count, custom_ak=None):
+        client_os, clients_count, custom_ak=None, org_label=None):
     """Generates satellite clients on docker as containers
 
     :param string client_os: Client OS of which client to be generated
         e.g: rhel6, rhel7
     :param string clients_count: No of clients to generate
     :param string custom_ak: Activation key name, to register clients
+    :param string org_label: The organization in which the docker clients to
+        created and where the custom ak is available
 
     Environment Variables:
 
@@ -43,10 +45,17 @@ def generate_satellite_docker_clients_on_rhevm(
         host_title = 'scenarioclient{0}'.format(
             gen_string('alpha')) if custom_ak else 'dockerclient'
         hostname = '{0}{1}{2}'.format(count, host_title, client_os)
-        container_id = run(
-            'docker run -d -h {0} -v /dev/log:/dev/log -e "SATHOST={1}" '
-            '-e "AK={2}" upgrade:{3}'.format(
-                hostname, satellite_hostname, ak, client_os))
+        if org_label:
+            create_command = 'docker run -d -h {0} -v /dev/log:/dev/log ' \
+                             '-e "SATHOST={1}" -e "AK={2}" -e "ORG={3}" ' \
+                             'upgrade:{4}'.format(
+                                hostname, satellite_hostname, ak, org_label,
+                                client_os)
+        else:
+            create_command = 'docker run -d -h {0} -v /dev/log:/dev/log ' \
+                             '-e "SATHOST={1}" -e "AK={2}" upgrade:{3}'.format(
+                                hostname, satellite_hostname, ak, client_os)
+        container_id = run(create_command)
         result[hostname] = container_id
     return result
 
@@ -82,20 +91,31 @@ def refresh_subscriptions_on_docker_clients(container_ids):
         docker_execute_command(container_ids, 'yum clean all', quiet=True)
 
 
-def docker_execute_command(container_id, command, quiet=False):
+def docker_execute_command(container_id, command, quiet=False, async=False):
     """Executes command on running docker container
 
     :param string container_id: Running containers id to execute command
     :param string command: Command to run on running container
-    :returns command output
+    :param bool quiet: To run command in quiet mode on container
+    :param bool async: To run command in background mode on container
+
+    :returns command output if async is False
     """
     if not isinstance(quiet, bool):
-        if quiet.lower() == 'false':
-            quiet = False
-        elif quiet.lower() == 'true':
-            quiet = True
+        raise TypeError(
+            'quiet parameter value should be boolean type. '
+            '{} type provided.'.format(type(quiet))
+        )
+    if not isinstance(async, bool):
+        raise TypeError(
+            'async parameter value should be boolean type. '
+            '{} type provided.'.format(type(async))
+        )
     return run(
-        'docker exec {0} {1}'.format(container_id, command), quiet=quiet)
+        'docker exec {0} {1} {2}'.format(
+            '-d' if async else '', container_id, command),
+        quiet=quiet
+        )
 
 
 def docker_cleanup_containers():

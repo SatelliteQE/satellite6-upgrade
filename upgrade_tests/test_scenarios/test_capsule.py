@@ -43,9 +43,9 @@ class Scenario_capsule_sync(TestCase):
     """
     cls_name = 'Scenario_capsule_sync'
     sat_host = get_satellite_host()
+    cap_host = os.environ.get(
+            'RHEV_CAP_HOST', os.environ.get('CAPSULE_HOSTNAME'))
     env.host_string = sat_host
-    env.user = 'root'
-    hammer.set_hammer_config()
     repo_name = 'capsulesync_TestRepo_' + cls_name
     repo_path = '/var/www/html/pub/preupgradeCapSync_repo/'
     rpm_name = rpm1.split('/')[-1]
@@ -137,25 +137,21 @@ class Scenario_capsule_sync(TestCase):
             2. The repos/rpms from satellite should be synced to satellite
 
          """
-        cap_host = os.environ.get(
-            'RHEV_CAP_HOST',
-            os.environ.get('CAPSULE_HOSTNAME')
-        )
         cap_data = hammer.hammer('capsule list')
-        cap_id = hammer.get_attribute_value(cap_data, cap_host, 'id')
-        cap_info = {'id': cap_id, 'name': cap_host}
+        cap_id = hammer.get_attribute_value(cap_data, self.cap_host, 'id')
         org_data = hammer.hammer('organization list')
         org_name = hammer.get_attribute_value(
             org_data, int(self.org_id), 'name')
-        print hammer.sync_capsule_content(cap_info, async=False)
+        print hammer.hammer(
+            'capsule content synchronize --id {0}'.format(cap_id))
         result = execute(
             lambda: run(
                 '[ -f /var/lib/pulp/published/yum/http/repos/'
                 '{0}/{1}/{2}/custom/{3}/{4}/{5} ]; echo $?'.format(
                     org_name, self.env_name, self.cv_name,
                     self.prod_name, self.repo_name, self.rpm_name)),
-            host=cap_host
-        )[cap_host]
+            host=self.cap_host
+        )[self.cap_host]
         self.assertEqual('0', result)
 
 
@@ -174,9 +170,9 @@ class Scenario_capsule_sync_2(TestCase):
     """
     cls_name = 'Scenario_capsule_sync_2'
     sat_host = get_satellite_host()
+    cap_host = os.environ.get(
+            'RHEV_CAP_HOST', os.environ.get('CAPSULE_HOSTNAME'))
     env.host_string = sat_host
-    env.user = 'root'
-    hammer.set_hammer_config()
     repo_name = 'capsulesync_TestRepo_' + cls_name
     repo_path = '/var/www/html/pub/postupgradeCapSync_repo/'
     rpm_name = rpm2.split('/')[-1]
@@ -253,22 +249,18 @@ class Scenario_capsule_sync_2(TestCase):
         )
         print hammer.hammer_content_view_promote_version(
             self.cv_name, cv_ver, env_id, self.org_id)
-        cap_host = os.environ.get(
-            'RHEV_CAP_HOST',
-            os.environ.get('CAPSULE_HOSTNAME')
-        )
         cap_data = hammer.hammer('capsule list')
-        cap_id = hammer.get_attribute_value(cap_data, cap_host, 'id')
-        cap_info = {'id': cap_id, 'name': cap_host}
+        cap_id = hammer.get_attribute_value(cap_data, self.cap_host, 'id')
         org_data = hammer.hammer('organization list')
         org_name = hammer.get_attribute_value(
             org_data, int(self.org_id), 'name')
-        print hammer.sync_capsule_content(cap_info, async=False)
+        print hammer.hammer(
+            'capsule content synchronize --id {0}'.format(cap_id))
         result = execute(
             lambda: run('[ -f /var/lib/pulp/published/yum/http/repos/'
                         '{0}/{1}/{2}/custom/{3}/{4}/{5} ]; echo $?'.format(
                             org_name, self.env_name, self.cv_name,
                             self.prod_name, self.repo_name, self.rpm_name)),
-            host=cap_host
-        )[cap_host]
+            host=self.cap_host
+        )[self.cap_host]
         self.assertEqual('0', result)

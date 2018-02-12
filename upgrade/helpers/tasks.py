@@ -28,6 +28,7 @@ from automation_tools.satellite6.hammer import (
     hammer_repository_synchronize,
     set_hammer_config
 )
+from automation_tools.utils import get_discovery_image
 from robozilla.decorators import bz_bug_is_open
 from upgrade.helpers.logger import logger
 from upgrade.helpers.docker import (
@@ -344,6 +345,12 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
         setup_foreman_discovery,
         sat_version=sat_version,
         host=sat_host
+    )
+    # Execute task for creating latest discovery iso required for unattended
+    #  test
+    execute(
+        get_discovery_image,
+        host=os.environ.get('LIBVIRT_HOSTNAME')
     )
     # Commenting out until GH issue:#135
     # Removing the original manifest from Default Organization (Org-id 1),

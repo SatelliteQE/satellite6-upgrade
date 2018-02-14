@@ -162,7 +162,9 @@ class ScenarioBug1429201(TestCase):
         # Creating a rhel7 vm and subscribing to AK
         container_ids = dockerize(self.ak_name, 'rhel7')
         # Subscription manager needs time to register
-        docker_wait_until_repo_list(container_ids.values()[0])
+        execute(docker_wait_until_repo_list,
+                container_ids.values()[0],
+                host=self.docker_vm)
         result = execute(
             docker_execute_command,
             container_ids.values()[0],
@@ -268,7 +270,9 @@ class ScenarioBug1429201(TestCase):
                 host=self.docker_vm
                 )
         # Subscription manager needs time to register
-        docker_wait_until_repo_list(container_ids.values()[0])
+        execute(docker_wait_until_repo_list,
+                container_ids.values()[0],
+                host=self.docker_vm)
         result_fail = execute(
             docker_execute_command,
             container_ids.values()[0],

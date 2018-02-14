@@ -139,9 +139,11 @@ def docker_wait_until_repo_list(container_id, timeout=5):
     while True:
         result = docker_execute_command(
             container_id,
-            'yum repolist | grep repolist'
+            'yum repolist | grep repolist',
+            quiet=True
         )
-        result = int(result.splitlines()[0].split(':')[1].strip())
+        if result.startswith('repolist'):
+            result = int(result.splitlines()[0].split(':')[1].strip())
         if time.time() > timeup:
             logger.warning('There are no repos on {0} or timeup of {1} mins '
                            'has occured'.format(container_id, timeout))

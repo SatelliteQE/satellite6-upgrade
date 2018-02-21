@@ -34,7 +34,7 @@ from upgrade.helpers.logger import logger
 from upgrade.helpers.docker import (
     attach_subscription_to_host_from_content_host
 )
-from fabric.api import execute, run
+from fabric.api import env, execute, run
 
 logger = logger()
 
@@ -348,6 +348,7 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     )
     # Execute task for creating latest discovery iso required for unattended
     #  test
+    env.disable_known_hosts = True
     execute(
         get_discovery_image,
         host=os.environ.get('LIBVIRT_HOSTNAME')

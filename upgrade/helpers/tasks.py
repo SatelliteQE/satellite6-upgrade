@@ -11,6 +11,7 @@ from automation_tools import (
     setup_fake_manifest_certificate,
 )
 from automation_tools import setup_foreman_discovery
+from automation_tools.repository import enable_repos
 from automation_tools.satellite6.hammer import (
     attach_subscription_to_host_from_satellite,
     get_attribute_value,
@@ -34,7 +35,11 @@ from upgrade.helpers.logger import logger
 from upgrade.helpers.docker import (
     attach_subscription_to_host_from_content_host
 )
-from fabric.api import env, execute, run
+from fabric.api import env, execute, put, run
+if sys.version_info[0] is 2:
+    from StringIO import StringIO  # (import-error) pylint:disable=F0401
+else:  # pylint:disable=F0401,E0611
+    from io import StringIO
 
 logger = logger()
 
@@ -391,3 +396,75 @@ def check_ntpd():
     if ntpd_check.return_code > 0:
         run("service ntpd start")
         run("chkconfig ntpd on")
+
+
+def setup_foreman_maintain():
+    """Task which install foreman-maintain tool.
+
+    Environment Variables necessary to proceed Setup:
+    -----------------------------------------------------
+
+    DISTRIBUTION
+        The satellite upgrade using internal or CDN distribution.
+        e.g 'CDN','DOWNSTREAM'
+
+    MAINTAIN_REPO
+        URL of repo if distribution is DOWNSTREAM
+
+    BASE_URL
+        URL for the compose repository if distribution is DOWNSTREAM
+    """
+    # setting up foreman-maintain repo
+    if os.environ.get('DISTRIBUTION') == 'CDN':
+        enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
+    else:
+        satellite_repo = StringIO()
+        satellite_repo.write('[foreman-maintain]\n')
+        satellite_repo.write('name=foreman-maintain\n')
+        satellite_repo.write('baseurl={0}\n'.format(
+            os.environ.get('MAINTAIN_REPO')
+        ))
+        satellite_repo.write('enabled=1\n')
+        satellite_repo.write('gpgcheck=0\n')
+        put(local_path=satellite_repo,
+            remote_path='/etc/yum.repos.d/foreman-maintain.repo')
+        satellite_repo.close()
+
+        # Add Sat6 repo from latest compose
+        satellite_repo = StringIO()
+        satellite_repo.write('[sat6]\n')
+        satellite_repo.write('name=satellite 6\n')
+        satellite_repo.write('baseurl={0}\n'.format(
+            os.environ.get('BASE_URL')
+        ))
+        satellite_repo.write('enabled=1\n')
+        satellite_repo.write('gpgcheck=0\n')
+        put(local_path=satellite_repo,
+            remote_path='/etc/yum.repos.d/sat6.repo')
+        satellite_repo.close()
+
+    # repolist
+    run('yum repolist')
+    # install foreman-maintain
+    run('yum install rubygem-foreman_maintain -y')
+
+
+def upgrade_using_foreman_maintain():
+    """Task which upgrades the product using foreman-maintain tool.
+
+    Environment Variables necessary to proceed Upgrade:
+    -----------------------------------------------------
+    FROM_VERSION
+        Current satellite version which will be upgraded to latest version
+
+    TO_VERSION
+        To which Satellite version to upgrade.
+        e.g '6.2','6.3'
+    """
+    # z stream upgrade
+    if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
+        run('foreman-maintain upgrade run --target-version {} -y'.format(
+            os.environ.get('TO_VERSION') + ".z"))
+    else:
+        run('foreman-maintain upgrade run --target-version {} -y'.format(
+            os.environ.get('TO_VERSION')))

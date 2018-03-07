@@ -18,7 +18,7 @@ and associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.common import run_to_upgrade
+from upgrade_tests.helpers.common import existence, run_to_upgrade
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -40,7 +40,7 @@ def test_positive_smart_variables_by_name(pre, post):
     :expectedresults: All smart variables should be retained post upgrade by
         names
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @run_to_upgrade('6.2')
@@ -53,7 +53,7 @@ def test_positive_smart_variables_by_default_value(pre, post):
     :expectedresults: All smart variables default values should be retained
         post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @run_to_upgrade('6.2')
@@ -66,7 +66,7 @@ def test_positive_smart_variables_by_type(pre, post):
     :expectedresults: All smart variables override check should be retained
         post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @run_to_upgrade('6.2')
@@ -80,4 +80,4 @@ def test_positive_smart_variables_by_puppet_class(pre, post):
     :expectedresults: All smart variables associations with puppet classes
         should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

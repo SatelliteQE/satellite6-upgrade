@@ -17,6 +17,7 @@
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -34,7 +35,7 @@ def test_positive_os_by_title(pre, post):
 
     :expectedresults: All OS should be retained post upgrade by their title
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", os_fam, ids=pytest_ids(os_fam))
@@ -45,4 +46,4 @@ def test_positive_os_by_family(pre, post):
 
     :expectedresults: All OS should be retained post upgrade by their families
     """
-    assert pre == post
+    assert existence(pre, post)

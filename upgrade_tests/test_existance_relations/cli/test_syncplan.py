@@ -18,6 +18,7 @@ association post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -37,7 +38,7 @@ def test_positive_syncplans_by_name(pre, post):
 
     :expectedresults: All sync plans should be retained post upgrade by names
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", sp_sd, ids=pytest_ids(sp_sd))
@@ -48,7 +49,7 @@ def test_positive_syncplans_by_start_date(pre, post):
 
     :expectedresults: All sync plans start date should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", sp_interval, ids=pytest_ids(sp_interval))
@@ -60,7 +61,7 @@ def test_positive_syncplans_by_interval(pre, post):
     :expectedresults: All sync plans interval time should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", sp_enable, ids=pytest_ids(sp_enable))
@@ -72,4 +73,4 @@ def test_positive_syncplans_by_enablement(pre, post):
     :expectedresults: All sync plans enablement and disablement should be
         retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

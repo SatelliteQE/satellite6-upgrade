@@ -17,6 +17,7 @@
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -33,4 +34,4 @@ def test_positive_gpg_keys_by_name(pre, post):
 
     :expectedresults: All gpg keys should be retained post upgrade by names
     """
-    assert pre == post
+    assert existence(pre, post)

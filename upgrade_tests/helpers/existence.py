@@ -4,7 +4,6 @@ post upgrade
 import csv
 import json
 import os
-import pytest
 
 from automation_tools.satellite6.hammer import (
     hammer,
@@ -322,8 +321,7 @@ def compare_postupgrade(component, attribute):
                 else postupgrade_entity
             culprit_ver = ' in preupgrade version' if 'missing' \
                 in preupgrade_entity else ' in postupgrade version'
-            entity_values.append(
-                pytest.fail(culprit+culprit_ver))
+            entity_values.append((culprit, culprit_ver))
         else:
             entity_values.append((preupgrade_entity, postupgrade_entity))
     return entity_values

@@ -18,8 +18,8 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
-from upgrade_tests.helpers.variants import assert_varients
 
 # Required Data
 component = 'filter'
@@ -40,7 +40,7 @@ def test_positive_filters_by_resource_type(pre, post):
     :expectedresults: All filters of all roles should be retained post upgrade
         by resource types
     """
-    assert assert_varients(component, pre, post)
+    assert existence(pre, post, component)
 
 
 @pytest.mark.parametrize("pre,post", fil_search, ids=pytest_ids(fil_search))
@@ -52,7 +52,7 @@ def test_positive_filters_by_search(pre, post):
     :expectedresults: All filters search criteria should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize(
@@ -65,7 +65,7 @@ def test_positive_filters_by_unlimited_check(pre, post):
     :expectedresults: All filters unlimited criteria should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", fil_role, ids=pytest_ids(fil_role))
@@ -77,7 +77,7 @@ def test_positive_filters_by_role(pre, post):
     :expectedresults: All filters association with role should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", fil_perm, ids=pytest_ids(fil_perm))
@@ -89,4 +89,4 @@ def test_positive_filters_by_permissions(pre, post):
     :expectedresults: All filters all permissions should be retained post
         upgrade
     """
-    assert assert_varients(component, pre, post)
+    assert existence(pre, post, component)

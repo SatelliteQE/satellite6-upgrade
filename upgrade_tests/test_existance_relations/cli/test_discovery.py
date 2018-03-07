@@ -19,6 +19,7 @@ its relations post upgrade
 """
 import os
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -43,7 +44,7 @@ def test_positive_discovery_by_name(pre, post):
     :expectedresults: All architectures should be retained post upgrade by
         names
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", dis_mac, ids=pytest_ids(dis_mac))
@@ -54,7 +55,7 @@ def test_positive_discovery_by_mac(pre, post):
 
     :expectedresults: All discovered hosts mac should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", dis_cpus, ids=pytest_ids(dis_cpus))
@@ -65,7 +66,7 @@ def test_positive_discovery_by_cpus(pre, post):
 
     :expectedresults: All discovered hosts cpus should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", dis_mem, ids=pytest_ids(dis_mem))
@@ -77,7 +78,7 @@ def test_positive_discovery_by_memory(pre, post):
     :expectedresults: All discovered hosts memory allocation should be retained
         post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", dis_disks, ids=pytest_ids(dis_disks))
@@ -89,7 +90,7 @@ def test_positive_discovery_by_disc_counts(pre, post):
     :expectedresults: All discovered hosts disk counts should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", dis_size, ids=pytest_ids(dis_size))
@@ -101,7 +102,7 @@ def test_positive_discovery_by_disc_size(pre, post):
     :expectedresults: All discovered hosts disk size should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", dis_subnet, ids=pytest_ids(dis_subnet))
@@ -115,4 +116,4 @@ def test_positive_discovery_by_subnet(pre, post):
     """
     if to_version == '6.3':
         post = post.split(' (')[0]
-    assert pre == post
+    assert existence(pre, post)

@@ -18,6 +18,7 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -34,7 +35,7 @@ def test_positive_compute_resources_by_name(pre, post):
 
     :expectedresults: All compute resources should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize(
@@ -47,4 +48,4 @@ def test_positive_compute_resources_by_provider(pre, post):
     :expectedresults: All compute resources provider should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

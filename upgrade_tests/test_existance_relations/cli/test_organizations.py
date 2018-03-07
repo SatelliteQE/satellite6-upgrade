@@ -18,6 +18,7 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from robozilla.decorators import pytest_skip_if_bug_open
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
@@ -38,7 +39,7 @@ def test_positive_organizations_by_id(pre, post):
 
     :expectedresults: All organizations should be retained post upgrade by id's
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", org_name, ids=pytest_ids(org_name))
@@ -50,7 +51,7 @@ def test_positive_organizations_by_name(pre, post):
     :expectedresults: All organizations should be retained post upgrade by
         names
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", org_label, ids=pytest_ids(org_label))
@@ -62,7 +63,7 @@ def test_positive_organizations_by_label(pre, post):
     :expectedresults: All organizations should be retained post upgrade by
         labels
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest_skip_if_bug_open('bugzilla', 1461455)
@@ -75,4 +76,4 @@ def test_positive_organizations_by_description(pre, post):
     :expectedresults: All organizations descriptions should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

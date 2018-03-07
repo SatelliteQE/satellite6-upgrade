@@ -20,7 +20,7 @@ associations post upgrade
 import pytest
 
 from robozilla.decorators import pytest_skip_if_bug_open
-from upgrade_tests.helpers.common import run_to_upgrade
+from upgrade_tests.helpers.common import existence, run_to_upgrade
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -46,7 +46,7 @@ def test_positive_cvs_by_repository_ids(pre, post):
         pre = sorted([num.strip() for num in pre.split(',')])
     if ',' in post:
         post = sorted([num.strip() for num in post.split(',')])
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", cvs_label, ids=pytest_ids(cvs_label))
@@ -57,7 +57,7 @@ def test_positive_cvs_by_label(pre, post):
 
     :expectedresults: All CVs should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @run_to_upgrade('6.2')
@@ -70,7 +70,7 @@ def test_positive_cvs_by_composite_views(pre, post):
 
     :expectedresults: All composite CVs should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", cvs_name, ids=pytest_ids(cvs_name))
@@ -81,4 +81,4 @@ def test_positive_cvs_by_name(pre, post):
 
     :expectedresults: All CVs should be retained post upgrade by their name
     """
-    assert pre == post
+    assert existence(pre, post)

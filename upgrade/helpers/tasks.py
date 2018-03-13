@@ -461,8 +461,19 @@ def upgrade_using_foreman_maintain():
         To which Satellite version to upgrade.
         e.g '6.2','6.3'
     """
-    # z stream upgrade
+    # setup hammer config
+    if os.environ.get('FROM_VERSION') != "6.3":
+        run('mkdir -p /root/.hammer/cli.modules.d')
+        hammer_file = StringIO()
+        hammer_file.write('--- \n')
+        hammer_file.write(' :foreman: \n')
+        hammer_file.write('  :username: admin\n')
+        hammer_file.write('  :password: changeme \n')
+        put(local_path=hammer_file,
+            remote_path='/root/.hammer/cli.modules.d/foreman.yml')
+        hammer_file.close()
     if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
+        # z stream upgrade
         run('foreman-maintain upgrade run --target-version {} -y'.format(
             os.environ.get('TO_VERSION') + ".z"))
     else:

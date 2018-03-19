@@ -52,15 +52,12 @@ def get_rhevm_client():
         sys.exit(1)
 
 
-def create_rhevm_instance(instance_name, template_name, datacenter='Default',
-                          quota='admin', cluster='Default', timeout=5):
+def create_rhevm_instance(instance_name, template_name, datacenter=None,
+                          cluster=None, timeout=5):
     """Creates rhevm Instance from template.
 
     The assigning template should have network and storage configuration saved
     already.
-
-    ssh_key should be added to openstack project before running automation.
-    Else the automation will fail.
 
     The following environment variables affect this command:
 
@@ -70,24 +67,33 @@ def create_rhevm_instance(instance_name, template_name, datacenter='Default',
         The password of a rhevm project to login.
     RHEV_URL
         An url to API of rhevm project.
+    RHEV_DATACENTER
+        Datacenter name in RHEV where instance is created
+    RHEV_CLUSTER
+        Cluster name in RHEV where instance is created
 
     :param instance_name: A string. RHEVM Instance name to create.
     :param template_name: A string. RHEVM image name from which instance
         to be created.
+    :param datacenter: A string. Name of the datacenter in rhevm
+    :param cluster: A string. Name of the cluster in rhevm
     :param int timeout: The polling timeout in minutes to create rhevm
     instance.
     """
+    if not datacenter:
+        datacenter = os.environ.get('RHEV_DATACENTER')
+    if not cluster:
+        cluster = os.environ.get('RHEV_CLUSTER')
     rhevm_client = get_rhevm_client()
     template = rhevm_client.templates.get(name=template_name)
     datacenter = rhevm_client.datacenters.get(name=datacenter)
-    quota = datacenter.quotas.get(name=quota)
     logger.info('Turning on instance {0} from template {1}. Please wait '
                 'till get up ...'.format(instance_name, template_name))
     rhevm_client.vms.add(
         params.VM(
             name=instance_name,
-            cluster=rhevm_client.clusters.get(name=cluster),
-            template=template, quota=quota))
+            cluster=rhevm_client.clusters.get(cluster),
+            template=template))
     if wait_till_rhevm_instance_status(
             instance_name, 'down', timeout=timeout):
         rhevm_client.vms.get(name=instance_name).start()

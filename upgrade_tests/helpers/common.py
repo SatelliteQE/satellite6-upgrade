@@ -39,7 +39,7 @@ def run_to_upgrade(version):
     :return: If the version and FROM_VERSION doesnt matches then
         pytests skip test
     """
-    allowed_versions = ('6.0', '6.1', '6.2')
+    allowed_versions = ('6.0', '6.1', '6.2', '6.3')
     if version not in allowed_versions:
         raise VersionException(
             'Wrong sat version provided to run this test. Provide one of '

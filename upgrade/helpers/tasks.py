@@ -56,9 +56,9 @@ def check_necessary_env_variables_for_upgrade(product):
         failure.append('Product name should be one of {0}.'.format(
             ', '.join(products)))
     # From which version to upgrade
-    if os.environ.get('FROM_VERSION') not in ['6.2', '6.1', '6.0']:
+    if os.environ.get('FROM_VERSION') not in ['6.3', '6.2', '6.1', '6.0']:
         failure.append('Wrong FROM_VERSION provided to upgrade from. '
-                       'Provide one of 6.2, 6.1, 6.0.')
+                       'Provide one of 6.3, 6.2, 6.1, 6.0')
     # To which version to upgrade
     if os.environ.get('TO_VERSION') not in ['6.1', '6.2', '6.3']:
         failure.append('Wrong TO_VERSION provided to upgrade to. '

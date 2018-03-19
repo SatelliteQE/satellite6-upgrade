@@ -88,10 +88,10 @@ def product_upgrade(product):
 
     FROM_VERSION
         The satellite/capsule current version to upgrade to latest.
-        e.g '6.1','6.0'
+        e.g '6.2','6.1'
     TO_VERSION
         To which Satellite/Capsule version to upgrade.
-        e.g '6.1','6.2'
+        e.g '6.3','6.2'
     OS
         The OS Version on which the satellite is installed.
         e.g 'rhel7','rhel6'

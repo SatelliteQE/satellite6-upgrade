@@ -18,6 +18,7 @@ post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from robozilla.decorators import pytest_skip_if_bug_open
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
@@ -37,7 +38,7 @@ def test_positive_contenthosts_by_name(pre, post):
     :expectedresults: All content hosts should be retained post upgrade by
         names
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest_skip_if_bug_open('bugzilla', 1461397)
@@ -50,4 +51,4 @@ def test_positive_installable_erratas_by_name(pre, post):
     :expectedresults: All chosts installable erratas should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

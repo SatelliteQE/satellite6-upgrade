@@ -18,6 +18,7 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -36,7 +37,7 @@ def test_positive_subnets_by_name(pre, post):
 
     :expectedresults: All subnets should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", sub_network, ids=pytest_ids(sub_network))
@@ -47,7 +48,7 @@ def test_positive_subnets_by_network(pre, post):
 
     :expectedresults: All subnets network ip's should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", sub_mask, ids=pytest_ids(sub_mask))
@@ -58,4 +59,4 @@ def test_positive_subnets_by_mask(pre, post):
 
     :expectedresults: All subnets masks should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

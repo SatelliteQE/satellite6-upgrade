@@ -18,6 +18,7 @@ its associations post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -40,8 +41,7 @@ def test_positive_discovery_rules_by_name(pre, post):
     :expectedresults: All discovery rules should be retained post upgrade by
         names
     """
-    print pre if pre else "OMG"
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", drule_prio, ids=pytest_ids(drule_prio))
@@ -53,7 +53,7 @@ def test_positive_discovery_rules_by_priority(pre, post):
     :expectedresults: All discovery rules priorities should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize(
@@ -66,7 +66,7 @@ def test_positive_discovery_rules_by_search(pre, post):
     :expectedresults: All discovery rules search should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", drule_hg, ids=pytest_ids(drule_hg))
@@ -79,7 +79,7 @@ def test_positive_discovery_rules_by_hostgroup(pre, post):
     :expectedresults: All discovery rules hostgroups should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", drule_hl, ids=pytest_ids(drule_hl))
@@ -91,7 +91,7 @@ def test_positive_discovery_rules_by_hostslimit(pre, post):
     :expectedresults: All discovery rules hosts limit should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize(
@@ -105,4 +105,4 @@ def test_positive_discovery_rules_by_enablement(pre, post):
     :expectedresults: All discovery rules enablement and disablement should be
         retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

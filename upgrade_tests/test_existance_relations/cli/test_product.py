@@ -18,6 +18,7 @@ post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -35,7 +36,7 @@ def test_positive_products_by_name(pre, post):
 
     :expectedresults: All products should be retained post upgrade by names
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", prod_repo, ids=pytest_ids(prod_repo))
@@ -48,4 +49,4 @@ def test_positive_products_by_repositories(pre, post):
     :expectedresults: Repositories of all products should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

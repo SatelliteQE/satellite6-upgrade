@@ -19,6 +19,7 @@ associations post upgrade
 """
 import pytest
 from robozilla.decorators import pytest_skip_if_bug_open
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -40,7 +41,7 @@ def test_positive_hosts_by_ip(pre, post):
     :expectedresults: IP of each host should be associated to its respective
         host post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest_skip_if_bug_open('bugzilla', 1289510)
@@ -53,7 +54,7 @@ def test_positive_hosts_by_mac(pre, post):
     :expectedresults: MAC of each host should be associated to its respective
         host post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", host_hg, ids=pytest_ids(host_hg))
@@ -65,7 +66,7 @@ def test_positive_hosts_by_hostgroup(pre, post):
     :expectedresults: HostGroup of each host should be associated to its
         respective host post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", host_os, ids=pytest_ids(host_os))
@@ -77,7 +78,7 @@ def test_positive_hosts_by_operating_system(pre, post):
     :expectedresults: OS of each host should be associated to its respective
         host post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", host_name, ids=pytest_ids(host_name))
@@ -88,4 +89,4 @@ def test_positive_hosts_by_name(pre, post):
 
     :expectedresults: All hosts should be retained post upgrade by their names
     """
-    assert pre == post
+    assert existence(pre, post)

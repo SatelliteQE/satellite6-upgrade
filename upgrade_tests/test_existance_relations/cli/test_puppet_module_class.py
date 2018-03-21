@@ -18,6 +18,7 @@ existence post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -37,7 +38,7 @@ def test_positive_puppet_classes_by_name(pre, post):
     :expectedresults: All puppet classes should be retained post upgrade by
         names
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", pm_name, ids=pytest_ids(pm_name))
@@ -49,4 +50,4 @@ def test_positive_puppet_modules_by_name(pre, post):
     :expectedresults: All puppet modules should be retained post upgrade by
         names
     """
-    assert pre == post
+    assert existence(pre, post)

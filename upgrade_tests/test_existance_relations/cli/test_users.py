@@ -18,6 +18,7 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -36,7 +37,7 @@ def test_positive_users_by_name(pre, post):
 
     :expectedresults: All users should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", user_login, ids=pytest_ids(user_login))
@@ -47,7 +48,7 @@ def test_positive_users_by_login(pre, post):
 
     :expectedresults: All users login name should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", user_email, ids=pytest_ids(user_email))
@@ -58,4 +59,4 @@ def test_positive_users_by_email(pre, post):
 
     :expectedresults: All users email should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

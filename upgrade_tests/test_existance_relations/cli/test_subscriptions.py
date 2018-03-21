@@ -19,8 +19,8 @@ upgrade
 """
 import os
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
-from upgrade_tests.helpers.variants import assert_varients
 
 # Required Data
 component = 'subscription'
@@ -42,7 +42,7 @@ def test_positive_subscriptions_by_name(pre, post):
     :expectedresults: All subscriptions should be retained post upgrade by
         names
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", sub_uuid, ids=pytest_ids(sub_uuid))
@@ -53,7 +53,7 @@ def test_positive_subscriptions_by_uuid(pre, post):
 
     :expectedresults: All subscriptions uuids should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", sub_support, ids=pytest_ids(sub_support))
@@ -65,7 +65,7 @@ def test_positive_subscriptions_by_support(pre, post):
     :expectedresults: All subscriptions support status should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", sub_qntity, ids=pytest_ids(sub_qntity))
@@ -77,7 +77,7 @@ def test_positive_subscriptions_by_quantity(pre, post):
     :expectedresults: All subscriptions quantities should be retained post
         upgrade
     """
-    assert assert_varients(component, pre, post)
+    assert existence(pre, post, component)
 
 
 @pytest.mark.parametrize("pre,post", sub_consume, ids=pytest_ids(sub_consume))
@@ -89,7 +89,7 @@ def test_positive_subscriptions_by_consumed(pre, post):
     :expectedresults: All subscriptions consumed status should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", sub_edate, ids=pytest_ids(sub_edate))
@@ -109,4 +109,4 @@ def test_positive_subscriptions_by_end_date(pre, post):
         pre = ' '.join(
             [splited_pre[0].replace('-', '/'), splited_pre[1].split('.')[0]]
         )
-    assert pre == post
+    assert existence(pre, post)

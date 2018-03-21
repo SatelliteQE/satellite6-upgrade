@@ -18,6 +18,7 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 
@@ -39,7 +40,7 @@ def test_positive_aks_by_content_view(pre, post):
 
     :expectedresults: CV of all AKs should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", aks_lc, ids=pytest_ids(aks_lc))
@@ -50,7 +51,7 @@ def test_positive_aks_by_lc(pre, post):
 
     :expectedresults: LC of all AKs should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", aks_name, ids=pytest_ids(aks_name))
@@ -61,7 +62,7 @@ def test_positive_aks_by_name(pre, post):
 
     :expectedresults: AKs should be existing by their names post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", aks_hl, ids=pytest_ids(aks_hl))
@@ -73,4 +74,4 @@ def test_positive_aks_by_host_limit(pre, post):
     :expectedresults: Subscription consumptions by hosts of all AKs should be
         retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

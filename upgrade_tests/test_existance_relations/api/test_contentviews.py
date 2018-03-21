@@ -18,6 +18,7 @@ post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -35,4 +36,4 @@ def test_positive_cv_by_chosts_count(pre, post):
     :expectedresults: Content Hosts of all CVs should be retained post
         upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

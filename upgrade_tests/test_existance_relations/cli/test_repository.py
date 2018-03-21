@@ -18,6 +18,7 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
+from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -36,7 +37,7 @@ def test_positive_repositories_by_name(pre, post):
 
     :expectedresults: All repositories should be retained post upgrade by names
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", repo_prod, ids=pytest_ids(repo_prod))
@@ -49,7 +50,7 @@ def test_positive_repositories_by_product(pre, post):
     :expectedresults: All repositories association to its product should be
         retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", repo_ctype, ids=pytest_ids(repo_ctype))
@@ -60,4 +61,4 @@ def test_positive_repositories_by_url(pre, post):
 
     :expectedresults: All repositories urls should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

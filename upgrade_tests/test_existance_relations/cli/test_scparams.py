@@ -18,7 +18,7 @@
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.common import run_to_upgrade
+from upgrade_tests.helpers.common import run_to_upgrade, existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 
@@ -40,7 +40,7 @@ def test_positive_smart_params_by_name(pre, post):
     :expectedresults: All smart parameters should be retained post upgrade by
         names
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", scp_dval, ids=pytest_ids(scp_dval))
@@ -52,7 +52,7 @@ def test_positive_smart_params_by_default_value(pre, post):
     :expectedresults: All smart parameters default values should be retained
         post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @pytest.mark.parametrize("pre,post", scp_ovrde, ids=pytest_ids(scp_ovrde))
@@ -64,7 +64,7 @@ def test_positive_smart_params_by_override(pre, post):
     :expectedresults: All smart parameters override check should be retained
         post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)
 
 
 @run_to_upgrade('6.2')
@@ -78,4 +78,4 @@ def test_positive_smart_params_by_puppet_class(pre, post):
     :expectedresults: All smart parameters associations with puppet classes
         should be retained post upgrade
     """
-    assert pre == post
+    assert existence(pre, post)

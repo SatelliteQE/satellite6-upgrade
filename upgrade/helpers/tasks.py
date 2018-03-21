@@ -414,6 +414,7 @@ def setup_foreman_maintain():
     BASE_URL
         URL for the compose repository if distribution is DOWNSTREAM
     """
+    env.disable_known_hosts = True
     # setting up foreman-maintain repo
     if os.environ.get('DISTRIBUTION') == 'CDN':
         enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
@@ -461,6 +462,7 @@ def upgrade_using_foreman_maintain():
         To which Satellite version to upgrade.
         e.g '6.2','6.3'
     """
+    env.disable_known_hosts = True
     # setup hammer config
     if os.environ.get('FROM_VERSION') != "6.3":
         run('mkdir -p /root/.hammer/cli.modules.d')

@@ -2,6 +2,7 @@ fauxfactory==2.0.9
 ovirt-engine-sdk-python==3.6.8.0
 python-novaclient
 robozilla
+shade
 
 # Get automation-tools from master
 git+https://github.com/SatelliteQE/automation-tools#egg=automation-tools

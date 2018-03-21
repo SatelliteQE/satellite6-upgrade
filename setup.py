@@ -30,6 +30,7 @@ setup(
         'python-novaclient',
         'requests',
         'robozilla'
+        'shade'
     ],
     license='GNU GPL v3.0',
     classifiers=(

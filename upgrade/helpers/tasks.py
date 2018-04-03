@@ -7,6 +7,7 @@ import os
 import sys
 import time
 from automation_tools import (
+    foreman_debug,
     setup_alternate_capsule_ports,
     setup_fake_manifest_certificate,
 )
@@ -29,6 +30,7 @@ from automation_tools.satellite6.hammer import (
     hammer_repository_synchronize,
     set_hammer_config
 )
+from automation_tools.satellite6.log import LogAnalyzer
 from automation_tools.utils import get_discovery_image
 from robozilla.decorators import bz_bug_is_open
 from upgrade.helpers.logger import logger
@@ -474,10 +476,22 @@ def upgrade_using_foreman_maintain():
         put(local_path=hammer_file,
             remote_path='/root/.hammer/cli.modules.d/foreman.yml')
         hammer_file.close()
-    if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
-        # z stream upgrade
-        run('foreman-maintain upgrade run --target-version {} -y'.format(
-            os.environ.get('TO_VERSION') + ".z"))
-    else:
-        run('foreman-maintain upgrade run --target-version {} -y'.format(
-            os.environ.get('TO_VERSION')))
+
+    try:
+        with LogAnalyzer(os.environ.get('SATELLITE_HOSTNAME')):
+            if os.environ.get('FROM_VERSION') != os.environ.get('TO_VERSION'):
+                run('foreman-maintain upgrade run --target-version {}'
+                    ' -y'.format(os.environ.get('TO_VERSION')))
+            else:
+                run('foreman-maintain upgrade run --target-version {}'
+                    ' -y'.format(os.environ.get('TO_VERSION') + ".z"))
+            # Generate foreman debug on satellite after upgrade
+            execute(foreman_debug, 'satellite_{}'.format(
+                os.environ.get('SATELLITE_HOSTNAME')),
+                host=os.environ.get('SATELLITE_HOSTNAME'))
+    except Exception:
+        # Generate foreman debug on failed satellite upgrade
+        execute(foreman_debug, 'satellite_{}'.format(
+            os.environ.get('SATELLITE_HOSTNAME')),
+            host=os.environ.get('SATELLITE_HOSTNAME'))
+        raise

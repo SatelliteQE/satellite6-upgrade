@@ -1,5 +1,7 @@
 """Module which publish all satellite6 upgrade tasks"""
 
+from automation_tools import partition_disk
+
 from upgrade.runner import ( # flake8: noqa
     product_upgrade,
     setup_products_for_upgrade

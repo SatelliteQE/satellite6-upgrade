@@ -6,6 +6,8 @@ all environment variables are required.
 import os
 import sys
 import time
+import socket
+
 from automation_tools import (
     foreman_debug,
     setup_alternate_capsule_ports,
@@ -476,7 +478,6 @@ def upgrade_using_foreman_maintain():
         put(local_path=hammer_file,
             remote_path='/root/.hammer/cli.modules.d/foreman.yml')
         hammer_file.close()
-
     try:
         with LogAnalyzer(os.environ.get('SATELLITE_HOSTNAME')):
             if os.environ.get('FROM_VERSION') != os.environ.get('TO_VERSION'):
@@ -495,3 +496,20 @@ def upgrade_using_foreman_maintain():
             os.environ.get('SATELLITE_HOSTNAME')),
             host=os.environ.get('SATELLITE_HOSTNAME'))
         raise
+    if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
+        # z stream upgrade
+        run('foreman-maintain upgrade run --target-version {} -y'.format(
+            os.environ.get('TO_VERSION') + ".z"))
+    else:
+        run('foreman-maintain upgrade run --target-version {} -y'.format(
+            os.environ.get('TO_VERSION')))
+
+
+def get_osp_hostname(ipaddr):
+    """The openstack has floating ip and we need to fetch the hostname from DNS
+    :param ipaddr : IP address of the osp box
+    """
+    try:
+        return socket.gethostbyaddr(ipaddr)[0]
+    except Exception as ex:
+        logger.error(ex)

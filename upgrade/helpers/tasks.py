@@ -513,3 +513,19 @@ def get_osp_hostname(ipaddr):
         return socket.gethostbyaddr(ipaddr)[0]
     except Exception as ex:
         logger.error(ex)
+
+
+def add_baseOS_repo(base_url):
+    """This adds the latest repo to the host to fetch latest available packages
+
+    :param base_url: Url of the latest baseos repo to be added.
+    """
+    rhel_repo = StringIO()
+    rhel_repo.write('[rhel]\n')
+    rhel_repo.write('name=rhel\n')
+    rhel_repo.write('baseurl={0}\n'.format(base_url))
+    rhel_repo.write('enabled=1\n')
+    rhel_repo.write('gpgcheck=0\n')
+    put(local_path=rhel_repo,
+        remote_path='/etc/yum.repos.d/rhel.repo')
+    rhel_repo.close()

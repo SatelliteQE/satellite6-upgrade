@@ -12,7 +12,8 @@ from upgrade.helpers.rhevm import (
     create_rhevm_instance, delete_rhevm_instance
 )
 from upgrade.helpers.tasks import (
-    sync_capsule_repos_to_upgrade
+    sync_capsule_repos_to_upgrade,
+    add_baseOS_repo
 )
 from upgrade.helpers.tools import (
     copy_ssh_key,
@@ -35,6 +36,13 @@ def satellite6_capsule_setup(sat_host, os_version, upgradable_capsule=True):
     :param bool upgradable_capsule: Whether to setup capsule to be able to
         upgrade in future
     """
+    if os_version == 'rhel6':
+        baseurl = os.environ.get('RHEL6_CUSTOM_REPO')
+    elif os_version == 'rhel7':
+        baseurl = os.environ.get('RHEL7_CUSTOM_REPO')
+    else:
+        logger.warning('No OS Specified. Terminating..')
+        sys.exit(1)
     # For User Defined Capsule
     if os.environ.get('CAPSULE_HOSTNAMES'):
         cap_hosts = os.environ.get('CAPSULE_HOSTNAMES')
@@ -81,6 +89,8 @@ def satellite6_capsule_setup(sat_host, os_version, upgradable_capsule=True):
     # Dont run capsule upgrade requirements for n-1 capsule
     if upgradable_capsule:
         execute(sync_capsule_repos_to_upgrade, cap_hosts, host=sat_host)
+        for cap_host in cap_hosts:
+            execute(add_baseOS_repo, baseurl, host=cap_host)
         for cap_host in cap_hosts:
             logger.info('Capsule {} is ready for Upgrade'.format(cap_host))
     return cap_hosts

@@ -477,13 +477,27 @@ def upgrade_using_foreman_maintain():
             remote_path='/root/.hammer/cli.modules.d/foreman.yml')
         hammer_file.close()
 
-    if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
-        # z stream upgrade
-        run('foreman-maintain upgrade run --target-version {} -y'.format(
-            os.environ.get('TO_VERSION') + ".z"))
+    # whitelist foreman-tasks-not-paused and disk-performance check
+    # for 6.2 and 6.2.z upgrade.
+    if os.environ.get('TO_VERSION') == '6.2':
+        if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
+            # z stream upgrade
+            run('foreman-maintain upgrade run '
+                '--whitelist="foreman-tasks-not-paused,disk-performance" '
+                '--target-version {} '
+                '-y'.format(os.environ.get('TO_VERSION') + ".z"))
+        else:
+            run('foreman-maintain upgrade run '
+                '--whitelist="foreman-tasks-not-paused,disk-performance" '
+                '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
     else:
-        run('foreman-maintain upgrade run --target-version {} -y'.format(
-            os.environ.get('TO_VERSION')))
+        if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
+            # z stream upgrade
+            run('foreman-maintain upgrade run --target-version {} -y'.format(
+                os.environ.get('TO_VERSION') + ".z"))
+        else:
+            run('foreman-maintain upgrade run --target-version {} -y'.format(
+                os.environ.get('TO_VERSION')))
 
 
 def get_osp_hostname(ipaddr):

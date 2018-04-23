@@ -93,13 +93,13 @@ def satellite6_upgrade():
     logger.highlight('\n========== SATELLITE UPGRADE =================\n')
     to_version = os.environ.get('TO_VERSION')
     base_url = os.environ.get('BASE_URL')
-    if to_version not in ['6.1', '6.2', '6.3']:
+    if to_version not in ['6.1', '6.2', '6.3', '6.4']:
         logger.warning('Wrong Satellite Version Provided to upgrade to. '
-                       'Provide one of 6.1, 6.2, 6.3')
+                       'Provide one of 6.1, 6.2, 6.3, 6.4')
         sys.exit(1)
     major_ver = distro_info()[1]
     if os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == 'true' \
-            and os.environ.get('OS') == 'rhel7':
+            and os.environ.get('OS') == 'rhel7' and to_version != '6.4':
         if base_url is None:
             os.environ['DISTRIBUTION'] = "CDN"
         else:

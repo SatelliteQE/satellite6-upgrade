@@ -32,6 +32,7 @@ dis_disks = compare_postupgrade(component, 'disk count')
 dis_size = compare_postupgrade(component, 'disks size')
 dis_subnet = compare_postupgrade(component, 'subnet')
 to_version = os.environ.get('TO_VERSION')
+from_version = os.environ.get('FROM_VERSION')
 
 
 # Tests
@@ -114,6 +115,6 @@ def test_positive_discovery_by_subnet(pre, post):
     :expectedresults: All discovered hosts subnet should be retained post
         upgrade
     """
-    if to_version == '6.3':
-        post = post.split(' (')[0]
+    post = post.split(' (')[0] if to_version == '6.3' else post
+    pre = post.split(' (')[0] if from_version == '6.3' else pre
     assert existence(pre, post)

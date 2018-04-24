@@ -41,7 +41,7 @@ def csv_reader(component, subcommand):
     data = execute(
         hammer, '{0} {1}'.format(component, subcommand), 'csv', host=sat_host
     )[sat_host]
-    csv_read = csv.DictReader(str(data.encode('utf-8')).lower().split('\n'))
+    csv_read = csv.DictReader(data.lower().split('\n'))
     for row in csv_read:
         entity_list.append(row)
     comp_dict[component] = entity_list
@@ -189,14 +189,13 @@ def set_datastore(datastore, endpoint):
         raise IncorrectEndpointException(
             'Endpoints has to be one of {}'.format(allowed_ends))
     if endpoint == 'cli':
-        org = os.environ.get('ORGANIZATION', 'Default_Organization')
         nonorged_comps_data = [
             csv_reader(
                 component, 'list') for component in cli_const.components[
                 'org_not_required']]
         orged_comps_data = [
             csv_reader(
-                component, 'list --organization {}'.format(org)
+                component, 'list --organization-id 1'
                 ) for component in cli_const.components['org_required']
         ]
         all_comps_data = nonorged_comps_data + orged_comps_data

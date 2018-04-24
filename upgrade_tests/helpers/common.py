@@ -56,7 +56,7 @@ def existence(pre, post, component=None):
         pre = str(pre)
         post = str(post)
     if ('missing' in pre) or ('missing' in post):
-            pytest.fail(msg='{0}{1}'.format(pre, post))
+        pytest.fail(msg='{0}{1}'.format(pre, post))
     elif component:
         return assert_varients(component, pre, post)
     else:

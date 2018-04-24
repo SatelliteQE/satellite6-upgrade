@@ -21,19 +21,22 @@ class VersionError(Exception):
 #
 # Note: The variants should be listed from 6.1 onwards
 _entity_varients = {
-    # Filter component variants
     'filter': [
-        ['lookupkey', 'variablelookupkey'],
-        ['(miscellaneous)', 'foremanopenscap::arfreport'],
-        ['organization', 'katello::subscription'],
-        ['configtemplate', 'provisioningtemplate'],
+        # Resource Type Variants
+        ['lookupkey', 'variablelookupkey', 'variablelookupkey'],
+        ['(miscellaneous)', 'foremanopenscap::arfreport',
+         'foremanopenscap::arfreport'],
+        ['organization', 'katello::subscription', 'katello::subscription'],
+        ['configtemplate', 'provisioningtemplate', 'provisioningtemplate'],
+        # Permissions Variants
         ['view_templates, create_templates, edit_templates, '
          'destroy_templates, deploy_templates',
          'view_provisioning_templates, create_provisioning_templates, '
          'edit_provisioning_templates, destroy_provisioning_templates, '
-         'deploy_provisioning_templates']
-    ],
-    # Setting Component variants
+         'deploy_provisioning_templates',
+         'view_provisioning_templates, create_provisioning_templates, '
+         'edit_provisioning_templates, destroy_provisioning_templates, '
+         'deploy_provisioning_templates']],
     'settings': [
         # Value Variants
         ['immediate', 'immediate', 'on_demand'],
@@ -92,12 +95,10 @@ _entity_varients = {
          ' machines and dns records may also be deleted.'],
         ['private key that foreman will use to encrypt websockets',
          'private key that foreman will use to encrypt websockets',
-         'private key file that foreman will use to encrypt websockets']
-    ],
-    # Subscription component Variants
+         'private key file that foreman will use to encrypt websockets']],
     'subscription': [
-        ['-1', '-1', 'unlimited']
-    ]
+        # Validity Variants
+        ['-1', '-1', 'unlimited']]
 }
 
 

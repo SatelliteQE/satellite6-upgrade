@@ -58,13 +58,14 @@ def check_necessary_env_variables_for_upgrade(product):
         failure.append('Product name should be one of {0}.'.format(
             ', '.join(products)))
     # From which version to upgrade
-    if os.environ.get('FROM_VERSION') not in ['6.3', '6.2', '6.1', '6.0']:
+    supported_vers = ['6.4', '6.3', '6.2', '6.1', '6.0']
+    if os.environ.get('FROM_VERSION') not in supported_vers:
         failure.append('Wrong FROM_VERSION provided to upgrade from. '
-                       'Provide one of 6.3, 6.2, 6.1, 6.0')
+                       'Provide one of 6.4, 6.3, 6.2, 6.1, 6.0')
     # To which version to upgrade
-    if os.environ.get('TO_VERSION') not in ['6.1', '6.2', '6.3']:
+    if os.environ.get('TO_VERSION') not in ['6.4', '6.1', '6.2', '6.3']:
         failure.append('Wrong TO_VERSION provided to upgrade to. '
-                       'Provide one of 6.1, 6.2, 6.3')
+                       'Provide one of 6.4, 6.1, 6.2, 6.3')
     # Check If OS is set for creating an instance name in rhevm
     if not os.environ.get('OS'):
         failure.append('Please provide OS version as rhel7 or rhel6, '
@@ -374,7 +375,7 @@ def capsule_sync(cap_host):
     :param list cap_host: List of capsules to perform sync
     """
     set_hammer_config()
-    if os.environ.get('TO_VERSION') in ['6.2', '6.3']:
+    if os.environ.get('TO_VERSION') in ['6.2', '6.3', '6.4']:
         logger.info('Refreshing features for capsule host {0}'.
                     format(cap_host))
         print hammer('capsule refresh-features --name "{0}"'.

@@ -1,8 +1,11 @@
 """API and CLI upgrade Tests Constants"""
+import os
+
 from nailgun import entities
 
 # FAKE REPOS
 FAKE_REPO_ZOO3 = 'http://inecas.fedorapeople.org/fakerepos/zoo3/'
+to_version = os.environ.get('TO_VERSION')
 
 
 class cli_const:
@@ -18,7 +21,8 @@ class cli_const:
             'capsule',
             'compute-resource',
             'discovery',
-            'discovery_rule',
+            'discovery-rule' if to_version in [
+                '6.3', '6.4'] else 'discovery_rule',
             'domain',
             'environment',
             'filter',

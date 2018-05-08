@@ -12,7 +12,7 @@ from automation_tools import (
     setup_alternate_capsule_ports,
     setup_fake_manifest_certificate,
 )
-from automation_tools import setup_foreman_discovery
+from automation_tools import setup_foreman_discovery, setup_avahi_discovery
 from automation_tools.repository import enable_repos
 from automation_tools.satellite6.hammer import (
     attach_subscription_to_host_from_satellite,
@@ -367,6 +367,9 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     # logger.info("Removing the Original Manifest from Default Organization")
     # execute(hammer, 'subscription delete-manifest --organization-id 1',
     #         host=sat_host)
+
+    # Run Avahi Task on upgrade boxes for REX tests to run
+    execute(setup_avahi_discovery, host=sat_host)
 
 
 def capsule_sync(cap_host):

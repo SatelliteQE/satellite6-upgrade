@@ -5,6 +5,7 @@ import json
 import time
 
 from automation_tools import manage_daemon
+from nailgun import entity_mixins
 from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
 from upgrade.helpers.rhevm import (
     create_rhevm_instance,
@@ -16,9 +17,27 @@ from fabric.api import execute
 
 rpm1 = 'https://inecas.fedorapeople.org/fakerepos/zoo3/bear-4.1-1.noarch.rpm'
 rpm2 = 'https://inecas.fedorapeople.org/fakerepos/zoo3/camel-0.1-1.noarch.rpm'
-data = {}
 
 logger = logger()
+
+
+def call_entity_method_with_timeout(entity_callable, timeout=300, **kwargs):
+    """Call Entity callable with a custom timeout
+
+    :param entity_callable, the entity method object to call
+    :param timeout: the time to wait for the method call to finish
+    :param kwargs: the kwargs to pass to the entity callable
+
+    Usage:
+        call_entity_method_with_timeout(
+            entities.Repository(id=repo_id).sync, timeout=1500)
+    """
+    original_task_timeout = entity_mixins.TASK_TIMEOUT
+    entity_mixins.TASK_TIMEOUT = timeout
+    try:
+        entity_callable(**kwargs)
+    finally:
+        entity_mixins.TASK_TIMEOUT = original_task_timeout
 
 
 def create_dict(entities_dict):
@@ -29,9 +48,15 @@ def create_dict(entities_dict):
     :param string entities_dict: A dictionary of entities created in
         satellite
     """
-    data.update(entities_dict)
-    with open('scenario_entities', 'wb') as pref:
-        json.dump(data, pref)
+    if os.path.exists('scenario_entities'):
+        with open('scenario_entities') as entities_data:
+            data = json.load(entities_data)
+        data.update(entities_dict)
+        with open('scenario_entities', 'w') as entities_data:
+            json.dump(data, entities_data)
+    else:
+        with open('scenario_entities', 'w') as entities_data:
+            json.dump(entities_dict, entities_data)
 
 
 def get_entity_data(scenario_name):

@@ -43,9 +43,9 @@ class Scenario_capsule_sync(TestCase):
     """
     cls_name = 'Scenario_capsule_sync'
     sat_host = get_satellite_host()
+    env.host_string = sat_host
     cap_host = os.environ.get(
             'RHEV_CAP_HOST', os.environ.get('CAPSULE_HOSTNAME'))
-    env.host_string = sat_host
     repo_name = 'capsulesync_TestRepo_' + cls_name
     repo_path = '/var/www/html/pub/preupgradeCapSync_repo/'
     rpm_name = rpm1.split('/')[-1]
@@ -170,9 +170,9 @@ class Scenario_capsule_sync_2(TestCase):
     """
     cls_name = 'Scenario_capsule_sync_2'
     sat_host = get_satellite_host()
+    env.host_string = sat_host
     cap_host = os.environ.get(
             'RHEV_CAP_HOST', os.environ.get('CAPSULE_HOSTNAME'))
-    env.host_string = sat_host
     repo_name = 'capsulesync_TestRepo_' + cls_name
     repo_path = '/var/www/html/pub/postupgradeCapSync_repo/'
     rpm_name = rpm2.split('/')[-1]

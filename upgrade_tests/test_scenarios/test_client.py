@@ -27,6 +27,7 @@ from upgrade.helpers.docker import docker_execute_command
 from upgrade_tests import post_upgrade, pre_upgrade
 from upgrade_tests.helpers.constants import FAKE_REPO_ZOO3
 from upgrade_tests.helpers.scenarios import (
+    call_entity_method_with_timeout,
     create_dict,
     dockerize,
     get_entity_data,
@@ -59,9 +60,10 @@ def create_activation_key_for_client_registration(
         name=rhel_repo_name,
         product=rhel_prod,
         url=rhel_url,
-        content_type='yum'
+        content_type='yum',
+        verify_ssl_on_sync=False
     ).create()
-    rhel_repo.sync()
+    call_entity_method_with_timeout(rhel_repo.sync, timeout=1400)
     if sat_state.lower() == 'pre':
         from_ver = os.environ.get('FROM_VERSION')
         product_name = 'Red Hat Enterprise Linux Server'

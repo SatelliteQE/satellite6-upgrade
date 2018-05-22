@@ -115,6 +115,8 @@ def sync_capsule_repos_to_upgrade(capsules):
     from_version = os.environ.get('FROM_VERSION')
     to_version = os.environ.get('TO_VERSION')
     os_ver = os.environ.get('OS')[-1]
+    if to_version in ['6.4', '6.3']:
+        tools_repo_url = os.environ.get('TOOLS_URL_RHEL7')
     activation_key = os.environ.get(
         'CAPSULE_AK', os.environ.get('RHEV_CAPSULE_AK'))
     if activation_key is None:
@@ -153,6 +155,41 @@ def sync_capsule_repos_to_upgrade(capsules):
     except KeyError:
         # If latest capsule repo is not created already(Fresh Upgrade),
         # So create new....
+        if to_version in ['6.4', '6.3']:
+            rhscl_repo = 'Red Hat Software Collections RPMs for Red Hat ' \
+                         'Enterprise Linux 7 Server'
+            rhscl_prd = 'Red Hat Software Collections for RHEL Server'
+            hammer('repository-set enable --name "{0}" '
+                   '--product "{1}" '
+                   '--organization-id 1 '
+                   '--basearch "x86_64" '
+                   '--releasever 7Server'.format(rhscl_repo,
+                                                 rhscl_prd)
+                   )
+            hammer_repository_synchronize(rhscl_repo, '1', rhscl_prd)
+            if tools_repo_url:
+                capsule_tools = 'Capsule Tools Product'
+                capsule_tools_repo = 'Capsule Tools Repo'
+                hammer_product_create(capsule_tools, '1')
+                time.sleep(2)
+                hammer_repository_create(
+                    capsule_tools_repo, '1', capsule_tools, tools_repo_url)
+            else:
+                tools_prd = 'Red Hat Enterprise Linux Server'
+                tools_repo = 'Red Hat Satellite Tools {0} ' \
+                             '(for RHEL {1} Server) (RPMs)'.format(to_version,
+                                                                   os_ver
+                                                                   )
+                hammer_repository_set_enable(
+                    tools_repo, tools_prd, '1', 'x86_64')
+            hammer_repository_synchronize(capsule_tools_repo,
+                                          '1',
+                                          capsule_tools
+                                          )
+            hammer_content_view_add_repository(
+                cv_name, '1', rhscl_prd, rhscl_repo)
+            hammer_content_view_add_repository(
+                cv_name, '1', capsule_tools, capsule_tools_repo)
         if capsule_repo:
             hammer_product_create(product_name, '1')
             time.sleep(2)

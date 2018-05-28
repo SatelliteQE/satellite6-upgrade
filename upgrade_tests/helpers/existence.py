@@ -133,29 +133,35 @@ def _find_on_list_of_dicts(lst, data_key, all_=False):
             data_key))
 
 
-def _find_on_list_of_dicts_using_search_key(lst_of_dct, search_key, attr):
+def _find_on_list_of_dicts_using_search_criteria(
+        lst_of_dct, search_criteria, attr):
     """Returns the value of attr key in a dictionary from the list of
-    dictionaries with the help of search_key.
+    dictionaries with the help of search_critria.
 
     To retrieve the value search key and the attribute should be in the
     same dictionary
 
     :param list lst_of_dct: A list of dictionaries
-    :param str search_key: A value of any unique key in dictionary in list of
-        dictionary.
-        The value will be used to fetch another keys value from same dictionary
+    :param dict search_criteria: A dictionary contains the search criteria
+        where key is the attribute and value is that attribute value. This dict
+        will be used to fetch another key values from list of dictionaries.
     :param str attr: The key name in dictionary in which search_key exists in
         list of dictionaries
     :returns the value of given attr key from a dictionary where search_key
         exists as value of another key
 
     """
+    search_key = search_criteria.keys()[0]
+    search_value = search_criteria.values()[0]
     for single_dict in lst_of_dct:
-        for k, v in single_dict.items():
-            if search_key == str(v):
+        for key, value in single_dict.items():
+            if search_value == str(value) and key == search_key:
                 return single_dict.get(
-                    attr, '{} attribute missing'.format(attr))
-    return '{} entity missing'.format(search_key)
+                    attr,
+                    '{0} attribute missing for {1} : {2}'.format(
+                        attr, search_key, search_value)
+                )
+    return '{0} : {1} entity missing'.format(search_key, search_value)
 
 
 def set_datastore(datastore, endpoint):
@@ -237,7 +243,7 @@ def get_datastore(datastore, endpoint):
         return json.load(ds)
 
 
-def find_datastore(datastore, component, attribute, search_key=None):
+def find_datastore(datastore, component, attribute, search_criteria=None):
     """Returns a particular sat component property attribute or all attribute
     values of component property
 
@@ -262,16 +268,15 @@ def find_datastore(datastore, component, attribute, search_key=None):
     """
     # Lower the keys and attributes
     component = component.lower() if component is not None else component
-    search_key = search_key.lower() if search_key is not None else search_key
     attribute = attribute.lower() if attribute is not None else attribute
     # Fetching Process
     comp_data = _find_on_list_of_dicts(datastore, component)
     if isinstance(comp_data, list):
-        if (search_key is None) and attribute:
+        if (search_criteria is None) and attribute:
             return _find_on_list_of_dicts(comp_data, attribute, all_=True)
-        if all([search_key, attribute]):
-            return _find_on_list_of_dicts_using_search_key(
-                comp_data, search_key, attribute)
+        if all([search_criteria, attribute]):
+            return _find_on_list_of_dicts_using_search_criteria(
+                comp_data, search_criteria, attribute)
 
 
 def compare_postupgrade(component, attribute):
@@ -311,9 +316,15 @@ def compare_postupgrade(component, attribute):
     atr = 'id' if endpoint == 'api' else cli_const.attribute_keys[component]
     for test_case in find_datastore(predata, component, atr):
         preupgrade_entity = find_datastore(
-            predata, component, search_key=str(test_case), attribute=pre_attr)
+            predata,
+            component,
+            search_criteria={atr: str(test_case)},
+            attribute=pre_attr)
         postupgrade_entity = find_datastore(
-            postdata, component, search_key=str(test_case), attribute=post_attr
+            postdata,
+            component,
+            search_criteria={atr: str(test_case)},
+            attribute=post_attr
         )
         if 'missing' in str(preupgrade_entity) or 'missing' in str(postupgrade_entity): # noqa
             culprit = preupgrade_entity if 'missing' in preupgrade_entity \

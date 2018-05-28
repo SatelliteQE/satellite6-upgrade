@@ -60,6 +60,8 @@ def existence(pre, post, component=None):
     elif component:
         return assert_varients(component, pre, post)
     else:
+        if isinstance(pre, list) and isinstance(post, list):
+            return sorted(pre) == sorted(post)
         return pre == post
 
 

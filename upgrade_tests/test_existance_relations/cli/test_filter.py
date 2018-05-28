@@ -77,7 +77,7 @@ def test_positive_filters_by_role(pre, post):
     :expectedresults: All filters association with role should be retained post
         upgrade
     """
-    assert existence(pre, post)
+    assert existence(pre, post, component)
 
 
 @pytest.mark.parametrize("pre,post", fil_perm, ids=pytest_ids(fil_perm))

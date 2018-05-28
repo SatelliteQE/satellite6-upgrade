@@ -48,4 +48,4 @@ def test_positive_compute_resources_by_provider(pre, post):
     :expectedresults: All compute resources provider should be retained post
         upgrade
     """
-    assert existence(pre, post)
+    assert existence(pre, post, component)

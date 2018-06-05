@@ -5,6 +5,8 @@ import json
 import time
 
 from automation_tools import manage_daemon
+from automation_tools.satellite6 import hammer
+from fabric.api import run
 from nailgun import entity_mixins
 from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
 from upgrade.helpers.rhevm import (
@@ -144,4 +146,33 @@ def get_satellite_host():
     return os.environ.get(
         'RHEV_SAT_HOST',
         os.environ.get('SATELLITE_HOSTNAME')
+    )
+
+
+def upload_manifest(manifest_url, org_name):
+    """ Upload manifest to satellite
+
+    :param manifest_url: URL of manifest hosted over http
+    :param org_name: Organization name in satellite
+
+    Usage:
+        upload_manifest(self.manifest_url, self.org_name)
+    """
+    run('wget {0} -O {1}'.format(manifest_url, '/manifest.zip'))
+    print hammer.hammer('subscription upload --file {0} '
+                        '--organization {1}'.format('/manifest.zip',
+                                                    org_name))
+
+
+def delete_manifest(org_name):
+    """ Delete manifest from satellite
+
+    :param org_name: Organization name in satellite
+
+    Usage:
+        delete_manifest(self.org_name)
+    """
+    print hammer.hammer(
+        'subscription delete-manifest '
+        '--organization "{0}"'.format(org_name)
     )

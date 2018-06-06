@@ -51,7 +51,7 @@ def test_positive_organizations_by_name(pre, post):
     :expectedresults: All organizations should be retained post upgrade by
         names
     """
-    assert existence(pre, post)
+    assert existence(pre, post, component)
 
 
 @pytest.mark.parametrize("pre,post", org_label, ids=pytest_ids(org_label))

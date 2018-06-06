@@ -34,4 +34,4 @@ def test_positive_roles_by_name(pre, post):
 
     :expectedresults: All roles should be retained post upgrade
     """
-    assert existence(pre, post)
+    assert existence(pre, post, component)

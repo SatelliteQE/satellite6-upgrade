@@ -21,6 +21,8 @@ class VersionError(Exception):
 #
 # Note: The variants should be listed from 6.1 onwards
 _entity_varients = {
+    'compute-resource': [
+        ['rhev', 'rhev', 'rhv']],
     'filter': [
         # Resource Type Variants
         ['lookupkey', 'variablelookupkey', 'variablelookupkey'],
@@ -36,7 +38,28 @@ _entity_varients = {
          'deploy_provisioning_templates',
          'view_provisioning_templates, create_provisioning_templates, '
          'edit_provisioning_templates, destroy_provisioning_templates, '
-         'deploy_provisioning_templates']],
+         'deploy_provisioning_templates'],
+        ['viewer', 'viewer', 'customized viewer'],
+        ['site manager', 'site manager', 'customized site manager'],
+        ['manager', 'manager', 'customized manager'],
+        ['discovery reader', 'discovery reader', 'customized discovery reader'], # noqa
+        ['discovery manager', 'discovery manager', 'customized discovery manager'], # noqa
+        ['compliance viewer', 'compliance viewer', 'customized compliance viewer'], # noqa
+        ['compliance manager', 'compliance manager', 'customized compliance manager'], # noqa
+        ['anonymous', 'anonymous', 'default role'],
+        ['commonparameter', 'commonparameter', 'parameter']],
+    'organization': [
+        ['default_organization', 'default_organization', 'default organization']], # noqa
+    'role': [
+        # Role Variants
+        ['viewer', 'viewer', 'customized viewer'],
+        ['site manager', 'site manager', 'customized site manager'],
+        ['manager', 'manager', 'customized manager'],
+        ['discovery reader', 'discovery reader', 'customized discovery reader'], # noqa
+        ['discovery manager', 'discovery manager', 'customized discovery manager'], # noqa
+        ['compliance viewer', 'compliance viewer', 'customized compliance viewer'], # noqa
+        ['compliance manager', 'compliance manager', 'customized compliance manager'], # noqa
+        ['anonymous', 'anonymous', 'default role']],
     'settings': [
         # Value Variants
         ['immediate', 'immediate', 'on_demand'],
@@ -45,8 +68,9 @@ _entity_varients = {
         ['false', 'false', 'true'],
         ['["lo", "usb*", "vnet*", "macvtap*"]',
          '["lo", "usb*", "vnet*", "macvtap*"]',
-         '["lo", "usb*", "vnet*", "macvtap*", "_vdsmdummy_",'
-         ' "veth*", "docker*"]'],
+         '["lo", "usb*", "vnet*", "macvtap*", "_vdsmdummy_", "veth*", '
+         '"docker*", "tap*", "qbr*", "qvb*", "qvo*", "qr-*", "qg-*", '
+         '"vlinuxbr*", "vovsbr*"]'],
         # Description Variants
         ['fact name to use for primary interface detection and hostname',
          'fact name to use for primary interface detection and hostname',
@@ -98,7 +122,7 @@ _entity_varients = {
          'private key file that foreman will use to encrypt websockets']],
     'subscription': [
         # Validity Variants
-        ['-1', '-1', 'unlimited']]
+        ['-1', '-1', 'unlimited']],
 }
 
 

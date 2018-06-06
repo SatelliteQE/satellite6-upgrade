@@ -158,6 +158,8 @@ def upload_manifest(manifest_url, org_name):
     Usage:
         upload_manifest(self.manifest_url, self.org_name)
     """
+    # Sets hammer default configuration
+    hammer.set_hammer_config()
     run('wget {0} -O {1}'.format(manifest_url, '/manifest.zip'))
     print hammer.hammer('subscription upload --file {0} '
                         '--organization {1}'.format('/manifest.zip',
@@ -172,6 +174,8 @@ def delete_manifest(org_name):
     Usage:
         delete_manifest(self.org_name)
     """
+    # Sets hammer default configuration
+    hammer.set_hammer_config()
     print hammer.hammer(
         'subscription delete-manifest '
         '--organization "{0}"'.format(org_name)

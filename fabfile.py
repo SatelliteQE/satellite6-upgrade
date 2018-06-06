@@ -45,3 +45,7 @@ from upgrade.helpers.tools import (
 from upgrade_tests.helpers.existence import (
     set_datastore
 )
+from upgrade_tests.helpers.scenarios import (
+    upload_manifest,
+    delete_manifest,
+)

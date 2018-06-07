@@ -542,6 +542,42 @@ def upgrade_using_foreman_maintain():
                 os.environ.get('TO_VERSION')))
 
 
+def upgrade_puppet3_to_puppet4():
+    """Task which upgrade satellite 6.3 from puppet3 to puppet4.
+
+    Environment Variables necessary to proceed Setup:
+    -----------------------------------------------------
+
+    DISTRIBUTION
+        The satellite upgrade using internal or CDN distribution.
+        e.g 'CDN','DOWNSTREAM'
+
+    PUPPET4_REPO
+        URL of puppet4 repo if distribution is DOWNSTREAM
+    """
+    env.disable_known_hosts = True
+    # setting up puppet4 repo
+    if os.environ.get('DISTRIBUTION') == 'CDN':
+        enable_repos('rhel-7-server-satellite-6.3-puppet4-rpms')
+    else:
+        satellite_repo = StringIO()
+        satellite_repo.write('[Puppet4]\n')
+        satellite_repo.write('name=puppet4\n')
+        satellite_repo.write('baseurl={0}\n'.format(
+            os.environ.get('PUPPET4_REPO')
+        ))
+        satellite_repo.write('enabled=1\n')
+        satellite_repo.write('gpgcheck=0\n')
+        put(local_path=satellite_repo,
+            remote_path='/etc/yum.repos.d/puppet4.repo')
+        satellite_repo.close()
+
+    # repolist
+    run('yum repolist')
+    # upgrade puppet
+    run('satellite-installer --upgrade-puppet')
+
+
 def get_osp_hostname(ipaddr):
     """The openstack has floating ip and we need to fetch the hostname from DNS
     :param ipaddr : IP address of the osp box

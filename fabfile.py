@@ -31,7 +31,8 @@ from upgrade.helpers.tasks import (
     sync_capsule_repos_to_upgrade,
     sync_tools_repos_to_upgrade,
     setup_foreman_maintain,
-    upgrade_using_foreman_maintain
+    upgrade_using_foreman_maintain,
+    upgrade_puppet3_to_puppet4
 )
 from upgrade.helpers.tools import (
     copy_ssh_key,

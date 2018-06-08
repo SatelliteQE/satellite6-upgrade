@@ -48,6 +48,7 @@ def create_activation_key_for_client_registration(
     :return nailgun.entity: Activation key
     """
     client_os = client_os.upper()
+    from_ver = os.environ.get('FROM_VERSION')
     rhel_prod_name = 'scenarios_rhel{}_prod'.format(client_os[-1])
     rhel_repo_name = '{}_repo'.format(rhel_prod_name)
     rhel_url = os.environ.get('{}_CUSTOM_REPO'.format(client_os))
@@ -56,16 +57,23 @@ def create_activation_key_for_client_registration(
                          'is not provided!'.format(client_os))
     rhel_prod = entities.Product(
         name=rhel_prod_name, organization=org.id).create()
-    rhel_repo = entities.Repository(
-        name=rhel_repo_name,
-        product=rhel_prod,
-        url=rhel_url,
-        content_type='yum',
-        verify_ssl_on_sync=False
-    ).create()
+    if sat_state.lower() == 'pre' and from_ver in ['6.1', '6.2']:
+        rhel_repo = entities.Repository(
+            name=rhel_repo_name,
+            product=rhel_prod,
+            url=rhel_url,
+            content_type='yum'
+        ).create()
+    else:
+        rhel_repo = entities.Repository(
+            name=rhel_repo_name,
+            product=rhel_prod,
+            url=rhel_url,
+            content_type='yum',
+            verify_ssl_on_sync=False
+        ).create()
     call_entity_method_with_timeout(rhel_repo.sync, timeout=1400)
     if sat_state.lower() == 'pre':
-        from_ver = os.environ.get('FROM_VERSION')
         product_name = 'Red Hat Enterprise Linux Server'
         repo_name = 'Red Hat Satellite Tools {0} for RHEL ' \
                     '{1} Server RPMs x86_64'.format(from_ver, client_os[-1])

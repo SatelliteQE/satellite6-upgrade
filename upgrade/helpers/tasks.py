@@ -159,6 +159,9 @@ def sync_capsule_repos_to_upgrade(capsules):
             rhscl_repo = 'Red Hat Software Collections RPMs for Red Hat ' \
                          'Enterprise Linux 7 Server'
             rhscl_prd = 'Red Hat Software Collections for RHEL Server'
+            rhscl_label = 'rhel-server-rhscl-7-rpms'
+            rhscl_repo_name = 'Red Hat Software Collections RPMs for Red ' \
+                              'Hat Enterprise Linux 7 Server x86_64 7Server'
             hammer('repository-set enable --name "{0}" '
                    '--product "{1}" '
                    '--organization-id 1 '
@@ -166,7 +169,11 @@ def sync_capsule_repos_to_upgrade(capsules):
                    '--releasever 7Server'.format(rhscl_repo,
                                                  rhscl_prd)
                    )
-            hammer_repository_synchronize(rhscl_repo, '1', rhscl_prd)
+            time.sleep(20)
+            hammer_repository_synchronize(rhscl_repo_name,
+                                          '1',
+                                          rhscl_prd
+                                          )
             if tools_repo_url:
                 capsule_tools = 'Capsule Tools Product'
                 capsule_tools_repo = 'Capsule Tools Repo'
@@ -180,16 +187,27 @@ def sync_capsule_repos_to_upgrade(capsules):
                              '(for RHEL {1} Server) (RPMs)'.format(to_version,
                                                                    os_ver
                                                                    )
+                tools_label = 'rhel-{0}-server-satellite-tools-{1}-' \
+                              'rpms'.format(os_ver, to_version)
                 hammer_repository_set_enable(
                     tools_repo, tools_prd, '1', 'x86_64')
+                time.sleep(5)
             hammer_repository_synchronize(capsule_tools_repo,
                                           '1',
                                           capsule_tools
                                           )
             hammer_content_view_add_repository(
-                cv_name, '1', rhscl_prd, rhscl_repo)
+                cv_name, '1', rhscl_prd, rhscl_repo_name)
             hammer_content_view_add_repository(
                 cv_name, '1', capsule_tools, capsule_tools_repo)
+            hammer_activation_key_content_override(
+                activation_key, rhscl_label, '1', '1')
+            if tools_repo_url:
+                hammer_activation_key_add_subscription(
+                    activation_key, '1', capsule_tools)
+            else:
+                hammer_activation_key_content_override(
+                    activation_key, tools_label, '1', '1')
         if capsule_repo:
             hammer_product_create(product_name, '1')
             time.sleep(2)

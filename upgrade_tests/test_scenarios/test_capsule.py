@@ -147,7 +147,7 @@ class Scenario_capsule_sync(TestCase):
         result = execute(
             lambda: run(
                 '[ -f /var/lib/pulp/published/yum/http/repos/'
-                '{0}/{1}/{2}/custom/{3}/{4}/{5} ]; echo $?'.format(
+                '{0}/{1}/{2}/custom/{3}/{4}/Packages/b/{5} ]; echo $?'.format(
                     org_name, self.env_name, self.cv_name,
                     self.prod_name, self.repo_name, self.rpm_name)),
             host=self.cap_host
@@ -258,7 +258,8 @@ class Scenario_capsule_sync_2(TestCase):
             'capsule content synchronize --id {0}'.format(cap_id))
         result = execute(
             lambda: run('[ -f /var/lib/pulp/published/yum/http/repos/'
-                        '{0}/{1}/{2}/custom/{3}/{4}/{5} ]; echo $?'.format(
+                        '{0}/{1}/{2}/custom/{3}/{4}/Packages/c/{5} ]; '
+                        'echo $?'.format(
                             org_name, self.env_name, self.cv_name,
                             self.prod_name, self.repo_name, self.rpm_name)),
             host=self.cap_host

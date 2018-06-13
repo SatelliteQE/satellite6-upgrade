@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import thread
 
 from fabric.api import execute
 from ovirtsdk.api import API
@@ -232,14 +233,14 @@ def create_rhevm_template(host, cluster, new_template, storage):
         except Exception as ex:
             logger.error('Failed to Create Template from VM:\n%s' % str(ex))
             get_client.disconnect()
-
     else:
         get_client.disconnect()
         logger.error('Low Storage cannot proceed or VM not found')
+        sys.exit()
 
 
 # Fabric task
-def validate_and_create_product_templates():
+def validate_and_create_product_templates(product):
     """Task to do a sanity check on the satellite and capsule and then
     create their templates after z-stream upgrade
 
@@ -253,6 +254,8 @@ def validate_and_create_product_templates():
         The rhevm capsule hostname to run upgrade on
     RHEV_STORAGE
         The storage domain on the rhevm used to create templates
+    RHEV_CLUSTER
+        Cluster name in RHEV where instance is created
     RHEV_SAT_IMAGE
         The satellite Image from which satellite instance will be created
     RHEV_CAP_IMAGE
@@ -265,11 +268,14 @@ def validate_and_create_product_templates():
         created, generally the upgraded box
     """
     # Get the instances name, specified in the jenkins job
-    sat_instance = os.environ.get('RHEV_SAT_INSTANCE')
-    cap_instance = os.environ.get('RHEV_CAP_INSTANCE')
-    cluster = 'Default'
-    storage = os.environ.get('RHEV_STORAGE')
-    if sat_instance and cap_instance:
+    if product not in ['satellite', 'n-1']:
+        os_version = os.environ.get('OS_VERSION')
+        sat_instance = 'upgrade_satellite_auto_rhel{0}'.format(os_version)
+        logger.info('Satellite Instance name {0}'.format(sat_instance))
+        cap_instance = 'upgrade_capsule_auto_rhel{0}'.format(os_version)
+        logger.info('Capsule Instance name {0}'.format(cap_instance))
+        cluster = os.environ.get('RHEV_CLUSTER')
+        storage = os.environ.get('RHEV_STORAGE')
         sat_host = os.environ.get('RHEV_SAT_HOST')
         new_sat_template = os.environ.get('RHEV_SAT_IMAGE') + "_new"
         cap_host = os.environ.get('RHEV_CAP_HOST')
@@ -280,17 +286,22 @@ def validate_and_create_product_templates():
             execute(capsule_sync, cap_host, host=sat_host)
             execute(check_ntpd, host=cap_host)
             execute(katello_restart, host=cap_host)
-            try:
-                create_rhevm_template(sat_instance,
-                                      cluster,
-                                      new_sat_template,
-                                      storage
-                                      )
-                create_rhevm_template(cap_instance,
-                                      cluster,
-                                      new_cap_template,
-                                      storage
-                                      )
-            except Exception as ex:
-                logger.error(
-                    'Failed to Create thread :\n%s' % str(ex))
+            thread.start_new_thread(create_rhevm_template,
+                                    (sat_instance,
+                                     cluster,
+                                     new_sat_template,
+                                     storage
+                                     ))
+            thread.start_new_thread(create_rhevm_template,
+                                    (cap_instance,
+                                     cluster,
+                                     new_cap_template,
+                                     storage
+                                     ))
+            wait_till_rhevm_instance_status(sat_instance,
+                                            'Image Locked',
+                                            timeout=30
+                                            )
+            wait_till_rhevm_instance_status(sat_instance,
+                                            'down',
+                                            timeout=240)

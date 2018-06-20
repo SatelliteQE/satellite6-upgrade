@@ -156,24 +156,14 @@ def sync_capsule_repos_to_upgrade(capsules):
         # If latest capsule repo is not created already(Fresh Upgrade),
         # So create new....
         if to_version in ['6.4', '6.3']:
-            rhscl_repo = 'Red Hat Software Collections RPMs for Red Hat ' \
-                         'Enterprise Linux 7 Server'
-            rhscl_prd = 'Red Hat Software Collections for RHEL Server'
-            rhscl_label = 'rhel-server-rhscl-7-rpms'
-            rhscl_repo_name = 'Red Hat Software Collections RPMs for Red ' \
-                              'Hat Enterprise Linux 7 Server x86_64 7Server'
-            hammer('repository-set enable --name "{0}" '
-                   '--product "{1}" '
-                   '--organization-id 1 '
-                   '--basearch "x86_64" '
-                   '--releasever 7Server'.format(rhscl_repo,
-                                                 rhscl_prd)
-                   )
-            time.sleep(20)
-            hammer_repository_synchronize(rhscl_repo_name,
-                                          '1',
-                                          rhscl_prd
-                                          )
+            (
+                rhscl_prd,
+                rhscl_repo_name,
+                rhscl_label,
+                rh7server_prd,
+                rh7server_repo_name,
+                rh7server_label
+            ) = sync_rh_repos_to_satellite()
             if tools_repo_url:
                 capsule_tools = 'Capsule Tools Product'
                 capsule_tools_repo = 'Capsule Tools Repo'
@@ -199,9 +189,13 @@ def sync_capsule_repos_to_upgrade(capsules):
             hammer_content_view_add_repository(
                 cv_name, '1', rhscl_prd, rhscl_repo_name)
             hammer_content_view_add_repository(
+                cv_name, '1', rh7server_prd, rh7server_repo_name)
+            hammer_content_view_add_repository(
                 cv_name, '1', capsule_tools, capsule_tools_repo)
             hammer_activation_key_content_override(
                 activation_key, rhscl_label, '1', '1')
+            hammer_activation_key_content_override(
+                activation_key, rh7server_label, '1', '1')
             if tools_repo_url:
                 hammer_activation_key_add_subscription(
                     activation_key, '1', capsule_tools)
@@ -261,6 +255,64 @@ def sync_capsule_repos_to_upgrade(capsules):
     else:
         # In upgrade to CDN capsule, the subscription will be already attached
         pass
+
+
+def sync_rh_repos_to_satellite():
+    """Task to sync Redhat Repositories to latest required during upgrade
+
+    :returns tuple: RHSCL and Redhat 7 Server repo name, label name and
+        product name
+    """
+    # RHSCL
+    rhscl_repo = 'Red Hat Software Collections RPMs for Red Hat ' \
+                 'Enterprise Linux 7 Server'
+    rhscl_prd = 'Red Hat Software Collections for RHEL Server'
+    rhscl_label = 'rhel-server-rhscl-7-rpms'
+    rhscl_repo_name = 'Red Hat Software Collections RPMs for Red ' \
+                      'Hat Enterprise Linux 7 Server x86_64 7Server'
+    # Red Hat Enterprise Linux 7 Server
+    rh7server_repo = 'Red Hat Enterprise Linux 7 Server (RPMs)'
+    rh7server_prd = 'Red Hat Enterprise Linux Server'
+    rh7server_label = 'rhel-7-server-rpms'
+    rh7server_repo_name = 'Red Hat Enterprise Linux 7 Server RPMs x86_64 ' \
+                          '7Server'
+    # Enable rhscl repository
+    hammer('repository-set enable --name "{0}" '
+           '--product "{1}" '
+           '--organization-id 1 '
+           '--basearch "x86_64" '
+           '--releasever 7Server'.format(rhscl_repo,
+                                         rhscl_prd)
+           )
+    time.sleep(20)
+    # Sync enabled Repo from cdn
+    hammer_repository_synchronize(rhscl_repo_name,
+                                  '1',
+                                  rhscl_prd
+                                  )
+    # Enable RHEL 7 Server repository
+    hammer('repository-set enable --name "{0}" '
+           '--product "{1}" '
+           '--organization-id 1 '
+           '--basearch "x86_64" '
+           '--releasever 7Server'.format(rh7server_repo,
+                                         rh7server_prd)
+           )
+    time.sleep(20)
+    # Sync enabled Repo from cdn
+    hammer_repository_synchronize(rh7server_repo_name,
+                                  '1',
+                                  rh7server_prd
+                                  )
+    # FixMe: If number of repository to be synced from CDN increases use dict
+    return {
+        rhscl_prd,
+        rhscl_repo_name,
+        rhscl_label,
+        rh7server_prd,
+        rh7server_repo_name,
+        rh7server_label
+    }
 
 
 def sync_tools_repos_to_upgrade(client_os, hosts):

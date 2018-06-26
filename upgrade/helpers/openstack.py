@@ -11,6 +11,9 @@ from upgrade.helpers.tools import host_pings, host_ssh_availability_check
 
 logger = logger()
 
+# Toggle Debug logging
+shade.simple_logging(debug=True)
+
 
 def get_openstack_client():
     """Creates client object instance from openstack novaclient API.
@@ -102,16 +105,22 @@ def create_openstack_instance(instance_name, image_name, volume_size,
     openstack_client = shade.openstack_cloud(cloud='satellite-jenkins')
     # Validate image is added into openstack project
     image = openstack_client.get_image(image_name)
+    volume_name = '{0}_volume'.format(instance_name)
+    logger.info('Creating new Openstack Volume {0}'.format(volume_name))
+    openstack_client.create_volume(size=volume_size,
+                                   name=volume_name,
+                                   bootable=True,
+                                   image=image.id
+                                   )
     # Create instance from the given parameters
     logger.info('Creating new Openstack instance {0}'.format(instance_name))
     instance = openstack_client.create_server(
         name=instance_name,
-        image=image.id,
         flavor=flavor_name,
         boot_from_volume=True,
         key_name=ssh_key,
         network=network_name,
-        volume_size=volume_size,
+        boot_volume=volume_name,
         terminate_volume=True,
         wait=True
     )
@@ -139,6 +148,7 @@ def create_openstack_instance(instance_name, image_name, volume_size,
         ip_addr, hostname)), host=hostname)
     with open('/tmp/instance.info', 'w') as outfile:
         outfile.write('OSP_HOSTNAME={0}'.format(hostname))
+    return instance
 
 
 def delete_openstack_instance(instance_name):

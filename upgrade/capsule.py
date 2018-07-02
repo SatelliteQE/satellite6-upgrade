@@ -8,8 +8,9 @@ from automation_tools.utils import distro_info, update_packages
 from datetime import datetime
 from fabric.api import env, execute, run
 from upgrade.helpers.logger import logger
-from upgrade.helpers.rhevm import (
-    create_rhevm_instance, delete_rhevm_instance
+from upgrade.helpers.rhevm4 import (
+    create_rhevm4_instance,
+    delete_rhevm4_instance
 )
 from upgrade.helpers.tasks import (
     sync_capsule_repos_to_upgrade,
@@ -66,9 +67,9 @@ def satellite6_capsule_setup(sat_host, os_version, upgradable_capsule=True):
         cap_image = os.environ.get('RHEV_CAP_IMAGE')
         cap_hosts = os.environ.get('RHEV_CAP_HOST')
         cap_instance = 'upgrade_capsule_auto_{0}'.format(os_version)
-        execute(delete_rhevm_instance, cap_instance)
+        execute(delete_rhevm4_instance, cap_instance)
         logger.info('Turning on Capsule Instance ....')
-        execute(create_rhevm_instance, cap_instance, cap_image)
+        execute(create_rhevm4_instance, cap_instance, cap_image)
         non_responsive_host = []
         env['capsule_hosts'] = cap_hosts
         if ',' in cap_hosts:

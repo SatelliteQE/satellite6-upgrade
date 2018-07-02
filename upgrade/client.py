@@ -10,10 +10,10 @@ from upgrade.helpers.docker import (
     refresh_subscriptions_on_docker_clients,
 )
 from upgrade.helpers.logger import logger
-from upgrade.helpers.rhevm import (
-    create_rhevm_instance,
-    get_rhevm_client,
-    wait_till_rhevm_instance_status
+from upgrade.helpers.rhevm4 import (
+    create_rhevm4_instance,
+    get_rhevm4_client,
+    wait_till_rhevm4_instance_status
 )
 from upgrade.helpers.tasks import (
     sync_tools_repos_to_upgrade
@@ -66,22 +66,23 @@ def satellite6_client_setup():
             logger.warning('Clients Count should be atleast 2, please rerun !')
             sys.exit(1)
         # Check if the VM containing docker images is up, else turn on
-        rhevm_client = get_rhevm_client()
-        instance_name = 'sat6-docker-upgrade'
-        template_name = 'sat6-docker-upgrade-template'
-        vm = rhevm_client.vms.get(name=instance_name)
-        if not vm:
-            logger.info('Docker VM for generating Content Host is not created.'
-                        'Creating it, please wait..')
-            create_rhevm_instance(instance_name, template_name)
-            execute(manage_daemon, 'restart', 'docker', host=docker_vm)
-        elif vm.get_status().get_state() == 'down':
-            logger.info('Docker VM for generating Content Host is not up. '
-                        'Turning on, please wait ....')
-            rhevm_client.vms.get(name=instance_name).start()
-            wait_till_rhevm_instance_status(instance_name, 'up', 5)
-            execute(manage_daemon, 'restart', 'docker', host=docker_vm)
-        rhevm_client.disconnect()
+        with get_rhevm4_client().build() as rhevm_client:
+            instance_name = 'sat6-docker-upgrade'
+            template_name = 'sat6-docker-upgrade-template'
+            vm = rhevm_client.system_service().vms_service(
+                ).list(search='name={}'.format(instance_name))
+            if not vm:
+                logger.info(
+                    'Docker VM for generating Content Host is not created. '
+                    'Creating it, please wait..')
+                create_rhevm4_instance(instance_name, template_name)
+                execute(manage_daemon, 'restart', 'docker', host=docker_vm)
+            elif vm[0].status.name.lower() == 'down':
+                logger.info('Docker VM for generating Content Host is not up. '
+                            'Turning on, please wait ....')
+                rhevm_client.vms.get(name=instance_name).start()
+                wait_till_rhevm4_instance_status(instance_name, 'up', 5)
+                execute(manage_daemon, 'restart', 'docker', host=docker_vm)
         time.sleep(5)
         logger.info('Generating {} clients on RHEL6 and RHEL7 on Docker. '
                     'Please wait .....'.format(clients_count))

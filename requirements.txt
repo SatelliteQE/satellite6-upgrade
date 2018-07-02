@@ -1,5 +1,5 @@
 fauxfactory==2.0.9
-ovirt-engine-sdk-python==3.6.8.0
+ovirt-engine-sdk-python==4.2.7
 python-novaclient
 robozilla
 shade

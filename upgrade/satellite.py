@@ -18,9 +18,9 @@ from automation_tools.utils import distro_info, update_packages
 from datetime import datetime
 from fabric.api import env, execute, put, run
 from upgrade.helpers.logger import logger
-from upgrade.helpers.rhevm import (
-    create_rhevm_instance,
-    delete_rhevm_instance
+from upgrade.helpers.rhevm4 import (
+    create_rhevm4_instance,
+    delete_rhevm4_instance
 )
 from upgrade.helpers.tasks import (
     setup_foreman_maintain,
@@ -59,8 +59,8 @@ def satellite6_setup(os_version):
         sat_image = os.environ.get('RHEV_SAT_IMAGE')
         sat_host = os.environ.get('RHEV_SAT_HOST')
         sat_instance = 'upgrade_satellite_auto_{0}'.format(os_version)
-        execute(delete_rhevm_instance, sat_instance)
-        execute(create_rhevm_instance, sat_instance, sat_image)
+        execute(delete_rhevm4_instance, sat_instance)
+        execute(create_rhevm4_instance, sat_instance, sat_image)
         if not host_pings(sat_host):
             sys.exit(1)
         execute(host_ssh_availability_check, sat_host)

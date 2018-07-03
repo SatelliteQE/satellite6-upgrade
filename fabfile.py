@@ -21,11 +21,11 @@ from upgrade.helpers.openstack import (
     create_openstack_instance,
     delete_openstack_instance,
 )
-from upgrade.helpers.rhevm import (
-    create_rhevm_instance,
-    delete_rhevm_instance,
-    wait_till_rhevm_instance_status,
-    validate_and_create_product_templates
+from upgrade.helpers.rhevm4 import (
+    create_rhevm4_instance,
+    delete_rhevm4_instance,
+    wait_till_rhevm4_instance_status,
+    validate_and_create_rhevm4_templates
 )
 from upgrade.helpers.tasks import (
     sync_capsule_repos_to_upgrade,

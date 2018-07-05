@@ -136,11 +136,12 @@ def delete_rhevm4_instance(instance_name, timeout=5):
     """
     with get_rhevm4_client().build() as rhevm_client:
         vservice = rhevm_client.system_service().vms_service()
-        vm = vservice.list(search='name={}'.format(instance_name))[0]
+        vm = vservice.list(search='name={}'.format(instance_name))
         if not vm:
             logger.info('The instance {0} is not found '
                         'in RHEV to delete!'.format(instance_name))
         else:
+            vm = vm[0]
             logger.info(
                 'Deleting instance {0} from RHEVM.'.format(instance_name))
             if vm.delete_protected:

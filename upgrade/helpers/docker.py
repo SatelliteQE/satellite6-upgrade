@@ -91,7 +91,7 @@ def refresh_subscriptions_on_docker_clients(container_ids):
         docker_execute_command(container_ids, 'yum clean all', quiet=True)
 
 
-def docker_execute_command(container_id, command, quiet=False, async=False):
+def docker_execute_command(container_id, command, quiet=True, async=False):
     """Executes command on running docker container
 
     :param string container_id: Running containers id to execute command

@@ -116,6 +116,8 @@ def satellite6_upgrade():
         setup_satellite_firewall()
         run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')
         logger.info('Updating system packages ... ')
+        # setup foreman-maintain
+        setup_foreman_maintain()
         update_packages(quiet=True)
         # Following disables the old satellite repo and extra repos enabled
         # during subscribe e.g Load balancer Repo

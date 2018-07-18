@@ -59,15 +59,16 @@ def setup_products_for_upgrade(product, os_version):
                 sat_host, os_version, False if product == 'n-1' else True)
         if product == 'client' or product == 'longrun':
             logger.info('Setting up Clients ....')
-            clients6, clients7 = satellite6_client_setup()
+            clients6, clients7, puppet_clients7 = satellite6_client_setup()
         setups_dict = {
             'sat_host': sat_host,
             'capsule_hosts': cap_hosts,
             'clients6': clients6,
-            'clients7': clients7
+            'clients7': clients7,
+            'puppet_clients7': puppet_clients7
         }
         create_setup_dict(setups_dict)
-        return sat_host, cap_hosts, clients6, clients7
+        return sat_host, cap_hosts, clients6, clients7, puppet_clients7
 
 
 def product_upgrade(product):
@@ -233,8 +234,11 @@ def product_upgrade(product):
                 if product == 'client' or product == 'longrun':
                     clients6 = setup_dict['clients6']
                     clients7 = setup_dict['clients7']
+                    puppet_clients7 = setup_dict['puppet_clients7']
                     satellite6_client_upgrade('rhel6', clients6)
                     satellite6_client_upgrade('rhel7', clients7)
+                    satellite6_client_upgrade(
+                        'rhel7', puppet_clients7, puppet=True)
                 if product == 'longrun':
                     # Execute tasks as post upgrade tier1 tests
                     # are dependent

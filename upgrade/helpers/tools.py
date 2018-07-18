@@ -169,7 +169,7 @@ def get_hostname_from_ip(ip, timeout=3):
     return output[ip]
 
 
-def katello_agent_version_filter(rpm_name):
+def version_filter(rpm_name):
     """Helper function to filter the katello-agent version from katello-agent
     rpm name
 

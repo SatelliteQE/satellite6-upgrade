@@ -10,7 +10,11 @@ logger = logger()
 
 
 def generate_satellite_docker_clients_on_rhevm(
-        client_os, clients_count, custom_ak=None, org_label=None):
+        client_os,
+        clients_count,
+        custom_ak=None,
+        org_label=None,
+        puppet=False):
     """Generates satellite clients on docker as containers
 
     :param string client_os: Client OS of which client to be generated
@@ -19,6 +23,7 @@ def generate_satellite_docker_clients_on_rhevm(
     :param string custom_ak: Activation key name, to register clients
     :param string org_label: The organization in which the docker clients to
         created and where the custom ak is available
+    :param bool puppet: Genearates puppet clients only if true
 
     Environment Variables:
 
@@ -35,28 +40,34 @@ def generate_satellite_docker_clients_on_rhevm(
     satellite_hostname = os.environ.get('RHEV_SAT_HOST')
     ak = custom_ak or os.environ.get(
         'RHEV_CLIENT_AK_{}'.format(client_os.upper()))
-    result = {}
+    result = {'katello': {}, 'puppet': {}}
+    puppet = bool(puppet)
+    if not puppet:
+        host_title = 'scenariokatelloclient{0}'.format(
+            gen_string('alpha')) if custom_ak else 'dockerkatelloclient'
+        image = 'upgrade:{}'
+    else:
+        host_title = 'scenariopuppetclient{0}'.format(
+            gen_string('alpha')) if custom_ak else 'dockerpuppetclient'
+        image = 'upgrade:puppet-{}'
     for count in range(int(clients_count)):
         if bz_bug_is_open('1405085'):
             time.sleep(5)
         # If custom activation key is passed, it will be used to create custom
         # docker clients for scenario tests and we will require to set distinct
         # hostname for those content hosts
-        host_title = 'scenarioclient{0}'.format(
-            gen_string('alpha')) if custom_ak else 'dockerclient'
         hostname = '{0}{1}{2}'.format(count, host_title, client_os)
         if org_label:
             create_command = 'docker run -d -h {0} -v /dev/log:/dev/log ' \
-                             '-e "SATHOST={1}" -e "AK={2}" -e "ORG={3}" ' \
-                             'upgrade:{4}'.format(
-                                hostname, satellite_hostname, ak, org_label,
-                                client_os)
+                '-e "SATHOST={1}" -e "AK={2}" -e "ORG={3}" {4}'.format(
+                    hostname, satellite_hostname, ak, org_label,
+                    image.format(client_os))
         else:
             create_command = 'docker run -d -h {0} -v /dev/log:/dev/log ' \
-                             '-e "SATHOST={1}" -e "AK={2}" upgrade:{3}'.format(
-                                hostname, satellite_hostname, ak, client_os)
+                '-e "SATHOST={1}" -e "AK={2}" {3}'.format(
+                    hostname, satellite_hostname, ak, image.format(client_os))
         container_id = run(create_command)
-        result[hostname] = container_id
+        result['puppet' if puppet else 'katello'][hostname] = container_id
     return result
 
 

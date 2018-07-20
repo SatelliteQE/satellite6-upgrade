@@ -672,3 +672,42 @@ def add_baseOS_repo(base_url):
     put(local_path=rhel_repo,
         remote_path='/etc/yum.repos.d/rhel.repo')
     rhel_repo.close()
+
+
+def setup_satellite_clone():
+    """Task which install satellite-clone tool.
+
+    Environment Variables necessary to proceed Setup:
+    -----------------------------------------------------
+
+    DISTRIBUTION
+        The satellite upgrade using internal or CDN distribution.
+        e.g 'CDN','DOWNSTREAM'
+
+    MAINTAIN_REPO
+        URL of repo if distribution is DOWNSTREAM
+
+    BASE_URL
+        URL for the compose repository if distribution is DOWNSTREAM
+    """
+    env.disable_known_hosts = True
+    # setting up foreman-maintain repo
+    if os.environ.get('DISTRIBUTION') == 'CDN':
+        enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
+    else:
+        satellite_repo = StringIO()
+        satellite_repo.write('[maintainrepo]\n')
+        satellite_repo.write('name=maintain\n')
+        satellite_repo.write('baseurl={0}\n'.format(
+            os.environ.get('MAINTAIN_REPO')
+        ))
+        satellite_repo.write('enabled=1\n')
+        satellite_repo.write('gpgcheck=0\n')
+        put(local_path=satellite_repo,
+            remote_path='/etc/yum.repos.d/maintain.repo')
+        satellite_repo.close()
+
+    # repolist
+    run('yum repolist')
+    # install foreman-maintain
+    run('yum install satellite-clone -y')

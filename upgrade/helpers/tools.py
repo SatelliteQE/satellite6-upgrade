@@ -227,7 +227,7 @@ def create_setup_dict(setups_dict):
     """Creates a file to save the return values from setup_products_for_upgrade
      task
 
-    :param string setups_dict: Dictionary of all return value of
+    :param dict setups_dict: Dictionary of all return value of
     setup_products_for_upgrade
     """
     with open('product_setup', 'wb') as pref:

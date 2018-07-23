@@ -39,6 +39,7 @@ def satellite6_client_setup():
     # If User Defined Clients Hostname provided
     clients6 = os.environ.get('CLIENT6_HOSTS')
     clients7 = os.environ.get('CLIENT7_HOSTS')
+    puppet_clients7 = None
     docker_vm = os.environ.get('DOCKER_VM')
     clients_count = os.environ.get('CLIENTS_COUNT')
     from_version = os.environ.get('FROM_VERSION')

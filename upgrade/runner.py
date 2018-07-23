@@ -50,7 +50,7 @@ def setup_products_for_upgrade(product, os_version):
         e.g: rhel6, rhel7
     """
     if check_necessary_env_variables_for_upgrade(product):
-        sat_host = cap_hosts = clients6 = clients7 = None
+        sat_host = cap_hosts = clients6 = clients7 = puppet_clients7 = None
         logger.info('Setting up Satellite ....')
         sat_host = satellite6_setup(os_version)
         if product == 'capsule' or product == 'n-1' or product == 'longrun':
@@ -225,6 +225,10 @@ def product_upgrade(product):
                                     foreman_debug,
                                     'capsule_{}'.format(cap_host),
                                     host=cap_host)
+                            # Execute tasks as post upgrade tier1 tests
+                            # are dependent
+                            if product == 'longrun':
+                                post_upgrade_test_tasks(sat_host, cap_host)
                         except Exception:
                             # Generate foreman debug on failed capsule upgrade
                             execute(
@@ -239,10 +243,6 @@ def product_upgrade(product):
                     satellite6_client_upgrade('rhel7', clients7)
                     satellite6_client_upgrade(
                         'rhel7', puppet_clients7, puppet=True)
-                if product == 'longrun':
-                    # Execute tasks as post upgrade tier1 tests
-                    # are dependent
-                    post_upgrade_test_tasks(sat_host, cap_host)
         except Exception:
             # Generate foreman debug on failed satellite upgrade
             execute(foreman_debug, 'satellite_{}'.format(sat_host),

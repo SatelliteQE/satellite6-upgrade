@@ -93,13 +93,13 @@ def satellite6_client_setup():
             'rhel6',
             int(clients_count)/2,
             host=docker_vm
-        )[docker_vm]['katello']
+        )[docker_vm]
         clients7 = execute(
             generate_satellite_docker_clients_on_rhevm,
             'rhel7',
             int(clients_count)/2,
             host=docker_vm
-        )[docker_vm]['katello']
+        )[docker_vm]
         # Allow all puppet clients to be signed automatically
         execute(
             lambda: run('echo "*" > /etc/puppetlabs/puppet/autosign.conf'),
@@ -108,7 +108,7 @@ def satellite6_client_setup():
             generate_satellite_docker_clients_on_rhevm, 'rhel7', 2,
             puppet=True,
             host=docker_vm
-        )[docker_vm]['puppet']
+        )[docker_vm]
         # Sync latest sat tools repo to clients if downstream
         if all([
             os.environ.get('TOOLS_URL_RHEL6'),

@@ -114,7 +114,7 @@ def dockerize(ak_name=None, distro=None, org_label=None):
             wait_till_rhevm4_instance_status(instance_name, 'up', 5)
             execute(manage_daemon, 'restart', 'docker', host=docker_vm)
     time.sleep(5)
-    logger.info('Generating client on RHEL7 on Docker. '
+    logger.info('Generating katello client on RHEL7 on Docker. '
                 'Please wait .....')
     # Generate Clients on RHEL 7
     time.sleep(30)

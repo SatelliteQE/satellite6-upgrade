@@ -15,7 +15,7 @@ def generate_satellite_docker_clients_on_rhevm(
         custom_ak=None,
         org_label=None,
         puppet=False):
-    """Generates satellite clients on docker as containers
+    """Generates satellite katello or puppet clients on docker as containers
 
     :param string client_os: Client OS of which client to be generated
         e.g: rhel6, rhel7
@@ -24,6 +24,8 @@ def generate_satellite_docker_clients_on_rhevm(
     :param string org_label: The organization in which the docker clients to
         created and where the custom ak is available
     :param bool puppet: Genearates puppet clients only if true
+    :return dict: Returns the dictionary of katello or puppet clients
+        By default katello clients will be created
 
     Environment Variables:
 
@@ -40,7 +42,7 @@ def generate_satellite_docker_clients_on_rhevm(
     satellite_hostname = os.environ.get('RHEV_SAT_HOST')
     ak = custom_ak or os.environ.get(
         'RHEV_CLIENT_AK_{}'.format(client_os.upper()))
-    result = {'katello': {}, 'puppet': {}}
+    result = {}
     puppet = bool(puppet)
     if not puppet:
         host_title = 'scenariokatelloclient{0}'.format(
@@ -67,7 +69,7 @@ def generate_satellite_docker_clients_on_rhevm(
                 '-e "SATHOST={1}" -e "AK={2}" {3}'.format(
                     hostname, satellite_hostname, ak, image.format(client_os))
         container_id = run(create_command)
-        result['puppet' if puppet else 'katello'][hostname] = container_id
+        result[hostname] = container_id
     return result
 
 

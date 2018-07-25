@@ -49,6 +49,7 @@ def setup_products_for_upgrade(product, os_version):
     :param string os_version: The os version on which product is installed
         e.g: rhel6, rhel7
     """
+    env.disable_known_hosts = True
     if check_necessary_env_variables_for_upgrade(product):
         sat_host = cap_hosts = clients6 = clients7 = puppet_clients7 = None
         logger.info('Setting up Satellite ....')
@@ -156,6 +157,7 @@ def product_upgrade(product):
     RHEV_CLIENT_AK
         The AK name used in client subscription
     """
+    env.disable_known_hosts = True
     if check_necessary_env_variables_for_upgrade(product):
         from_version = os.environ.get('FROM_VERSION')
         to_version = os.environ.get('TO_VERSION')

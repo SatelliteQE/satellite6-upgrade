@@ -47,7 +47,7 @@ def create_dict(entities_dict):
     scenarios tested, so that these entities can be retrieved post upgrade
     to assert the test cases.
 
-    :param string entities_dict: A dictionary of entities created in
+    :param dict entities_dict: A dictionary of entities created in
         satellite
     """
     if os.path.exists('scenario_entities'):

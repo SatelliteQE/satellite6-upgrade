@@ -23,6 +23,7 @@ from unittest2.case import TestCase
 from upgrade_tests import post_upgrade, pre_upgrade
 from upgrade_tests.helpers.scenarios import (
     create_dict,
+    get_entity_data,
     get_satellite_host,
     rpm1,
     rpm2
@@ -53,8 +54,6 @@ class Scenario_capsule_sync(TestCase):
     activation_key = os.environ.get(
         'CAPSULE_AK', os.environ.get('RHEV_CAPSULE_AK'))
     cv_name = 'Scenario_precapSync_' + cls_name
-    _, env_name = hammer.hammer_determine_cv_and_env_from_ak(
-        activation_key, '1')
     org_id = '1'
     repo_url = 'http://' + sat_host + '/pub/preupgradeCapSync_repo/'
 
@@ -82,6 +81,8 @@ class Scenario_capsule_sync(TestCase):
         :expectedresults: The repo/rpm should be synced to satellite
 
          """
+        _, env_name = hammer.hammer_determine_cv_and_env_from_ak(
+            self.activation_key, '1')
         self.create_repo()
         print hammer.hammer_product_create(self.prod_name, self.org_id)
         prod_list = hammer.hammer(
@@ -108,16 +109,16 @@ class Scenario_capsule_sync(TestCase):
         cv_ver = hammer.get_latest_cv_version(self.cv_name)
         env_data = hammer.hammer(
             'lifecycle-environment list --organization-id {0} '
-            '--name {1}'.format(self.org_id, self.env_name))
+            '--name {1}'.format(self.org_id, env_name))
         env_id = hammer.get_attribute_value(
             env_data,
-            self.env_name,
+            env_name,
             'id'
         )
         print hammer.hammer_content_view_promote_version(
             self.cv_name, cv_ver, env_id, self.org_id)
         global_dict = {self.__class__.__name__: {
-            'rpm_name': self.rpm_name}}
+            'env_name': env_name}}
         create_dict(global_dict)
 
     @post_upgrade
@@ -137,6 +138,7 @@ class Scenario_capsule_sync(TestCase):
             2. The repos/rpms from satellite should be synced to satellite
 
          """
+        env_name = get_entity_data(self.__class__.__name__)['env_name']
         cap_data = hammer.hammer('capsule list')
         cap_id = hammer.get_attribute_value(cap_data, self.cap_host, 'id')
         org_data = hammer.hammer('organization list')
@@ -148,7 +150,7 @@ class Scenario_capsule_sync(TestCase):
             lambda: run(
                 '[ -f /var/lib/pulp/published/yum/http/repos/'
                 '{0}/{1}/{2}/custom/{3}/{4}/Packages/b/{5} ]; echo $?'.format(
-                    org_name, self.env_name, self.cv_name,
+                    org_name, env_name, self.cv_name,
                     self.prod_name, self.repo_name, self.rpm_name)),
             host=self.cap_host
         )[self.cap_host]
@@ -180,8 +182,6 @@ class Scenario_capsule_sync_2(TestCase):
     activation_key = os.environ.get(
         'CAPSULE_AK', os.environ.get('RHEV_CAPSULE_AK'))
     cv_name = 'Scenario_postcapSync_' + cls_name
-    _, env_name = hammer.hammer_determine_cv_and_env_from_ak(
-        activation_key, '1')
     org_id = '1'
     repo_url = 'http://' + sat_host + '/pub/postupgradeCapSync_repo/'
 
@@ -215,6 +215,8 @@ class Scenario_capsule_sync_2(TestCase):
             3. The repo/rpm from satellite should be synced to capsule
 
         """
+        _, env_name = hammer.hammer_determine_cv_and_env_from_ak(
+            self.activation_key, '1')
         self.create_repo()
         print hammer.hammer_product_create(self.prod_name, self.org_id)
         prod_list = hammer.hammer(
@@ -241,10 +243,10 @@ class Scenario_capsule_sync_2(TestCase):
         cv_ver = hammer.get_latest_cv_version(self.cv_name)
         env_data = hammer.hammer(
             'lifecycle-environment list --organization-id {0} '
-            '--name {1}'.format(self.org_id, self.env_name))
+            '--name {1}'.format(self.org_id, env_name))
         env_id = hammer.get_attribute_value(
             env_data,
-            self.env_name,
+            env_name,
             'id'
         )
         print hammer.hammer_content_view_promote_version(
@@ -260,7 +262,7 @@ class Scenario_capsule_sync_2(TestCase):
             lambda: run('[ -f /var/lib/pulp/published/yum/http/repos/'
                         '{0}/{1}/{2}/custom/{3}/{4}/Packages/c/{5} ]; '
                         'echo $?'.format(
-                            org_name, self.env_name, self.cv_name,
+                            org_name, env_name, self.cv_name,
                             self.prod_name, self.repo_name, self.rpm_name)),
             host=self.cap_host
         )[self.cap_host]

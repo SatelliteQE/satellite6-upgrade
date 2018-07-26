@@ -96,7 +96,7 @@ def create_activation_key_for_client_registration(
     elif sat_state.lower() == 'post':
         product_name = 'scenarios_tools_product'
         tools_repo_url = os.environ.get(
-            'TOOLS_URL_{}'.format(client_os.upper()))
+            'TOOLS_{}'.format(client_os.upper()))
         if tools_repo_url is None:
             raise ValueError('The Tools Repo URL environment variable for '
                              'OS {} is not provided!'.format(client_os))
@@ -302,7 +302,7 @@ class Scenario_upgrade_old_client_and_package_installation(TestCase):
             attach_subscription_to_host_from_satellite,
             self.org.id,
             product.name,
-            client_name,
+            str(client_name).lower(),
             host=get_satellite_host()
         )
         # Refresh subscriptions on client

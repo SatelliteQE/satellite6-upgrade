@@ -711,3 +711,19 @@ def setup_satellite_clone():
     run('yum repolist')
     # install foreman-maintain
     run('yum install satellite-clone -y')
+
+
+def puppet_autosign_hosts(version, hosts, append=True):
+    """Appends host entries to puppet autosign conf file
+
+    :param str version: The current satellite version
+    :param list hosts: The list of hosts to be added for autoconf
+    :param bool append: Whether to add or append
+    """
+    append = '>>' if append else '>'
+    puppetver = 'ver1' if version in ['6.1', '6.2'] else 'ver2'
+    puppetfile = {
+        'ver1': '/etc/puppet/autosign.conf',
+        'ver2': '/etc/puppetlabs/puppet/autosign.conf'}
+    for host in hosts:
+        run('echo "{0}" {1} {2}'.format(host, append, puppetfile[puppetver]))

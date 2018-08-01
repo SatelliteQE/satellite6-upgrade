@@ -16,6 +16,7 @@ from upgrade.helpers.rhevm4 import (
     wait_till_rhevm4_instance_status
 )
 from upgrade.helpers.tasks import (
+    puppet_autosign_hosts,
     sync_tools_repos_to_upgrade
 )
 from upgrade.helpers.tools import version_filter
@@ -102,8 +103,7 @@ def satellite6_client_setup():
         )[docker_vm]
         # Allow all puppet clients to be signed automatically
         execute(
-            lambda: run('echo "*" > /etc/puppetlabs/puppet/autosign.conf'),
-            host=sat_host)
+            puppet_autosign_hosts, from_version, ['*'], host=sat_host)
         puppet_clients7 = execute(
             generate_satellite_docker_clients_on_rhevm, 'rhel7', 2,
             puppet=True,
@@ -152,8 +152,7 @@ def satellite6_client_setup():
             host=docker_vm)
         # Resetting autosign conf
         execute(
-            lambda: run('echo "" > /etc/puppetlabs/puppet/autosign.conf'),
-            host=sat_host)
+            puppet_autosign_hosts, from_version, [''], False, host=sat_host)
     logger.info('Clients are ready for Upgrade.')
     return clients6, clients7, puppet_clients7
 

@@ -99,7 +99,7 @@ def satellite6_upgrade():
         sys.exit(1)
     major_ver = distro_info()[1]
     if os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == 'true' \
-            and os.environ.get('OS') == 'rhel7' and to_version != '6.4':
+            and os.environ.get('OS') == 'rhel7':
         if base_url is None:
             os.environ['DISTRIBUTION'] = "CDN"
         else:

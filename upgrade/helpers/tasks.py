@@ -590,17 +590,17 @@ def upgrade_using_foreman_maintain():
         hammer_file.close()
 
     # whitelist foreman-tasks-not-paused and disk-performance check
-    # for 6.2 and 6.2.z upgrade.
-    if os.environ.get('TO_VERSION') == '6.2':
+    # for 6.4 and 6.4.z upgrade.
+    if os.environ.get('TO_VERSION') == '6.4':
         if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
             # z stream upgrade
             run('foreman-maintain upgrade run '
-                '--whitelist="foreman-tasks-not-paused,disk-performance" '
+                '--whitelist="disk-performance" '
                 '--target-version {} '
                 '-y'.format(os.environ.get('TO_VERSION') + ".z"))
         else:
             run('foreman-maintain upgrade run '
-                '--whitelist="foreman-tasks-not-paused,disk-performance" '
+                '--whitelist="disk-performance" '
                 '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
     else:
         if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):

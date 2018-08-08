@@ -143,7 +143,7 @@ class Scenario_capsule_sync(TestCase):
         cap_id = hammer.get_attribute_value(cap_data, self.cap_host, 'id')
         org_data = hammer.hammer('organization list')
         org_name = hammer.get_attribute_value(
-            org_data, int(self.org_id), 'name')
+            org_data, int(self.org_id), 'label')
         print hammer.hammer(
             'capsule content synchronize --id {0}'.format(cap_id))
         result = execute(
@@ -255,7 +255,7 @@ class Scenario_capsule_sync_2(TestCase):
         cap_id = hammer.get_attribute_value(cap_data, self.cap_host, 'id')
         org_data = hammer.hammer('organization list')
         org_name = hammer.get_attribute_value(
-            org_data, int(self.org_id), 'name')
+            org_data, int(self.org_id), 'label')
         print hammer.hammer(
             'capsule content synchronize --id {0}'.format(cap_id))
         result = execute(

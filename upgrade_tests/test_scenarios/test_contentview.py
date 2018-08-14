@@ -264,7 +264,7 @@ class ScenarioBug1429201(TestCase):
                 self.org_id
             )
         )
-        run('/etc/cron.weekly/katello-remove-orphans')
+        run('foreman-rake katello:delete_orphaned_content')
         execute(refresh_subscriptions_on_docker_clients,
                 container_ids.values(),
                 host=self.docker_vm

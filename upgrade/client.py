@@ -40,7 +40,7 @@ def satellite6_client_setup():
     # If User Defined Clients Hostname provided
     clients6 = os.environ.get('CLIENT6_HOSTS')
     clients7 = os.environ.get('CLIENT7_HOSTS')
-    puppet_clients7 = None
+    puppet_clients6 = puppet_clients7 = None
     docker_vm = os.environ.get('DOCKER_VM')
     clients_count = os.environ.get('CLIENTS_COUNT')
     from_version = os.environ.get('FROM_VERSION')
@@ -109,6 +109,11 @@ def satellite6_client_setup():
             puppet=True,
             host=docker_vm
         )[docker_vm]
+        puppet_clients6 = execute(
+            generate_satellite_docker_clients_on_rhevm, 'rhel6', 2,
+            puppet=True,
+            host=docker_vm
+        )[docker_vm]
         # Sync latest sat tools repo to clients if downstream
         if all([
             os.environ.get('TOOLS_URL_RHEL6'),
@@ -119,8 +124,10 @@ def satellite6_client_setup():
             logger.info('Syncing Tools repos of rhel7 in Satellite..')
             if from_version in vers:
                 all_clients7 = clients7.values() + puppet_clients7.values()
+                all_clients6 = clients6.values() + puppet_clients6.values()
             else:
                 all_clients7 = clients7.keys() + puppet_clients7.keys()
+                all_clients6 = clients6.keys() + puppet_clients6.keys()
             execute(
                 sync_tools_repos_to_upgrade,
                 'rhel7',
@@ -136,14 +143,14 @@ def satellite6_client_setup():
                 'rhel6',
                 # Containers_ids are not requied from sat version > 6.1 to
                 # attach the subscriprion to client
-                clients6.values() if from_version in vers else clients6.keys(),
+                all_clients6,
                 host=sat_host
             )
         # Refresh subscriptions on clients
         time.sleep(30)
         execute(
             refresh_subscriptions_on_docker_clients,
-            clients6.values(),
+            clients6.values() + puppet_clients6.values(),
             host=docker_vm)
         time.sleep(30)
         execute(
@@ -154,7 +161,7 @@ def satellite6_client_setup():
         execute(
             puppet_autosign_hosts, from_version, [''], False, host=sat_host)
     logger.info('Clients are ready for Upgrade.')
-    return clients6, clients7, puppet_clients7
+    return clients6, clients7, puppet_clients7, puppet_clients6
 
 
 def satellite6_client_upgrade(os_version, clients, puppet=False):
@@ -168,7 +175,7 @@ def satellite6_client_upgrade(os_version, clients, puppet=False):
     """
     logger.highlight(
         '\n========== {0} {1} CLIENTS UPGRADE =================\n'.format(
-            os_version.upper(), 'puppet' if puppet else 'katello'))
+            os_version.upper(), 'PUPPET' if puppet else 'KATELLO'))
     old_version = os.environ.get('FROM_VERSION')
     docker_vm = os.environ.get('DOCKER_VM')
     rhel_ver = os_version[-1]

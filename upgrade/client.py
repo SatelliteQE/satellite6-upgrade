@@ -170,18 +170,21 @@ def satellite6_client_upgrade(os_version, clients, puppet=False):
         '\n========== {0} {1} CLIENTS UPGRADE =================\n'.format(
             os_version.upper(), 'puppet' if puppet else 'katello'))
     old_version = os.environ.get('FROM_VERSION')
+    to_version = os.environ.get('TO_VERSION')
     docker_vm = os.environ.get('DOCKER_VM')
     rhel_ver = os_version[-1]
     old_repo = 'rhel-{0}-server-satellite-tools-{1}-rpms'.format(
         rhel_ver, old_version)
+    puppet_agent = 'puppet' if to_version not in ['6.4'] else 'puppet-agent'
+    agent = puppet_agent if puppet else 'katello-agent'
     if os.environ.get('CLIENT6_HOSTS') or os.environ.get('CLIENT7_HOSTS'):
-        user_clients_upgrade(old_repo, clients, puppet)
+        user_clients_upgrade(old_repo, clients, agent)
     elif os.environ.get('DOCKER_VM'):
         execute(
             docker_clients_upgrade,
             old_repo,
             clients,
-            puppet,
+            agent,
             host=docker_vm
         )
         # Fetching katello-agent version post upgrade from all clients
@@ -190,46 +193,43 @@ def satellite6_client_upgrade(os_version, clients, puppet=False):
         client_vers = execute(
             docker_clients_agent_version,
             clients,
-            puppet,
+            agent,
             host=docker_vm
         )[docker_vm]
         for hostname, version in client_vers.items():
             logger.highlight(
-                'The {0}-agent on client {1} upgraded '
-                'to version {2}'.format(
-                    'puppet' if puppet else 'katello', hostname, version))
+                'The {0} on client {1} upgraded '
+                'to version {2}'.format(agent, hostname, version))
 
 
-def user_clients_upgrade(old_repo, clients, puppet=False):
+def user_clients_upgrade(old_repo, clients, agent):
     """Helper function to run upgrade on user provided clients
 
     :param string old_repo: The old tools repo to disable before updating
         katello-agent package
     :param list clients: The list of clients onto which katello-agent package
         will be updated
-    :param bool puppet: clients are puppet clients or not, default no
+    :param string agent: puppet/ puppet-agent / katello-agent
     """
     for client in clients:
         execute(disable_repos, old_repo, host=client)
-        agent = 'puppet' if puppet else 'katello'
         execute(
-            lambda: run('yum update -y {}-agent'.format(agent)), host=client)
+            lambda: run('yum update -y {}'.format(agent)), host=client)
         post = version_filter(execute(
-            lambda: run('rpm -q {}-agent'.format(agent)), host=client)[client])
+            lambda: run('rpm -q {}'.format(agent)), host=client)[client])
         logger.highlight(
-            '{0}-agent on {1} upgraded to {2}'.format(agent, client, post))
+            '{0} on {1} upgraded to {2}'.format(agent, client, post))
 
 
-def docker_clients_upgrade(old_repo, clients, puppet=False):
+def docker_clients_upgrade(old_repo, clients, agent):
     """Helper function to run upgrade on docker containers as clients
 
     :param string old_repo: The old tools repo to disable before updating
         katello-agent package
     :param dict clients: The dictionary containing client_name as key and
         container_id as value
-    :param bool puppet: clients are puppet clients or not, default no
+    :param string agent: puppet/ puppet-agent / katello-agent
     """
-    agent = 'puppet' if puppet else 'katello'
     for hostname, container in clients.items():
         logger.info('Upgrading client {0} on docker container: {1}'.format(
             hostname, container))
@@ -237,23 +237,22 @@ def docker_clients_upgrade(old_repo, clients, puppet=False):
             container, 'subscription-manager repos --disable {}'.format(
                 old_repo))
         docker_execute_command(
-            container, 'yum update -y {}-agent'.format(agent), True)
+            container, 'yum update -y {}'.format(agent), True)
 
 
-def docker_clients_agent_version(clients, puppet=False):
+def docker_clients_agent_version(clients, agent):
     """Determines and returns the katello or puppet agent version on docker
     clients
 
     :param dict clients: The dictionary containing client_name as key and
         container_id as value
+    :param string agent: puppet/ puppet-agent / katello-agent
     :returns dict: The dict of docker clients hostname as key and
         its katello or puppet agent version as value
-    :param bool puppet: get puppet agent version if true
     """
     clients_dict = {}
-    agent = 'puppet' if puppet else 'katello'
     for hostname, container in clients.items():
         pst = version_filter(
-            docker_execute_command(container, 'rpm -q {}-agent'.format(agent)))
+            docker_execute_command(container, 'rpm -q {}'.format(agent)))
         clients_dict[hostname] = pst
     return clients_dict

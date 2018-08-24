@@ -17,9 +17,7 @@ setup(
     author=u'Jitendra Yejare',
     author_email='jyejare@redhat.com',
     url='https://github.com/SatelliteQE/satellite6-upgrade',
-    packages=['satellite6-upgrade'],
     package_data={'': ['LICENSE']},
-    package_dir={'satellite6-upgrade': 'satellite6-upgrade'},
     include_package_data=True,
     install_requires=[
         'Fabric',
@@ -29,7 +27,7 @@ setup(
         'python-bugzilla==1.2.2',
         'python-novaclient',
         'requests',
-        'robozilla'
+        'robozilla',
         'shade'
     ],
     license='GNU GPL v3.0',

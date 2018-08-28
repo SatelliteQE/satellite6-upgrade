@@ -24,14 +24,14 @@ from fabric.api import execute
 from nailgun import entities
 from unittest2.case import TestCase
 from upgrade.helpers.docker import docker_execute_command
+from upgrade.helpers.tasks import get_satellite_host
 from upgrade_tests import post_upgrade, pre_upgrade
 from upgrade_tests.helpers.constants import FAKE_REPO_ZOO3
 from upgrade_tests.helpers.scenarios import (
     call_entity_method_with_timeout,
     create_dict,
     dockerize,
-    get_entity_data,
-    get_satellite_host
+    get_entity_data
 )
 
 

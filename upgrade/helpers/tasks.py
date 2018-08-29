@@ -530,21 +530,8 @@ def setup_foreman_maintain():
     """
     env.disable_known_hosts = True
     # setting up foreman-maintain repo
-    if os.environ.get('DISTRIBUTION') == 'CDN':
-        enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
-    else:
-        satellite_repo = StringIO()
-        satellite_repo.write('[foreman-maintain]\n')
-        satellite_repo.write('name=foreman-maintain\n')
-        satellite_repo.write('baseurl={0}\n'.format(
-            os.environ.get('MAINTAIN_REPO')
-        ))
-        satellite_repo.write('enabled=1\n')
-        satellite_repo.write('gpgcheck=0\n')
-        put(local_path=satellite_repo,
-            remote_path='/etc/yum.repos.d/foreman-maintain.repo')
-        satellite_repo.close()
-
+    setup_foreman_maintain_repo()
+    if os.environ.get('DISTRIBUTION') != 'CDN':
         # Add Sat6 repo from latest compose
         satellite_repo = StringIO()
         satellite_repo.write('[sat6]\n')
@@ -557,11 +544,40 @@ def setup_foreman_maintain():
         put(local_path=satellite_repo,
             remote_path='/etc/yum.repos.d/sat6.repo')
         satellite_repo.close()
-
     # repolist
     run('yum repolist')
     # install foreman-maintain
     run('yum install rubygem-foreman_maintain -y')
+
+
+def setup_foreman_maintain_repo():
+    """Task which setup repo for foreman-maintain.
+
+    Environment Variables necessary to proceed Setup:
+    -----------------------------------------------------
+
+    DISTRIBUTION
+        The satellite upgrade using internal or CDN distribution.
+        e.g 'CDN','DOWNSTREAM'
+
+    MAINTAIN_REPO
+        URL of repo if distribution is DOWNSTREAM
+    """
+    # setting up foreman-maintain repo
+    if os.environ.get('DISTRIBUTION') == 'CDN':
+        enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
+    else:
+        maintain_repo = StringIO()
+        maintain_repo.write('[foreman-maintain]\n')
+        maintain_repo.write('name=foreman-maintain\n')
+        maintain_repo.write('baseurl={0}\n'.format(
+            os.environ.get('MAINTAIN_REPO')
+        ))
+        maintain_repo.write('enabled=1\n')
+        maintain_repo.write('gpgcheck=0\n')
+        put(local_path=maintain_repo,
+            remote_path='/etc/yum.repos.d/foreman-maintain.repo')
+        maintain_repo.close()
 
 
 def upgrade_using_foreman_maintain():

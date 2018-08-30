@@ -15,7 +15,7 @@ from upgrade.helpers.rhevm4 import (
 from upgrade.helpers.tasks import (
     sync_capsule_repos_to_upgrade,
     add_baseOS_repo,
-    setup_foreman_maintain
+    setup_foreman_maintain_repo
 )
 from upgrade.helpers.tools import (
     copy_ssh_key,
@@ -139,7 +139,8 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     if from_version == '6.1' and major_ver == '6':
         enable_repos('rhel-server-rhscl-{0}-rpms'.format(major_ver))
     # setup foreman-maintain
-    setup_foreman_maintain() if to_version in ['6.4'] else None
+    if to_version not in ['6.1', '6.2', '6.3']:
+        setup_foreman_maintain_repo()
     # Check what repos are set
     run('yum repolist')
     if from_version == '6.0':

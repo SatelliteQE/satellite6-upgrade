@@ -24,7 +24,6 @@ from upgrade.satellite import (
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import (
     check_necessary_env_variables_for_upgrade,
-    pre_upgrade_system_checks,
     post_upgrade_test_tasks
 )
 from upgrade.helpers.tools import (
@@ -167,9 +166,7 @@ def product_upgrade(product):
         # Get the setup dict returned by setup_products_for_upgrade
         setup_dict = get_setup_data()
         sat_host = setup_dict['sat_host']
-        cap_hosts = setup_dict['capsule_hosts']
         env['satellite_host'] = sat_host
-        pre_upgrade_system_checks(cap_hosts)
         try:
             with LogAnalyzer(sat_host):
                 current = execute(
@@ -192,6 +189,7 @@ def product_upgrade(product):
                 execute(foreman_debug, 'satellite_{}'.format(sat_host),
                         host=sat_host)
                 if product == 'capsule' or product == 'longrun':
+                    cap_hosts = setup_dict['capsule_hosts']
                     for cap_host in cap_hosts:
                         try:
                             with LogAnalyzer(cap_host):

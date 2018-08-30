@@ -1,7 +1,7 @@
 """Initializes of config to be used in Scenario Tests
 """
 from automation_tools.satellite6.hammer import set_hammer_config
-from upgrade.helpers.tasks import get_satellite_host
+from upgrade_tests.helpers.scenarios import get_satellite_host
 from nailgun.config import ServerConfig
 from fabric.api import env
 

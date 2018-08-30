@@ -28,12 +28,12 @@ from upgrade.helpers.docker import (
     docker_wait_until_repo_list,
     refresh_subscriptions_on_docker_clients
 )
-from upgrade.helpers.tasks import get_satellite_host
 from upgrade_tests import post_upgrade, pre_upgrade
 from upgrade_tests.helpers.scenarios import (
     create_dict,
     dockerize,
     get_entity_data,
+    get_satellite_host,
     rpm1,
     rpm2
 )

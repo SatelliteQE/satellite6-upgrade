@@ -20,11 +20,11 @@ from automation_tools.satellite6 import hammer
 from fabric.api import env, execute, run
 from unittest2.case import TestCase
 
-from upgrade.helpers.tasks import get_satellite_host
 from upgrade_tests import post_upgrade, pre_upgrade
 from upgrade_tests.helpers.scenarios import (
     create_dict,
     get_entity_data,
+    get_satellite_host,
     rpm1,
     rpm2
 )

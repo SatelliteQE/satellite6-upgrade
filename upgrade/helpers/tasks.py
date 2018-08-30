@@ -785,5 +785,6 @@ def pre_upgrade_system_checks(capsules):
     :param capsules: The list of capsules
     """
     # Check and wait if the capsule sync task is running before upgrade
-    for capsule in capsules:
-        wait_untill_capsule_sync(capsule)
+    if capsules:
+        for capsule in capsules:
+            wait_untill_capsule_sync(capsule)

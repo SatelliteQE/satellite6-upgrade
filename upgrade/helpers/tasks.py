@@ -32,6 +32,7 @@ from automation_tools.satellite6.hammer import (
     set_hammer_config
 )
 from automation_tools.utils import get_discovery_image
+from nailgun import entities
 from robozilla.decorators import bz_bug_is_open
 from upgrade.helpers.logger import logger
 from upgrade.helpers.docker import (
@@ -727,3 +728,46 @@ def puppet_autosign_hosts(version, hosts, append=True):
         'ver2': '/etc/puppetlabs/puppet/autosign.conf'}
     for host in hosts:
         run('echo "{0}" {1} {2}'.format(host, append, puppetfile[puppetver]))
+
+
+def get_satellite_host():
+    """Get the satellite hostname depending on which jenkins variables are set
+
+    :return string : Returns the satellite hostname
+
+    Environment Variable:
+
+    RHEV_SAT_HOST
+        This is set, if we are using internal RHEV Templates and VM for
+        upgrade.
+    SATELLITE_HOSTNAME
+        This is set, in case user provides his personal satellite for
+        upgrade.
+        """
+    return os.environ.get(
+        'RHEV_SAT_HOST',
+        os.environ.get('SATELLITE_HOSTNAME')
+    )
+
+
+def wait_untill_capsule_sync(capsule):
+    """The polling function that waits for capsule sync task to finish
+
+    :param capsule: A capsule hostname
+    """
+    caps = entities.Capsule().search(
+        query={'search': 'name={}'.format(capsule)})
+    active_tasks = caps.content_get_sync()['active_sync_tasks']
+    if len(active_tasks) >= 1:
+        for task in active_tasks:
+            entities.ForemanTask(id=task['id']).poll()
+
+
+def pre_upgrade_system_checks(capsules):
+    """The preupgrade system checks necessary for smooth upgrade experience
+
+    :param capsules: The list of capsules
+    """
+    # Check and wait if the capsule sync task is running before upgrade
+    for capsule in capsules:
+        wait_untill_capsule_sync(capsule)

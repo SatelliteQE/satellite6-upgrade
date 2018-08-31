@@ -18,10 +18,10 @@ from automation_tools.satellite6 import hammer
 from fabric.api import env
 from nailgun import entities
 from unittest2.case import TestCase
+from upgrade.helpers.tasks import get_satellite_host
 from upgrade_tests import post_upgrade, pre_upgrade
 from upgrade_tests.helpers.scenarios import (
     delete_manifest,
-    get_satellite_host,
     upload_manifest
 )
 import os

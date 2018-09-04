@@ -18,7 +18,7 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.common import run_to_upgrade, existence
+from upgrade_tests.helpers.common import dont_run_to_upgrade, existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -29,7 +29,7 @@ cap_url = compare_postupgrade(component, 'url')
 
 
 # Tests
-@run_to_upgrade('6.2')
+@dont_run_to_upgrade('6.1')
 @pytest.mark.parametrize(
     "pre,post", cap_features, ids=pytest_ids(cap_features))
 def test_positive_capsules_by_features(pre, post):
@@ -40,7 +40,7 @@ def test_positive_capsules_by_features(pre, post):
     :expectedresults: All features of all capsules should be retained post
         upgrade
     """
-    assert existence(pre, post)
+    assert existence(pre, post, component)
 
 
 @pytest.mark.parametrize("pre,post", cap_name, ids=pytest_ids(cap_name))

@@ -20,7 +20,7 @@ associations post upgrade
 import pytest
 
 from robozilla.decorators import pytest_skip_if_bug_open
-from upgrade_tests.helpers.common import existence, run_to_upgrade
+from upgrade_tests.helpers.common import existence, dont_run_to_upgrade
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
@@ -60,7 +60,7 @@ def test_positive_cvs_by_label(pre, post):
     assert existence(pre, post)
 
 
-@run_to_upgrade('6.2')
+@dont_run_to_upgrade('6.1')
 @pytest.mark.parametrize(
     "pre,post", cvs_composite, ids=pytest_ids(cvs_composite))
 def test_positive_cvs_by_composite_views(pre, post):

@@ -16,6 +16,7 @@
 
 :Upstream: No
 """
+import os
 import pytest
 from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
@@ -34,4 +35,7 @@ def test_positive_domains_by_subnet(pre, post):
 
     :expectedresults: Subnets of all domains should be retained post upgrade
     """
+    if os.environ.get('TO_VERSION') == '6.4':
+        if post:
+            [subnet.pop('description') for subnet in post]
     assert existence(pre, post)

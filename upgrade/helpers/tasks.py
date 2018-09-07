@@ -38,7 +38,7 @@ from upgrade.helpers.logger import logger
 from upgrade.helpers.docker import (
     attach_subscription_to_host_from_content_host
 )
-from fabric.api import env, execute, put, run
+from fabric.api import env, execute, put, run, warn_only
 if sys.version_info[0] is 2:
     from StringIO import StringIO  # (import-error) pylint:disable=F0401
 else:  # pylint:disable=F0401,E0611
@@ -606,7 +606,16 @@ def upgrade_using_foreman_maintain():
             remote_path='/root/.hammer/cli.modules.d/foreman.yml')
         hammer_file.close()
 
-    # whitelist foreman-tasks-not-paused and disk-performance check
+    with warn_only():
+        if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
+            # z stream upgrade
+            run('foreman-maintain upgrade check --target-version {}'
+                ' -y'.format(os.environ.get('TO_VERSION') + ".z"))
+        else:
+            run('foreman-maintain upgrade check --target-version {}'
+                ' -y'.format(os.environ.get('TO_VERSION')))
+
+    # whitelist disk-performance check
     # for 6.4 and 6.4.z upgrade.
     if os.environ.get('TO_VERSION') == '6.4':
         if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):

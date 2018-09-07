@@ -52,7 +52,8 @@ def setup_products_for_upgrade(product, os_version):
     """
     env.disable_known_hosts = True
     if check_necessary_env_variables_for_upgrade(product):
-        sat_host = cap_hosts = clients6 = clients7 = puppet_clients7 = None
+        sat_host = cap_hosts = None
+        clients6 = clients7 = puppet_clients7 = puppet_clients6 = None
         logger.info('Setting up Satellite ....')
         sat_host = satellite6_setup(os_version)
         if product == 'capsule' or product == 'n-1' or product == 'longrun':
@@ -61,16 +62,21 @@ def setup_products_for_upgrade(product, os_version):
                 sat_host, os_version, False if product == 'n-1' else True)
         if product == 'client' or product == 'longrun':
             logger.info('Setting up Clients ....')
-            clients6, clients7, puppet_clients7 = satellite6_client_setup()
+            (
+                clients6, clients7, puppet_clients7, puppet_clients6
+             ) = satellite6_client_setup()
         setups_dict = {
             'sat_host': sat_host,
             'capsule_hosts': cap_hosts,
             'clients6': clients6,
             'clients7': clients7,
-            'puppet_clients7': puppet_clients7
+            'puppet_clients7': puppet_clients7,
+            'puppet_clients6': puppet_clients6
         }
         create_setup_dict(setups_dict)
-        return sat_host, cap_hosts, clients6, clients7, puppet_clients7
+        return (
+            sat_host, cap_hosts, clients6, clients7,
+            puppet_clients7, puppet_clients6)
 
 
 def product_upgrade(product):
@@ -243,10 +249,13 @@ def product_upgrade(product):
                     clients6 = setup_dict['clients6']
                     clients7 = setup_dict['clients7']
                     puppet_clients7 = setup_dict['puppet_clients7']
+                    puppet_clients6 = setup_dict['puppet_clients6']
                     satellite6_client_upgrade('rhel6', clients6)
                     satellite6_client_upgrade('rhel7', clients7)
                     satellite6_client_upgrade(
                         'rhel7', puppet_clients7, puppet=True)
+                    satellite6_client_upgrade(
+                        'rhel6', puppet_clients6, puppet=True)
         except Exception:
             # Generate foreman debug on failed satellite upgrade
             execute(foreman_debug, 'satellite_{}'.format(sat_host),

@@ -617,7 +617,7 @@ def upgrade_using_foreman_maintain():
 
     # whitelist disk-performance check
     # for 6.4 and 6.4.z upgrade.
-    if os.environ.get('TO_VERSION') == '6.4':
+    if os.environ.get('TO_VERSION') in ['6.3', '6.4']:
         if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
             # z stream upgrade
             run('foreman-maintain upgrade run '

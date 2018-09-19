@@ -116,8 +116,8 @@ def sync_capsule_repos_to_upgrade(capsules):
     from_version = os.environ.get('FROM_VERSION')
     to_version = os.environ.get('TO_VERSION')
     os_ver = os.environ.get('OS')[-1]
-    if to_version in ['6.4', '6.3']:
-        tools_repo_url = os.environ.get('TOOLS_URL_RHEL7')
+    tools_repo_url = os.environ.get('TOOLS_URL_RHEL7') if to_version in [
+        '6.4', '6.3'] else None
     activation_key = os.environ.get(
         'CAPSULE_AK', os.environ.get('RHEV_CAPSULE_AK'))
     if activation_key is None:
@@ -169,19 +169,18 @@ def sync_capsule_repos_to_upgrade(capsules):
                 capsule_tools = 'Capsule Tools Product'
                 capsule_tools_repo = 'Capsule Tools Repo'
                 hammer_product_create(capsule_tools, '1')
+                tools_label = None
                 time.sleep(2)
                 hammer_repository_create(
                     capsule_tools_repo, '1', capsule_tools, tools_repo_url)
             else:
-                tools_prd = 'Red Hat Enterprise Linux Server'
-                tools_repo = 'Red Hat Satellite Tools {0} ' \
-                             '(for RHEL {1} Server) (RPMs)'.format(to_version,
-                                                                   os_ver
-                                                                   )
+                capsule_tools = 'Red Hat Enterprise Linux Server'
+                capsule_tools_repo = 'Red Hat Satellite Tools {0} '
+                '(for RHEL {1} Server) (RPMs)'.format(to_version, os_ver)
                 tools_label = 'rhel-{0}-server-satellite-tools-{1}-' \
                               'rpms'.format(os_ver, to_version)
                 hammer_repository_set_enable(
-                    tools_repo, tools_prd, '1', 'x86_64')
+                    capsule_tools_repo, capsule_tools, '1', 'x86_64')
                 time.sleep(5)
             hammer_repository_synchronize(capsule_tools_repo,
                                           '1',

@@ -1,6 +1,11 @@
 """Module which publish all satellite6 upgrade tasks"""
 
-from automation_tools import partition_disk
+from automation_tools import (
+    partition_disk,
+    product_install,
+    vm_create,
+    vm_destroy
+)
 
 from upgrade.runner import (
     product_upgrade,
@@ -28,6 +33,7 @@ from upgrade.helpers.rhevm4 import (
     validate_and_create_rhevm4_templates
 )
 from upgrade.helpers.tasks import (
+    generate_custom_certs,
     sync_capsule_repos_to_upgrade,
     sync_tools_repos_to_upgrade,
     setup_foreman_maintain,

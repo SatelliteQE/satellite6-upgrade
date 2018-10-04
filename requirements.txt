@@ -1,12 +1,7 @@
-fauxfactory==2.0.9
-ovirt-engine-sdk-python==4.2.7
-python-novaclient
-robozilla
-shade
-
 # Get automation-tools from master
 git+https://github.com/SatelliteQE/automation-tools#egg=automation-tools
 
 # Get nailgun from master
 git+https://github.com/SatelliteQE/nailgun.git#egg=nailgun
 
+--editable .

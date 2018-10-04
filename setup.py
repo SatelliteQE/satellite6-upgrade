@@ -20,10 +20,10 @@ setup(
     package_data={'': ['LICENSE']},
     include_package_data=True,
     install_requires=[
-        'Fabric',
-        'ovirt-engine-sdk-python==3.6.8.0',
+        'Fabric3',
+        'fauxfactory==2.0.9',
+        'ovirt-engine-sdk-python==4.2.7',
         'pycurl',
-        'pytest',
         'python-bugzilla==1.2.2',
         'python-novaclient',
         'requests',

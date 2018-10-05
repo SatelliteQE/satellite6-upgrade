@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 try:
-    from setuptools import setup
+    from setuptools import find_packages, setup
 except ImportError:
     from distutils.core import setup
 
@@ -17,19 +17,6 @@ setup(
     author=u'Jitendra Yejare',
     author_email='jyejare@redhat.com',
     url='https://github.com/SatelliteQE/satellite6-upgrade',
-    package_data={'': ['LICENSE']},
-    include_package_data=True,
-    install_requires=[
-        'Fabric3',
-        'fauxfactory==2.0.9',
-        'ovirt-engine-sdk-python==4.2.7',
-        'pycurl',
-        'python-bugzilla==1.2.2',
-        'python-novaclient',
-        'requests',
-        'robozilla',
-        'shade'
-    ],
     license='GNU GPL v3.0',
     classifiers=(
         'Development Status :: 5 - Production/Stable',
@@ -41,4 +28,16 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
     ),
+    packages=find_packages(),
+    install_requires=[
+        'Fabric3',
+        'fauxfactory==2.0.9',
+        'ovirt-engine-sdk-python==4.2.7',
+        'pycurl',
+        'python-bugzilla==1.2.2',
+        'python-novaclient',
+        'requests',
+        'robozilla',
+        'shade'
+    ],
 )

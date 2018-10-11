@@ -17,12 +17,16 @@ its associations post upgrade
 
 :Upstream: No
 """
+import os
 import pytest
 from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
-component = 'discovery_rule'
+if os.environ.get('TO_VERSION') in ['6.3', '6.4']:
+    component = 'discovery-rule'
+else:
+    component = 'discovery_rule'
 drule_name = compare_postupgrade(component, 'name')
 drule_prio = compare_postupgrade(component, 'priority')
 drule_search = compare_postupgrade(component, 'search')

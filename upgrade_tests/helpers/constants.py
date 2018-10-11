@@ -66,7 +66,8 @@ class cli_const:
             'content-host',
             'compute-resource',
             'discovery',
-            'discovery_rule',
+            'discovery-rule' if to_version in [
+                '6.3', '6.4'] else 'discovery_rule',
             'domain',
             'environment',
             'filter',

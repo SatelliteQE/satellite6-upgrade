@@ -35,4 +35,4 @@ def test_positive_templates_by_name(pre, post):
 
     :expectedresults: All templates should be retained post upgrade by names
     """
-    assert existence(pre, post)
+    assert existence(pre, post, component)

@@ -18,7 +18,7 @@
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.common import run_to_upgrade, existence
+from upgrade_tests.helpers.common import dont_run_to_upgrade, existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 
@@ -67,7 +67,7 @@ def test_positive_smart_params_by_override(pre, post):
     assert existence(pre, post)
 
 
-@run_to_upgrade('6.2')
+@dont_run_to_upgrade('6.1')
 @pytest.mark.parametrize("pre,post", scp_pclass, ids=pytest_ids(scp_pclass))
 def test_positive_smart_params_by_puppet_class(pre, post):
     """Test all smart parameters associations with its puppet class is retained

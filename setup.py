@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
+
 try:
     from setuptools import find_packages, setup
 except ImportError:
@@ -7,6 +9,13 @@ except ImportError:
 
 with open('README.md', 'r') as f:
     readme = f.read()
+
+try:
+    os.environ['PYCURL_SSL_LIBRARY'] = 'openssl'
+    os.system('pip install --compile --install-option="--with-openssl" pycurl')
+except:
+    os.environ['PYCURL_SSL_LIBRARY'] = 'nss'
+    os.system('pip install --compile --install-option="--with-nss" pycurl')
 
 setup(
     name='satellite6-upgrade',

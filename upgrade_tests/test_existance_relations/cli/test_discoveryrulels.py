@@ -57,7 +57,10 @@ def test_positive_discovery_rules_by_priority(pre, post):
     :expectedresults: All discovery rules priorities should be retained post
         upgrade
     """
-    assert existence(pre, post)
+    if os.environ.get('TO_VERSION') == '6.4' and pre == '0':
+        assert not existence(pre, post)
+    else:
+        assert existence(pre, post)
 
 
 @pytest.mark.parametrize(

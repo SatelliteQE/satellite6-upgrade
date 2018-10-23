@@ -76,16 +76,16 @@ _entity_varients = {
         ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts, play_roles_on_host'] # noqa
     ],
     'organization': [
-        ['default_organization']*3+['default organization']], # noqa
+        ['default_organization']*3+['default organization']],  # noqa
     'role': [
         # Role Variants
         ['viewer']*2+['customized viewer']*2,
         ['site manager']*2+['customized site manager']*2,
         ['manager']*2+['customized manager']*2,
-        ['discovery reader']*2+['customized discovery reader']*2, # noqa
-        ['discovery manager']*2+['customized discovery manager']*2, # noqa
-        ['compliance viewer']*2+['customized compliance viewer']*2, # noqa
-        ['compliance manager']*2+['customized compliance manager']*2, # noqa
+        ['discovery reader']*2+['customized discovery reader']*2,  # noqa
+        ['discovery manager']*2+['customized discovery manager']*2,  # noqa
+        ['compliance viewer']*2+['customized compliance viewer']*2,  # noqa
+        ['compliance manager']*2+['customized compliance manager']*2,  # noqa
         ['anonymous']*2+['default role']*2],
     'settings': [
         # Value Variants
@@ -101,7 +101,7 @@ _entity_varients = {
         ['fact name to use for primary interface detection and hostname']*2 +
          ['fact name to use for primary interface detection']*2,
         ['automatically reboot discovered host during provisioning']*2 +
-         ['automatically reboot or kexec discovered host during provisioning']*2, # noqa
+         ['automatically reboot or kexec discovered host during provisioning']*2,  # noqa
         ['default provisioning template for new atomic operating systems']*2 +
          ['default provisioning template for new atomic operating systems '
          'created from synced content']*2,
@@ -133,13 +133,15 @@ _entity_varients = {
          ' machines and dns records may also be deleted.']*2,
         ['private key that foreman will use to encrypt websockets']*2 +
          ['private key file that foreman will use to encrypt websockets']*2,
-        ['duration in minutes after the puppet interval for servers to be classed as out of sync.']*3 + # noqa
+        ['duration in minutes after the puppet interval for servers to be classed as out of sync.']*3 +  # noqa
          ['duration in minutes after servers are classed as out of sync.'],
-        ['satellite kickstart default user data'] * 3 + ['kickstart default user data'], # noqa
+        ['satellite kickstart default user data'] * 3 + ['kickstart default user data'],  # noqa
         ['satellite kickstart default'] * 3 + ['kickstart default'],
-        ['satellite kickstart default finish'] * 3 + ['kickstart default finish'], # noqa
-        ['satellite atomic kickstart default'] * 3 + ['atomic kickstart default'], # noqa
-        ['default_location'] * 3 + ['default location']],
+        ['satellite kickstart default finish'] * 3 + ['kickstart default finish'],  # noqa
+        ['satellite atomic kickstart default'] * 3 + ['atomic kickstart default'],  # noqa
+        ['default_location'] * 3 + ['default location'],
+        ['what command should be used to switch to the effective user. one of ["sudo", "su"]']*3 +  # noqa
+         ['what command should be used to switch to the effective user. one of ["sudo", "dzdo", "su"]']],  # noqa
     'subscription': [
         # Validity Variants
         ['-1']*2+['unlimited']*2],
@@ -147,11 +149,40 @@ _entity_varients = {
         # name variants
         ['idm_register']*3+['deprecated idm_register'],
         ['satellite atomic kickstart default']*3+['deprecated satellite atomic kickstart default'], # noqa
-        ['satellite kickstart default']*3+['deprecated satellite kickstart default'], # noqa
+        ['satellite kickstart default']*3+['deprecated satellite kickstart default'],  # noqa
         ['satellite kickstart default finish']*3+['deprecated satellite kickstart default finish'], # noqa
         ['satellite kickstart default user data']*3+['deprecated satellite kickstart default user data'] # noqa
     ]
 }
+
+# Depreciated component entities satellite version wise
+_depreciated = {
+    '6.4': {
+        'settings': [
+            'use_pulp_oauth', 'use_gravatar', 'trusted_puppetmaster_hosts', 'force_post_sync_actions']  # noqa
+    }
+}
+
+
+def depreciated_attrs_less_component_data(component, attr_data):
+    """Removes the depreciated attribute entities of a component from all
+    entities of a component attribute
+
+    e.g if some settings are removed in some version then this function removes
+    those settings before actual comparision
+
+    :param string component: The component of which the attrs are depreciated
+    :param list attr_data: List of component attribute entities
+        e.g All the setting names / setting values etc.
+    :return list: attr_data with removed depreciated component entities from
+        the _depreciated dict
+    """
+    ver = os.environ.get('TO_VERSION')
+    if _depreciated.get(ver):
+        if _depreciated[ver].get(component):
+            for depr_attr_entity in _depreciated[ver][component]:
+                attr_data.remove(depr_attr_entity)
+    return attr_data
 
 
 def assert_varients(component, pre, post):

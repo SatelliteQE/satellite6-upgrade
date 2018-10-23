@@ -13,6 +13,9 @@ from fabric.api import execute
 from nailgun.config import ServerConfig
 from upgrade.helpers.tools import get_setup_data
 from upgrade_tests.helpers.constants import api_const, cli_const
+from upgrade_tests.helpers.variants import (
+    depreciated_attrs_less_component_data
+)
 
 
 class IncorrectEndpointException(Exception):
@@ -273,7 +276,10 @@ def find_datastore(datastore, component, attribute, search_criteria=None):
     comp_data = _find_on_list_of_dicts(datastore, component)
     if isinstance(comp_data, list):
         if (search_criteria is None) and attribute:
-            return _find_on_list_of_dicts(comp_data, attribute, all_=True)
+            attr_entities = _find_on_list_of_dicts(
+                comp_data, attribute, all_=True)
+            return depreciated_attrs_less_component_data(
+                component, attr_entities)
         if all([search_criteria, attribute]):
             return _find_on_list_of_dicts_using_search_criteria(
                 comp_data, search_criteria, attribute)

@@ -59,14 +59,14 @@ def check_necessary_env_variables_for_upgrade(product):
         failure.append('Product name should be one of {0}.'.format(
             ', '.join(products)))
     # From which version to upgrade
-    supported_vers = ['6.4', '6.3', '6.2', '6.1', '6.0']
+    supported_vers = ['6.5', '6.4', '6.3', '6.2', '6.1', '6.0']
     if os.environ.get('FROM_VERSION') not in supported_vers:
         failure.append('Wrong FROM_VERSION provided to upgrade from. '
-                       'Provide one of 6.4, 6.3, 6.2, 6.1, 6.0')
+                       'Provide one of {}'.format(supported_vers))
     # To which version to upgrade
-    if os.environ.get('TO_VERSION') not in ['6.4', '6.1', '6.2', '6.3']:
+    if os.environ.get('TO_VERSION') not in ['6.5', '6.4', '6.1', '6.2', '6.3']:
         failure.append('Wrong TO_VERSION provided to upgrade to. '
-                       'Provide one of 6.4, 6.1, 6.2, 6.3')
+                       'Provide one of 6.5, 6.4, 6.1, 6.2, 6.3')
     # Check If OS is set for creating an instance name in rhevm
     if not os.environ.get('OS'):
         failure.append('Please provide OS version as rhel7 or rhel6, '
@@ -117,7 +117,7 @@ def sync_capsule_repos_to_upgrade(capsules):
     to_version = os.environ.get('TO_VERSION')
     os_ver = os.environ.get('OS')[-1]
     tools_repo_url = os.environ.get('TOOLS_URL_RHEL7') if to_version in [
-        '6.4', '6.3'] else None
+        '6.5', '6.4', '6.3'] else None
     activation_key = os.environ.get(
         'CAPSULE_AK', os.environ.get('RHEV_CAPSULE_AK'))
     if activation_key is None:
@@ -156,7 +156,7 @@ def sync_capsule_repos_to_upgrade(capsules):
     except KeyError:
         # If latest capsule repo is not created already(Fresh Upgrade),
         # So create new....
-        if to_version in ['6.4', '6.3']:
+        if float(to_version) >= 6.3:
             (
                 rhscl_prd,
                 rhscl_repo_name,
@@ -486,7 +486,7 @@ def capsule_sync(cap_host):
     :param list cap_host: List of capsules to perform sync
     """
     set_hammer_config()
-    if os.environ.get('TO_VERSION') in ['6.2', '6.3', '6.4']:
+    if float(os.environ.get('TO_VERSION')) >= 6.2:
         logger.info('Refreshing features for capsule host {0}'.
                     format(cap_host))
         print hammer('capsule refresh-features --name "{0}"'.
@@ -615,26 +615,16 @@ def upgrade_using_foreman_maintain():
                 ' -y'.format(os.environ.get('TO_VERSION')))
 
     # whitelist disk-performance check
-    # for 6.4 and 6.4.z upgrade.
-    if os.environ.get('TO_VERSION') in ['6.3', '6.4']:
-        if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
-            # z stream upgrade
-            run('foreman-maintain upgrade run '
-                '--whitelist="disk-performance" '
-                '--target-version {} '
-                '-y'.format(os.environ.get('TO_VERSION') + ".z"))
-        else:
-            run('foreman-maintain upgrade run '
-                '--whitelist="disk-performance" '
-                '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
+    if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
+        # z stream upgrade
+        run('foreman-maintain upgrade run '
+            '--whitelist="disk-performance" '
+            '--target-version {} '
+            '-y'.format(os.environ.get('TO_VERSION') + ".z"))
     else:
-        if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
-            # z stream upgrade
-            run('foreman-maintain upgrade run --target-version {} -y'.format(
-                os.environ.get('TO_VERSION') + ".z"))
-        else:
-            run('foreman-maintain upgrade run --target-version {} -y'.format(
-                os.environ.get('TO_VERSION')))
+        run('foreman-maintain upgrade run '
+            '--whitelist="disk-performance" '
+            '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
 
 
 def upgrade_puppet3_to_puppet4():

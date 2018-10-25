@@ -182,7 +182,7 @@ def satellite6_client_upgrade(os_version, clients, puppet=False):
     rhel_ver = os_version[-1]
     old_repo = 'rhel-{0}-server-satellite-tools-{1}-rpms'.format(
         rhel_ver, old_version)
-    puppet_agent = 'puppet' if to_version not in ['6.4'] else 'puppet-agent'
+    puppet_agent = 'puppet' if float(to_version) <= 6.3 else 'puppet-agent'
     agent = puppet_agent if puppet else 'katello-agent'
     if os.environ.get('CLIENT6_HOSTS') or os.environ.get('CLIENT7_HOSTS'):
         user_clients_upgrade(old_repo, clients, agent)

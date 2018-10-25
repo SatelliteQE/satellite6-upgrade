@@ -313,12 +313,12 @@ class Scenario_upgrade_old_client_and_package_installation(TestCase):
             host=self.docker_vm
         )
         # Run goferd on client as its docker container
+        kwargs = {'async': True, 'host': self.docker_vm}
         execute(
             docker_execute_command,
             client_container_id,
             'goferd -f',
-            async=True,
-            host=self.docker_vm
+            **kwargs
         )
         create_dict(
             {self.__class__.__name__: rhel7_client}
@@ -440,12 +440,12 @@ class Scenario_upgrade_new_client_and_package_installation(TestCase):
             host=self.docker_vm
         )
         # Run goferd on client as its docker container
+        kwargs = {'async': True, 'host': self.docker_vm}
         execute(
             docker_execute_command,
             client_container_id,
             'goferd -f',
-            async=True,
-            host=self.docker_vm
+            **kwargs
         )
         # Holding on for 30 seconds wihle goferd starts
         time.sleep(30)

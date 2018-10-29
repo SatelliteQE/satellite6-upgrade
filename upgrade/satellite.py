@@ -93,9 +93,9 @@ def satellite6_upgrade():
     logger.highlight('\n========== SATELLITE UPGRADE =================\n')
     to_version = os.environ.get('TO_VERSION')
     base_url = os.environ.get('BASE_URL')
-    if to_version not in ['6.1', '6.2', '6.3', '6.4']:
+    if to_version not in ['6.1', '6.2', '6.3', '6.4', '6.5']:
         logger.warning('Wrong Satellite Version Provided to upgrade to. '
-                       'Provide one of 6.1, 6.2, 6.3, 6.4')
+                       'Provide one of 6.1, 6.2, 6.3, 6.4, 6.5')
         sys.exit(1)
     major_ver = distro_info()[1]
     if os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == 'true' \

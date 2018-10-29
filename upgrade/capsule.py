@@ -129,7 +129,7 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     # Host and Content Host are in different organizations (e.g. host not in
     # org, and content host in one), the content host will be unregistered as
     # part of the upgrade process.
-    if to_version in ['6.2', '6.3', '6.4']:
+    if float(to_version) >= 6.2:
         ak_name = os.environ.get('CAPSULE_AK') if os.environ.get(
             'CAPSULE_AK') else os.environ.get('RHEV_CAPSULE_AK')
         run('subscription-manager register --org="Default_Organization" '
@@ -177,7 +177,7 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     if to_version == '6.1':
         run('capsule-installer --upgrade --certs-tar '
             '/home/{0}-certs.tar'.format(cap_host))
-    elif to_version == '6.3' or to_version == '6.4':
+    elif float(to_version) >= 6.2:
         run('satellite-installer --scenario capsule --upgrade '
             '--certs-tar /home/{0}-certs.tar '
             '--certs-update-all --regenerate true '

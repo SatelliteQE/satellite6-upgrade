@@ -47,7 +47,6 @@ setup(
         'ovirt-engine-sdk-python==4.2.7',
         'pycurl',
         'python-bugzilla==1.2.2',
-        'python-novaclient',
         'requests',
         'robozilla',
         'shade'

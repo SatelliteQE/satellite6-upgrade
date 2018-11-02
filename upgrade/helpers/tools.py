@@ -175,7 +175,7 @@ def version_filter(rpm_name):
 
     :param string rpm_name: The katello-agent rpm name
     """
-    return re.search('\d(\-\d|\.\d)*', rpm_name).group()
+    return re.search(r'\d(\-\d|\.\d)*', rpm_name).group()
 
 
 def _extract_sat_cap_version(command):

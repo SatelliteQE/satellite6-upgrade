@@ -104,7 +104,7 @@ def refresh_subscriptions_on_docker_clients(container_ids):
         docker_execute_command(container_ids, 'yum clean all', quiet=True)
 
 
-def docker_execute_command(container_id, command, quiet=True, async=False):
+def docker_execute_command(container_id, command, quiet=True, **kwargs):
     """Executes command on running docker container
 
     :param string container_id: Running containers id to execute command
@@ -119,14 +119,14 @@ def docker_execute_command(container_id, command, quiet=True, async=False):
             'quiet parameter value should be boolean type. '
             '{} type provided.'.format(type(quiet))
         )
-    if not isinstance(async, bool):
+    if 'async' in kwargs and not isinstance(kwargs['async'], bool):
         raise TypeError(
             'async parameter value should be boolean type. '
-            '{} type provided.'.format(type(async))
+            '{} type provided.'.format(type(kwargs['async']))
         )
     return run(
         'docker exec {0} {1} {2}'.format(
-            '-d' if async else '', container_id, command),
+            '-d' if kwargs['async'] else '', container_id, command),
         quiet=quiet
         )
 

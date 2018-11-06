@@ -126,7 +126,7 @@ def docker_execute_command(container_id, command, quiet=True, **kwargs):
         )
     return run(
         'docker exec {0} {1} {2}'.format(
-            '-d' if kwargs['async'] else '', container_id, command),
+            '-d' if kwargs.get('async') else '', container_id, command),
         quiet=quiet
         )
 

@@ -527,6 +527,9 @@ def setup_foreman_maintain():
 
     BASE_URL
         URL for the compose repository if distribution is DOWNSTREAM
+
+    TOOLS_RHEL7
+        URL for the satellite tools repo if distribution is DOWNSTREAM
     """
     env.disable_known_hosts = True
     # setting up foreman-maintain repo
@@ -544,6 +547,18 @@ def setup_foreman_maintain():
         put(local_path=satellite_repo,
             remote_path='/etc/yum.repos.d/sat6.repo')
         satellite_repo.close()
+        # Add sattools repo from latest compose
+        tools_repo = StringIO()
+        tools_repo.write('[sat6tools7]\n')
+        tools_repo.write('name=satellite6-tools7\n')
+        tools_repo.write('baseurl={0}\n'.format(
+            os.environ.get('TOOLS_RHEL7')
+        ))
+        tools_repo.write('enabled=1\n')
+        tools_repo.write('gpgcheck=0\n')
+        put(local_path=tools_repo,
+            remote_path='/etc/yum.repos.d/sat6tools7.repo')
+        tools_repo.close()
     # repolist
     run('yum repolist')
     # install foreman-maintain

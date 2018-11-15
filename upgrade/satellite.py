@@ -98,6 +98,8 @@ def satellite6_upgrade():
                        'Provide one of 6.1, 6.2, 6.3, 6.4, 6.5')
         sys.exit(1)
     major_ver = distro_info()[1]
+    # remove once BZ 1644354 fixed
+    run("yum erase ant-junit -y")
     if os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == 'true' \
             and os.environ.get('OS') == 'rhel7':
         if base_url is None:
@@ -201,6 +203,8 @@ def satellite6_zstream_upgrade():
         sys.exit(1)
     base_url = os.environ.get('BASE_URL')
     major_ver = distro_info()[1]
+    # remove once BZ 1644354 fixed
+    run("yum erase ant-junit -y")
     if os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == "true" \
             and os.environ.get('OS') == 'rhel7':
         if base_url is None:

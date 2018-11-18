@@ -804,3 +804,31 @@ def pre_upgrade_system_checks(capsules):
     if capsules:
         for capsule in capsules:
             wait_untill_capsule_sync(capsule)
+
+
+def generate_custom_certs():
+    """ Task to generate custom certs for satellite
+    Environment Variable:
+    SERVER_HOSTNAME
+        The satellite server hostname
+    """
+    certs_script = StringIO()
+    certs_script.write(
+        u"#! /bin/bash\n"
+        u"name={hostname}\n"
+        u"mkdir ownca\n"
+        u"pushd ownca\n"
+        u"wget https://raw.githubusercontent.com/ntkathole/ownca/master/openssl.cnf\n"
+        u"wget https://raw.githubusercontent.com/ntkathole/ownca/master/generate-ca.sh\n"
+        u"wget https://raw.githubusercontent.com/ntkathole/ownca/master/generate-crt.sh\n"
+        u"echo 100001 >> serial\n"
+        u"chmod 744 *.sh\n"
+        u'yes "" | ./generate-ca.sh\n'
+        u'yes | ./generate-crt.sh $name\n'
+        u'cp cacert.crt $name/\n'
+        .format(hostname=os.environ.get('SERVER_HOSTNAME'))
+    )
+    put(local_path=certs_script,
+        remote_path='/root/certs_script.sh')
+    certs_script.close()
+    run("sh /root/certs_script.sh")

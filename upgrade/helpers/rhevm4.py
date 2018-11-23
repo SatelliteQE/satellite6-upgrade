@@ -5,7 +5,7 @@ Note: Many functions and commands are affected by environment variables.
 import os
 import sys
 import time
-import thread
+import _thread
 
 from fabric.api import execute
 from ovirtsdk4 import ConnectionBuilder
@@ -294,7 +294,7 @@ def validate_and_create_rhevm4_templates(product):
             execute(capsule_sync, cap_host, host=sat_host)
             execute(check_ntpd, host=cap_host)
             execute(katello_restart, host=cap_host)
-            thread.start_new_thread(
+            _thread.start_new_thread(
                 create_rhevm4_template,
                 (
                     sat_instance,
@@ -302,7 +302,7 @@ def validate_and_create_rhevm4_templates(product):
                     new_sat_template,
                     storage)
             )
-            thread.start_new_thread(
+            _thread.start_new_thread(
                 create_rhevm4_template,
                 (
                     cap_instance,

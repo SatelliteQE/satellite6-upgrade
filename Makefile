@@ -35,7 +35,7 @@ install-commit-hook:
 	@grep -q '^make can-i-push?' .git/hooks/pre-commit || echo "make can-i-push?" >> .git/hooks/pre-commit
 
 lint:
-	flake8 upgrade upgrade_tests
+	flake8 --max-line-length=99 upgrade upgrade_tests
 
 test-docstrings:
 	testimony $(TESTIMONY_OPTIONS) validate upgrade_tests

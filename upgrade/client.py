@@ -123,11 +123,11 @@ def satellite6_client_setup():
             vers = ['6.0', '6.1']
             logger.info('Syncing Tools repos of rhel7 in Satellite..')
             if from_version in vers:
-                all_clients7 = clients7.values() + puppet_clients7.values()
-                all_clients6 = clients6.values() + puppet_clients6.values()
+                all_clients7 = list(clients7.values()) + list(puppet_clients7.values())
+                all_clients6 = list(clients6.values()) + list(puppet_clients6.values())
             else:
-                all_clients7 = clients7.keys() + puppet_clients7.keys()
-                all_clients6 = clients6.keys() + puppet_clients6.keys()
+                all_clients7 = list(clients7.keys()) + list(puppet_clients7.keys())
+                all_clients6 = list(clients6.keys()) + list(puppet_clients6.keys())
             execute(
                 sync_tools_repos_to_upgrade,
                 'rhel7',
@@ -150,12 +150,12 @@ def satellite6_client_setup():
         time.sleep(30)
         execute(
             refresh_subscriptions_on_docker_clients,
-            clients6.values() + puppet_clients6.values(),
+            list(clients6.values()) + list(puppet_clients6.values()),
             host=docker_vm)
         time.sleep(30)
         execute(
             refresh_subscriptions_on_docker_clients,
-            clients7.values() + puppet_clients7.values(),
+            list(clients7.values()) + list(puppet_clients7.values()),
             host=docker_vm)
         # Resetting autosign conf
         execute(
@@ -203,7 +203,7 @@ def satellite6_client_upgrade(os_version, clients, puppet=False):
             agent,
             host=docker_vm
         )[docker_vm]
-        for hostname, version in client_vers.items():
+        for hostname, version in tuple(client_vers.items()):
             logger.highlight(
                 'The {0} on client {1} upgraded '
                 'to version {2}'.format(agent, hostname, version))
@@ -237,7 +237,7 @@ def docker_clients_upgrade(old_repo, clients, agent):
         container_id as value
     :param string agent: puppet/ puppet-agent / katello-agent
     """
-    for hostname, container in clients.items():
+    for hostname, container in tuple(clients.items()):
         logger.info('Upgrading client {0} on docker container: {1}'.format(
             hostname, container))
         docker_execute_command(
@@ -258,7 +258,7 @@ def docker_clients_agent_version(clients, agent):
         its katello or puppet agent version as value
     """
     clients_dict = {}
-    for hostname, container in clients.items():
+    for hostname, container in tuple(clients.items()):
         pst = version_filter(
             docker_execute_command(container, 'rpm -q {}'.format(agent)))
         clients_dict[hostname] = pst

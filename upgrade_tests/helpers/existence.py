@@ -154,10 +154,10 @@ def _find_on_list_of_dicts_using_search_criteria(
         exists as value of another key
 
     """
-    search_key = search_criteria.keys()[0]
-    search_value = search_criteria.values()[0]
+    search_key = list(search_criteria.keys())[0]
+    search_value = list(search_criteria.values())[0]
     for single_dict in lst_of_dct:
-        for key, value in single_dict.items():
+        for key, value in tuple(single_dict.items()):
             if search_value == str(value) and key == search_key:
                 return single_dict.get(
                     attr,
@@ -210,7 +210,7 @@ def set_datastore(datastore, endpoint):
         all_comps_data = nonorged_comps_data + orged_comps_data
     if endpoint == 'api':
         set_api_server_config()
-        api_comps = api_const.api_components().keys()
+        api_comps = list(api_const.api_components().keys())
         all_comps_data = [
             api_reader(component) for component in api_comps
         ]
@@ -303,7 +303,7 @@ def compare_postupgrade(component, attribute):
     :returns tuple: The tuple containing two items, first attribute value
         before upgrade and second attribute value of post upgrade
     """
-    sat_vers = ['6.1', '6.2', '6.3', '6.4']
+    sat_vers = ['6.1', '6.2', '6.3', '6.4', '6.5']
     from_ver = os.environ.get('FROM_VERSION')
     to_ver = os.environ.get('TO_VERSION')
     endpoint = os.environ.get('ENDPOINT')

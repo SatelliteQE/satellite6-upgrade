@@ -2,6 +2,6 @@
 git+https://github.com/SatelliteQE/automation-tools#egg=automation-tools
 
 # Get nailgun from master
-git+https://github.com/SatelliteQE/nailgun.git#egg=nailgun
+git+https://github.com/SatelliteQE/nailgun.git@6.2.z#egg=nailgun
 
 --editable .

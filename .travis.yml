@@ -2,6 +2,7 @@ language: python
 sudo: false
 python:
     - "2.7"
+    - "3.6"
 install:
     - pip install -r requirements.txt
     - pip install -r requirements-optional.txt
@@ -9,3 +10,5 @@ script:
     - make lint
     - make test-docstrings
     - py.test --cov=upgrade_tests/helpers upgrade_tests/helpers/coverme.py
+notifications:
+    irc: "chat.freenode.net#robottelo"

@@ -1,5 +1,7 @@
 """Module which publish all satellite6 upgrade tasks"""
 
+# flake8:noqa pylint:disable=F401
+
 from automation_tools import partition_disk
 
 from upgrade.runner import (

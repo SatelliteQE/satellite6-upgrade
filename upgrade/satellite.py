@@ -12,7 +12,6 @@ from automation_tools import (
     subscribe,
     install_prerequisites
 )
-from automation_tools.satellite6.hammer import hammer, set_hammer_config
 from automation_tools.repository import enable_repos, disable_repos
 from automation_tools.utils import distro_info, update_packages
 from datetime import datetime
@@ -168,12 +167,11 @@ def satellite6_upgrade():
         postup_time = datetime.now().replace(microsecond=0)
         logger.highlight('Time taken for Satellite Upgrade - {}'.format(
             str(postup_time-preup_time)))
-    set_hammer_config()
     # Rebooting the satellite for kernel update if any
     reboot(180)
     host_ssh_availability_check(env.get('satellite_host'))
     # Test the Upgrade is successful
-    hammer('ping')
+    run('hammer ping')
     run('katello-service status', warn_only=True)
     # Enable ostree feature only for rhel7 and sat6.2
     if to_version == '6.2' and major_ver == 7:
@@ -270,6 +268,5 @@ def satellite6_zstream_upgrade():
     reboot(180)
     host_ssh_availability_check(env.get('satellite_host'))
     # Test the Upgrade is successful
-    set_hammer_config()
-    hammer('ping')
+    run('hammer ping')
     run('katello-service status', warn_only=True)

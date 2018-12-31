@@ -26,7 +26,7 @@ setup(
     description='Tools to perform and test satellite6 upgrade.'
     'And test framework that validates entities postupgrade.',
     long_description=readme,
-    author=u'Jitendra Yejare',
+    author='Jitendra Yejare',
     author_email='jyejare@redhat.com',
     url='https://github.com/SatelliteQE/satellite6-upgrade',
     license='GNU GPL v3.0',
@@ -43,7 +43,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'Fabric3',
-        'fauxfactory==2.0.9',
+        'fauxfactory==2.1.1',
         'ovirt-engine-sdk-python==4.2.7',
         'pycurl',
         'python-bugzilla==1.2.2',

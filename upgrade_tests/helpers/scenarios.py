@@ -7,7 +7,6 @@ import time
 from automation_tools import manage_daemon
 from automation_tools.satellite6 import hammer
 from fabric.api import run
-from nailgun import entity_mixins
 from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
 from upgrade.helpers.rhevm4 import (
     create_rhevm4_instance,
@@ -21,25 +20,6 @@ rpm1 = 'https://inecas.fedorapeople.org/fakerepos/zoo3/bear-4.1-1.noarch.rpm'
 rpm2 = 'https://inecas.fedorapeople.org/fakerepos/zoo3/camel-0.1-1.noarch.rpm'
 
 logger = logger()
-
-
-def call_entity_method_with_timeout(entity_callable, timeout=300, **kwargs):
-    """Call Entity callable with a custom timeout
-
-    :param entity_callable, the entity method object to call
-    :param timeout: the time to wait for the method call to finish
-    :param kwargs: the kwargs to pass to the entity callable
-
-    Usage:
-        call_entity_method_with_timeout(
-            entities.Repository(id=repo_id).sync, timeout=1500)
-    """
-    original_task_timeout = entity_mixins.TASK_TIMEOUT
-    entity_mixins.TASK_TIMEOUT = timeout
-    try:
-        entity_callable(**kwargs)
-    finally:
-        entity_mixins.TASK_TIMEOUT = original_task_timeout
 
 
 def create_dict(entities_dict):
@@ -161,9 +141,9 @@ def upload_manifest(manifest_url, org_name):
     # Sets hammer default configuration
     hammer.set_hammer_config()
     run('wget {0} -O {1}'.format(manifest_url, '/manifest.zip'))
-    print hammer.hammer('subscription upload --file {0} '
-                        '--organization {1}'.format('/manifest.zip',
-                                                    org_name))
+    print(hammer.hammer(
+        'subscription upload --file {0} --organization {1}'.format(
+            '/manifest.zip', org_name)))
 
 
 def delete_manifest(org_name):
@@ -176,7 +156,7 @@ def delete_manifest(org_name):
     """
     # Sets hammer default configuration
     hammer.set_hammer_config()
-    print hammer.hammer(
+    print(hammer.hammer(
         'subscription delete-manifest '
         '--organization "{0}"'.format(org_name)
-    )
+    ))

@@ -8,6 +8,7 @@ import re
 import subprocess
 import time
 
+from nailgun import entity_mixins
 from fabric.api import execute, run
 from upgrade.helpers.logger import logger
 
@@ -80,7 +81,7 @@ def host_pings(host, timeout=15, ip_addr=False):
             stderr=subprocess.PIPE,
             shell=True
         )
-        output = command.communicate()[0]
+        output = command.communicate()[0].decode()
         # Checking the return code of ping is 0
         if time.time() > timeup:
             logger.warning('The timeout for pinging the host {0} has '
@@ -96,7 +97,7 @@ def host_pings(host, timeout=15, ip_addr=False):
 
 
 def host_ssh_availability_check(host, timeout=7):
-    """This ensures the given host has ssh up and running..
+    """This ensures the given host has ssh up and running.
 
     :param host: A string. The IP or hostname of host.
     :param int timeout: The polling timeout in minutes.
@@ -111,8 +112,8 @@ def host_ssh_availability_check(host, timeout=7):
             stderr=subprocess.PIPE,
             shell=True
         )
-        output = command.communicate()[1]
-        print output
+        output = command.communicate()[1].decode()
+        print(output)
         # Checking the return code of ping is 0
         if time.time() > timeup:
             logger.warning('SSH timed out for host {0} '.format(host))
@@ -204,12 +205,12 @@ def get_sat_cap_version(product):
     :return string: Satellite/Capsule version
     """
     if 'sat' in product.lower():
-        _6_2_VERSION_COMMAND = u'rpm -q satellite'
+        _6_2_VERSION_COMMAND = 'rpm -q satellite'
         _LT_6_2_VERSION_COMMAND = (
-            u'grep "VERSION" /usr/share/foreman/lib/satellite/version.rb'
+            'grep "VERSION" /usr/share/foreman/lib/satellite/version.rb'
         )
     if 'cap' in product.lower():
-        _6_2_VERSION_COMMAND = u'rpm -q satellite-capsule'
+        _6_2_VERSION_COMMAND = 'rpm -q satellite-capsule'
         _LT_6_2_VERSION_COMMAND = 'None'
     results = (
         _extract_sat_cap_version(cmd) for cmd in
@@ -230,7 +231,7 @@ def create_setup_dict(setups_dict):
     :param dict setups_dict: Dictionary of all return value of
     setup_products_for_upgrade
     """
-    with open('product_setup', 'wb') as pref:
+    with open('product_setup', 'w') as pref:
         json.dump(setups_dict, pref)
 
 
@@ -245,3 +246,22 @@ def get_setup_data():
     with open('product_setup', 'r') as pref:
         data = json.load(pref)
     return data
+
+
+def call_entity_method_with_timeout(entity_callable, timeout=300, **kwargs):
+    """Call Entity callable with a custom timeout
+
+    :param entity_callable, the entity method object to call
+    :param timeout: the time to wait for the method call to finish
+    :param kwargs: the kwargs to pass to the entity callable
+
+    Usage:
+        call_entity_method_with_timeout(
+            entities.Repository(id=repo_id).sync, timeout=1500)
+    """
+    original_task_timeout = entity_mixins.TASK_TIMEOUT
+    entity_mixins.TASK_TIMEOUT = timeout
+    try:
+        entity_callable(**kwargs)
+    finally:
+        entity_mixins.TASK_TIMEOUT = original_task_timeout

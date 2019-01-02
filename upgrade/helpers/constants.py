@@ -2,7 +2,7 @@
 
 rhelcontents = {
     'rhscl': {
-        'prod': 'Red Hat Software Collections (for RHEL Server)',
+        'prod': 'Red Hat Software Collections for RHEL Server',
         'repofull': 'Red Hat Software Collections RPMs for Red Hat Enterprise Linux '
                     '{os_ver} Server {arch} {os_ver}Server',
         'repo': 'Red Hat Software Collections RPMs for Red Hat Enterprise Linux {os_ver} Server',

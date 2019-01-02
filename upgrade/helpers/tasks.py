@@ -164,7 +164,9 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
             organization=org, content_type='yum').create()
     else:
         cap_product = entities.Product(
-            name=rhelcontents['capsule']['prod'], organization=org).search()[0]
+            name=rhelcontents['capsule']['prod'],
+            organization=org
+        ).search(query={'per_page': 100})[0]
         cap_reposet = entities.RepositorySet(
             name=rhelcontents['capsule']['repo'].format(cap_ver=to_version, os_ver=os_ver),
             product=cap_product
@@ -176,7 +178,7 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
         cap_repo = entities.Repository(
             name=rhelcontents['capsule']['repofull'].format(
                 cap_ver=to_version, os_ver=os_ver, arch='x86_64')
-        ).search(query={'organization_id': org.id})[0]
+        ).search(query={'organization_id': org.id, 'per_page': 100})[0]
     call_entity_method_with_timeout(entities.Repository(id=cap_repo.id).sync, timeout=2500)
     # Add repos to CV
     cv.repository += [cap_repo]
@@ -211,7 +213,7 @@ def _sync_rh_repos_to_satellite(org):
     arch = 'x86_64'
     # Enable rhscl repository
     scl_product = entities.Product(
-        name=rhelcontents['rhscl']['prod'], organization=org).search()[0]
+        name=rhelcontents['rhscl']['prod'], organization=org).search(query={'per_page': 100})[0]
     scl_reposet = entities.RepositorySet(
         name=rhelcontents['rhscl']['repo'].format(os_ver=rhelver), product=scl_product
     ).search()[0]
@@ -223,11 +225,11 @@ def _sync_rh_repos_to_satellite(org):
     # Sync enabled Repo from cdn
     scl_repo = entities.Repository(
         name=rhelcontents['rhscl']['repofull'].format(os_ver=rhelver, arch=arch)
-    ).search(query={'organization_id': org.id})[0]
+    ).search(query={'organization_id': org.id, 'per_page': 100})[0]
     call_entity_method_with_timeout(entities.Repository(id=scl_repo.id).sync, timeout=2500)
     # Enable RHEL 7 Server repository
     server_product = entities.Product(
-        name=rhelcontents['server']['prod'], organization=org).search()[0]
+        name=rhelcontents['server']['prod'], organization=org).search(query={'per_page': 100})[0]
     server_reposet = entities.RepositorySet(
         name=rhelcontents['server']['repo'].format(os_ver=rhelver), product=server_product
     ).search()[0]
@@ -239,7 +241,7 @@ def _sync_rh_repos_to_satellite(org):
     # Sync enabled Repo from cdn
     server_repo = entities.Repository(
         name=rhelcontents['server']['repofull'].format(os_ver=rhelver, arch=arch)
-    ).search(query={'organization_id': org.id})[0]
+    ).search(query={'organization_id': org.id, 'per_page': 100})[0]
     call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync, timeout=3600)
     scl_repo.repo_id = rhelcontents['rhscl']['label'].format(os_ver=rhelver)
     server_repo.repo_id = rhelcontents['server']['label'].format(os_ver=rhelver)
@@ -266,7 +268,8 @@ def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
         ).create()
     else:
         captools_product = entities.Product(
-            name=rhelcontents['tools']['prod'], organization=org).search()[0]
+            name=rhelcontents['tools']['prod'], organization=org
+        ).search(query={'per_page': 100})[0]
         cap_reposet = entities.RepositorySet(
             name=rhelcontents['tools']['repo'].format(sat_ver=to_ver, os_ver=rhelver),
             product=captools_product).search()[0]
@@ -278,7 +281,7 @@ def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
         captools_repo = entities.Repository(
             name=rhelcontents['tools']['repofull'].format(
                 sat_ver=to_ver, os_ver=rhelver, arch=arch)
-        ).search(query={'organization_id': org.id})[0]
+        ).search(query={'organization_id': org.id, 'per_page': 100})[0]
     call_entity_method_with_timeout(entities.Repository(id=captools_repo.id).sync, timeout=2500)
     captools_repo.repo_id = rhelcontents['tools']['label'].format(
         os_ver=rhelver, sat_ver=to_ver)

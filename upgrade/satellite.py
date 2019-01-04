@@ -171,7 +171,7 @@ def satellite6_upgrade():
     reboot(180)
     host_ssh_availability_check(env.get('satellite_host'))
     # Test the Upgrade is successful
-    run('hammer ping')
+    run('hammer ping', warn_only=True)
     run('katello-service status', warn_only=True)
     # Enable ostree feature only for rhel7 and sat6.2
     if to_version == '6.2' and major_ver == 7:
@@ -268,5 +268,5 @@ def satellite6_zstream_upgrade():
     reboot(180)
     host_ssh_availability_check(env.get('satellite_host'))
     # Test the Upgrade is successful
-    run('hammer ping')
+    run('hammer ping', warn_only=True)
     run('katello-service status', warn_only=True)

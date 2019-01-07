@@ -213,7 +213,8 @@ def _sync_rh_repos_to_satellite(org):
     arch = 'x86_64'
     # Enable rhscl repository
     scl_product = entities.Product(
-        name=rhelcontents['rhscl']['prod'], organization=org).search(query={'per_page': 100})[0]
+        name=rhelcontents['rhscl_sat64']['prod'], organization=org
+    ).search(query={'per_page': 100})[0]
     scl_reposet = entities.RepositorySet(
         name=rhelcontents['rhscl']['repo'].format(os_ver=rhelver), product=scl_product
     ).search()[0]

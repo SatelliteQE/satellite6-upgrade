@@ -8,6 +8,9 @@ rhelcontents = {
         'repo': 'Red Hat Software Collections RPMs for Red Hat Enterprise Linux {os_ver} Server',
         'label': 'rhel-server-rhscl-{os_ver}-rpms'
     },
+    'rhscl_sat64': {
+        'prod': 'Red Hat Software Collections (for RHEL Server)'
+    },
     'server': {
         'prod': 'Red Hat Enterprise Linux Server',
         'repofull': 'Red Hat Enterprise Linux {os_ver} Server RPMs {arch} {os_ver}Server',

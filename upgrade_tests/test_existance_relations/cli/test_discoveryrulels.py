@@ -23,7 +23,7 @@ from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
-if os.environ.get('TO_VERSION') in ['6.3', '6.4']:
+if float(os.environ.get('TO_VERSION')) >= 6.3:
     component = 'discovery-rule'
 else:
     component = 'discovery_rule'
@@ -57,6 +57,8 @@ def test_positive_discovery_rules_by_priority(pre, post):
     :expectedresults: All discovery rules priorities should be retained post
         upgrade
     """
+    # The priority changes from 0 to some priority number during
+    # 6.3 to 6.4 upgrade only
     if os.environ.get('TO_VERSION') == '6.4' and pre == '0':
         assert not existence(pre, post)
     else:

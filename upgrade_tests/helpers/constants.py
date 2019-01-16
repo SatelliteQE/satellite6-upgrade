@@ -21,8 +21,7 @@ class cli_const:
             'capsule',
             'compute-resource',
             'discovery',
-            'discovery-rule' if to_version in [
-                '6.3', '6.4'] else 'discovery_rule',
+            'discovery-rule' if float(to_version) >= 6.3 else 'discovery_rule',
             'domain',
             'environment',
             'filter',

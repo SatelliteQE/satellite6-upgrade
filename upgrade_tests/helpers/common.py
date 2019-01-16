@@ -61,7 +61,7 @@ def existence(pre, post, component=None):
         return assert_varients(component, pre, post)
     else:
         if isinstance(pre, list) and isinstance(post, list):
-            return sorted(pre) == sorted(post)
+            return sorted(list(pre)) == sorted(list(post))
         return pre == post
 
 

@@ -24,7 +24,7 @@ from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 # Required Data
 component = 'smart-variable'
 sv_name = compare_postupgrade(
-    component, ('name', 'name', 'variable', 'variable'))
+    component, ('name', 'name', 'variable', 'variable', 'variable'))
 sv_dv = compare_postupgrade(component, 'default value')
 sv_type = compare_postupgrade(component, 'type')
 sv_pclass = compare_postupgrade(component, 'puppet class')

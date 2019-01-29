@@ -5,7 +5,7 @@ all environment variables are required.
 """
 import os
 
-from automation_tools import foreman_debug
+from automation_tools import foreman_debug, setup_fake_manifest_certificate
 from automation_tools.satellite6.log import LogAnalyzer
 from upgrade.capsule import (
     satellite6_capsule_setup,
@@ -57,6 +57,14 @@ def setup_products_for_upgrade(product, os_version):
         logger.info('Setting up Satellite ....')
         sat_host = satellite6_setup(os_version)
         if product == 'capsule' or product == 'n-1' or product == 'longrun':
+            # Execute tasks as pre upgrade tests are dependent
+            certificate_url = os.environ.get('FAKE_MANIFEST_CERT_URL')
+            if certificate_url is not None:
+                execute(
+                    setup_fake_manifest_certificate,
+                    certificate_url,
+                    host=sat_host
+                )
             logger.info('Setting up Capsule ....')
             cap_hosts = satellite6_capsule_setup(
                 sat_host, os_version, False if product == 'n-1' else True)

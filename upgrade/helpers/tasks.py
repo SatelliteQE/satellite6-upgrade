@@ -25,7 +25,7 @@ from upgrade.helpers.docker import (
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tools import call_entity_method_with_timeout
 from fabric.api import env, execute, put, run, warn_only
-if sys.version_info[0] is 2:
+if sys.version_info[0] == 2:
     from StringIO import StringIO  # (import-error) pylint:disable=F0401
 else:  # pylint:disable=F0401,E0611
     from io import StringIO

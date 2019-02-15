@@ -6,6 +6,7 @@ import pytest
 from functools import partial
 from robozilla.decorators import pytest_skip_if_bug_open
 from upgrade_tests.helpers.variants import assert_varients
+from upgrade_tests.helpers.existence import assert_templates
 
 cur_ver = os.environ.get('FROM_VERSION')
 to_ver = os.environ.get('TO_VERSION')
@@ -20,7 +21,7 @@ pytest_skip_if_bug_open = partial(
         pytest_skip_if_bug_open)
 
 
-def existence(pre, post, component=None):
+def existence(pre, post, component=None, template=None):
     """Returns test result according to pre and post value
 
     Result Types:
@@ -30,6 +31,9 @@ def existence(pre, post, component=None):
     2. If 'component' is provided then it alternates the result of assert if
     the value of entity attribute is 'expected' to change during upgrade.
     visit def `assert_variants` for more details
+    3. If 'template' is provided then it calls helpers for foreman templates comparision,
+    also the preupgrade and postupgrade templates needs to be available.
+    This option is only for template.py template existence tests.
     3. Finally If nothing from above, then plain comparision and return results
     ```
 
@@ -49,6 +53,7 @@ def existence(pre, post, component=None):
     :param post: Post-upgrade Value from test
     :param component: The satellite component name for which the attribute name
      differs
+    :param template: The foreman template type for template comparision
     :return: Returns pytest.fail or Boolean value according to pre-upgrade and
      post-upgrade value
     """
@@ -59,6 +64,8 @@ def existence(pre, post, component=None):
         pytest.fail(msg='{0}{1}'.format(pre, post))
     elif component:
         return assert_varients(component, pre, post)
+    elif template and not post == 'true':
+        return assert_templates(template, pre, post)
     else:
         if isinstance(pre, list) and isinstance(post, list):
             return sorted(list(pre)) == sorted(list(post))

@@ -123,7 +123,6 @@ def satellite6_upgrade():
         disable_repos('*', silent=True)
         enable_repos('rhel-{0}-server-rpms'.format(major_ver))
         enable_repos('rhel-server-rhscl-{0}-rpms'.format(major_ver))
-        enable_repos('rhel-{0}-server-extras-rpms'.format(major_ver))
         # If CDN upgrade then enable satellite latest version repo
         if base_url is None:
             enable_repos('rhel-{0}-server-satellite-{1}-rpms'.format(
@@ -220,7 +219,6 @@ def satellite6_zstream_upgrade():
         disable_repos('*', silent=True)
         enable_repos('rhel-{0}-server-rpms'.format(major_ver))
         enable_repos('rhel-server-rhscl-{0}-rpms'.format(major_ver))
-        enable_repos('rhel-{0}-server-extras-rpms'.format(major_ver))
         # If CDN upgrade then enable satellite latest version repo
         if base_url is None:
             enable_repos('rhel-{0}-server-satellite-{1}-rpms'.format(

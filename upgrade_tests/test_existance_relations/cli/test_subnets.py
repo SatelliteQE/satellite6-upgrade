@@ -24,8 +24,10 @@ from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 # Required Data
 component = 'subnet'
 sub_name = compare_postupgrade(component, 'name')
-sub_network = compare_postupgrade(component, 'network')
-sub_mask = compare_postupgrade(component, 'mask')
+sub_network = compare_postupgrade(
+    component, ('network', 'network', 'network', 'network addr', 'network addr'))
+sub_mask = compare_postupgrade(
+    component, ('network', 'network', 'network', 'network mask', 'network mask'))
 
 
 # Tests

@@ -122,7 +122,11 @@ def template_reader(template_type, template_id):
     :param str template_id: The template id
     :return str: The template content as string
     """
-    template_dump = hammer('{0} dump --id {1}'.format(template_type, template_id), 'base')
+    set_hammer_config()
+    sat_host = get_setup_data()['sat_host']
+    template_dump = execute(
+        hammer, '{0} dump --id {1}'.format(template_type, template_id), 'base', host=sat_host
+    )[sat_host]
     return template_dump
 
 

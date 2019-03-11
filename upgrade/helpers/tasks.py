@@ -39,7 +39,7 @@ from upgrade.helpers.docker import (
     attach_subscription_to_host_from_content_host
 )
 from fabric.api import env, execute, put, run, warn_only
-if sys.version_info[0] is 2:
+if sys.version_info[0] == 2:
     from StringIO import StringIO  # (import-error) pylint:disable=F0401
 else:  # pylint:disable=F0401,E0611
     from io import StringIO

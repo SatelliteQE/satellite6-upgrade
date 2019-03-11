@@ -34,9 +34,9 @@ def get_openstack_client():
     username = os.environ.get('USERNAME')
     if username is None:
         logger.warning('The USERNAME environment variable should be defined')
-    password = os.environ.get('PASSWORD')
+    password = os.environ.get('OSP_PASSWORD')
     if password is None:
-        logger.warning('The PASSWORD environment variable should be defined')
+        logger.warning('The OSP_PASSWORD environment variable should be defined')
     auth_url = os.environ.get('AUTH_URL')
     if auth_url is None:
         logger.warning('The AUTH_URL environment variable should be defined')
@@ -44,9 +44,14 @@ def get_openstack_client():
     if project_name is None:
         logger.warning('The PROJECT_NAME environment variable should '
                        'be defined')
+    domain_name = os.environ.get('DOMAIN_NAME')
+    if domain_name is None:
+        logger.warning('The DOMAIN_NAME environment variable should '
+                       'be defined')
     data = {
         'clouds':
             {
+                'identity_api_version': 3,
                 'satellite-jenkins':
                     {
                         'auth':
@@ -54,7 +59,9 @@ def get_openstack_client():
                                 'username': username,
                                 'password': password,
                                 'project_name': project_name,
-                                'auth_url': auth_url
+                                'auth_url': auth_url,
+                                'user_domain_name': domain_name,
+                                'project_domain_name': domain_name
                             }
                     }
             }

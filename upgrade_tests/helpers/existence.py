@@ -2,6 +2,7 @@
 post upgrade
 """
 import csv
+import filecmp
 import json
 import os
 
@@ -9,17 +10,24 @@ from automation_tools.satellite6.hammer import (
     hammer,
     set_hammer_config
 )
+from difflib import Differ
 from fabric.api import execute
 from nailgun.config import ServerConfig
+from pprint import pprint
 from upgrade.helpers.tools import get_setup_data
 from upgrade_tests.helpers.constants import api_const, cli_const
 from upgrade_tests.helpers.variants import (
-    depreciated_attrs_less_component_data
+    depreciated_attrs_less_component_data,
+    template_varients
 )
 
 
 class IncorrectEndpointException(Exception):
     """Raise exception on wrong or No endpoint provided"""
+
+
+class IncorrectTemplateTypeException(Exception):
+    """Raise exception on wrong or No template type provided"""
 
 
 def csv_reader(component, subcommand):
@@ -105,6 +113,52 @@ def api_reader(component):
         comp_entity_data.append(single_entity_info)
     comp_data[component] = comp_entity_data
     return comp_data
+
+
+def template_reader(template_type, template_id):
+    """Hammer read and returns the template dump of template_id
+
+    :param str template_type: The satellite template type
+    :param str template_id: The template id
+    :return str: The template content as string
+    """
+    set_hammer_config()
+    sat_host = get_setup_data()['sat_host']
+    template_dump = execute(
+        hammer, '{0} dump --id {1}'.format(template_type, template_id), 'base', host=sat_host
+    )[sat_host]
+    return template_dump
+
+
+def _template_writer(datastorestate, template_type, template_ids):
+    """Reads the template from satellite and writes the template to
+    $pwd/```datastorestate```_templates/```template_type```/```template_ids```.erb
+
+    :param str datastorestate: Either preupgrade or postupgrade
+    :param str template_type: The satellite template type
+    :param str template_ids: The template id
+    """
+    datastorestate_dir = '{}_templates'.format(datastorestate)
+    if not os.path.exists(datastorestate_dir):
+        os.makedirs(datastorestate_dir)
+    templates_dir = '{0}/{1}'.format(datastorestate_dir, template_type)
+    if not os.path.exists(templates_dir):
+        os.makedirs(templates_dir)
+    for template_id in template_ids:
+        with open('{0}/{1}.erb'.format(templates_dir, template_id), 'w') as tempFile:
+            tempFile.write(template_reader(template_type, template_id))
+
+
+def set_templatestore(datastorestate):
+    """Creates the ```datastorestate```_templates directory and writes all templates inside there
+    respective directory
+
+    :param datastorestate: Either preupgrade or postupgrade
+    """
+    for template_type in ('job-template', 'template', 'partition-table'):
+        temp_ids = [template['id'] for template in csv_reader(
+            template_type, 'list')[template_type]]
+        _template_writer(datastorestate, template_type, temp_ids)
 
 
 def _find_on_list_of_dicts(lst, data_key, all_=False):
@@ -343,6 +397,63 @@ def compare_postupgrade(component, attribute):
     return entity_values
 
 
+def _find_templatestore(templatestorestate, template_type, template_id=None):
+    """Returns a particular template data or all ids of template_type templates stored in
+    templatestorestate
+
+     if template_id is provided, particular template data from saved templatestorestate
+    else, all ids of template_type templates stored in templatestorestate
+
+    Also, returns a string for 'not finding the template' with given id
+
+    :param templatestorestate: Either preupgrade or postupgrade
+    :param str template_type: The template type
+    :param str template_id: The template id
+    """
+    templates_path = '{0}_templates/{1}'.format(templatestorestate, template_type)
+    if not template_id:
+        # Returns list of template ids of template type
+        return [temp_name.strip('.erb') for temp_name in os.listdir(templates_path)]
+    template_id = template_id.strip()
+    template_path = '{0}/{1}.erb'.format(templates_path, template_id)
+    if not os.path.exists(template_path):
+        return 'ID : {0} {1} is missing.'.format(
+            template_id, template_type, templatestorestate)
+    with open('{0}'.format(template_path)) as template:
+        return template_path, template.read()
+
+
+def compare_templates(template_type):
+    """Helper to compare provisioning, ptables and job templates
+    Returns every template_type templates data from preupgrade and postupgrade datastore if
+    the compFile finds the difference else return (true, true) to directly pass the test without
+    actually comapring the contents of templates
+
+    :param str template_type: The template type
+    """
+    supported_templates = ('job-template', 'template', 'partition-table')
+    if template_type not in supported_templates:
+        raise IncorrectTemplateTypeException(
+            'The Template Type has to be one of {}'.format(supported_templates))
+    from_ver = os.environ.get('FROM_VERSION')
+    to_ver = os.environ.get('TO_VERSION')
+    entity_values = []
+    for template_id in _find_templatestore('preupgrade', template_type):
+        prefile, pre_template = _find_templatestore('preupgrade', template_type, template_id)
+        postfile, post_template = _find_templatestore('postupgrade', template_type, template_id)
+        if 'missing' in str(pre_template) or 'missing' in str(post_template):  # noqa
+            culprit = prefile if 'missing' in pre_template \
+                else postfile
+            culprit_ver = ' missing in Version {}'.format(from_ver) if 'missing' in pre_template \
+                else ' missing in Version {}'.format(to_ver)
+            entity_values.append((culprit, culprit_ver))
+        elif filecmp.cmp(prefile, postfile):
+            entity_values.append(('true', 'true'))
+        else:
+            entity_values.append((pre_template, post_template))
+    return entity_values
+
+
 def pytest_ids(data):
     """Generates pytest ids for post upgrade existance tests
 
@@ -357,3 +468,32 @@ def pytest_ids(data):
             'Wrong data type is provided to generate pytest ids. '
             'Provide one of list/str.')
     return ids
+
+
+def assert_templates(template_type, pre, post):
+    """Alternates the result of assert by diff comparing the template data
+
+    Again, Matches the difference with expected difference and returns True if
+    its expected else returns Fail
+
+    The expected template differences are derived from varients.py['template_varients']
+
+    e.g IF template has addition in 6.2 from 6.1 as '+ RedHat' , then It returns true to pass the
+    test if the change is listed in template_varients
+
+    :param template_type: Has to be one of 'partition-table', 'template' and 'job-template'
+    :param pre: The preupgrade template of template_type same as postupgrade template
+    :param post: The postupgrade template of template_type same as preupgrade template
+    :return: True if the templates difference is expected else False
+    """
+    diff = Differ()
+    difference = list(diff.compare(pre.splitlines(), post.splitlines()))
+    del diff
+    added_elements = [added for added in difference if added.startswith('+')]
+    removed_elements = [added for added in difference if added.startswith('-')]
+    for changed_element in added_elements+removed_elements:
+        for expected_varients in template_varients[template_type]:
+            if changed_element in expected_varients:
+                return True
+    pprint(difference)
+    return False

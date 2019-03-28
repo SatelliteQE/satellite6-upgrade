@@ -25,7 +25,7 @@ from upgrade.helpers.tasks import (
     setup_foreman_maintain,
     upgrade_using_foreman_maintain
 )
-if sys.version_info[0] is 2:
+if sys.version_info[0] == 2:
     from StringIO import StringIO  # (import-error) pylint:disable=F0401
 else:  # pylint:disable=F0401,E0611
     from io import StringIO

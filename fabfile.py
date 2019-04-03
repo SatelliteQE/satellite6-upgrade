@@ -45,7 +45,8 @@ from upgrade.helpers.tools import (
     reboot
 )
 from upgrade_tests.helpers.existence import (
-    set_datastore
+    set_datastore,
+    set_templatestore,
 )
 from upgrade_tests.helpers.scenarios import (
     upload_manifest,

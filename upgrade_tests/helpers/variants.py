@@ -155,6 +155,12 @@ _entity_varients = {
     ]
 }
 
+template_varients = {
+    'template': [],
+    'partition-table': [],
+    'job-template': []
+}
+
 # Depreciated component entities satellite version wise
 _depreciated = {
     '6.4': {

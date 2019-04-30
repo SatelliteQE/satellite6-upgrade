@@ -66,7 +66,8 @@ class cli_const:
             'content-host',
             'compute-resource',
             'discovery',
-            'discovery-rule' if float(to_version) >= 6.3 else 'discovery_rule',
+            'discovery-rule' if to_version is not None and float(to_version) >= 6.3
+            else 'discovery_rule',
             'domain',
             'environment',
             'filter',

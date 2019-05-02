@@ -99,16 +99,6 @@ def dont_run_to_upgrade(versions):
     :param str/list versions: The sat versions onto which the test wont run
     :return: If FROM_VERSION is in versions then pytests skips test
     """
-    allowed_versions = ('6.0', '6.1', '6.2', '6.3', '6.4', '6.5')
-    if cur_ver not in allowed_versions:
-        raise VersionException(
-            'Wrong sat version provided in FROM VERSION env var. Provide one '
-            'of {}'.format(allowed_versions))
     versions = [versions] if type(versions) is str else versions
-    for version in versions:
-        if version not in allowed_versions:
-            raise VersionException(
-                'Wrong sat version provided to run this test. Provide one of '
-                '{}'.format(allowed_versions))
     return pytest.mark.skipif(
         cur_ver in versions, reason='Not for version {}'.format(cur_ver))

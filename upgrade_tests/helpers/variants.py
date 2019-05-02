@@ -211,7 +211,7 @@ def assert_varients(component, pre, post):
         Else compares the actual preupgrade and postupgrade values and returns
         True/False accordingly
     """
-    supported_versions = ['6.1', '6.2', '6.3', '6.4', '6.5']
+    supported_versions = ['6.2', '6.3', '6.4', '6.5', '6.6']
     from_version = os.environ.get('FROM_VERSION')
     to_version = os.environ.get('TO_VERSION')
     if from_version not in supported_versions:

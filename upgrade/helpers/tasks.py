@@ -637,18 +637,9 @@ def upgrade_using_foreman_maintain():
             '--target-version {} '
             '-y'.format(os.environ.get('TO_VERSION') + ".z"))
     else:
-        if os.environ.get('TO_VERSION') == "6.5":
-            disable_repos('*', silent=True)
-            enable_repos('rhel-7-server-rpms')
-            enable_repos('rhel-server-rhscl-7-rpms')
-            enable_repos('rhel-7-server-ansible-2.6-rpms')
-            run('foreman-maintain upgrade run '
-                '--whitelist="disk-performance, repositories-setup" '
-                '--target-version 6.5 -y')
-        else:
-            run('foreman-maintain upgrade run '
-                '--whitelist="disk-performance" '
-                '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
+        run('foreman-maintain upgrade run '
+            '--whitelist="disk-performance" '
+            '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
 
 
 def upgrade_puppet3_to_puppet4():

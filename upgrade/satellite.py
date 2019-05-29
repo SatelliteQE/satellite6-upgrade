@@ -113,7 +113,7 @@ def satellite6_upgrade():
         logger.info('Updating system packages ... ')
         # setup foreman-maintain
         setup_foreman_maintain()
-        update_packages(quiet=True)
+        update_packages(quiet=False)
         # Following disables the old satellite repo and extra repos enabled
         # during subscribe e.g Load balancer Repo
         disable_repos('*', silent=True)

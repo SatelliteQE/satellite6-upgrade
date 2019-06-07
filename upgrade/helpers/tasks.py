@@ -172,9 +172,9 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
             product=cap_product
         ).search()[0]
         try:
-            cap_reposet.enable(data={'releasever': '7Server'})
-        except requests.exceptions.HTTPError:
-            logger.warn('Check if reposet is already enabled, else retrigger')
+            cap_reposet.enable(data={'releasever': '7Server', 'organization_id': org.id})
+        except requests.exceptions.HTTPError as exp:
+            logger.warn(exp)
         cap_repo = entities.Repository(
             name=rhelcontents['capsule']['repofull'].format(
                 cap_ver=to_version, os_ver=os_ver, arch='x86_64')
@@ -219,9 +219,10 @@ def _sync_rh_repos_to_satellite(org):
         name=rhelcontents['rhscl']['repo'].format(os_ver=rhelver), product=scl_product
     ).search()[0]
     try:
-        scl_reposet.enable(data={'basearch': arch, 'releasever': '7Server'})
-    except requests.exceptions.HTTPError:
-        logger.warn('Check if repository is already enabled, else retrigger')
+        scl_reposet.enable(
+            data={'basearch': arch, 'releasever': '7Server', 'organization_id': org.id})
+    except requests.exceptions.HTTPError as exp:
+        logger.warn(exp)
     time.sleep(20)
     # Sync enabled Repo from cdn
     scl_repo = entities.Repository(
@@ -235,9 +236,10 @@ def _sync_rh_repos_to_satellite(org):
         name=rhelcontents['server']['repo'].format(os_ver=rhelver), product=server_product
     ).search()[0]
     try:
-        server_reposet.enable(data={'basearch': arch, 'releasever': '7Server'})
-    except requests.exceptions.HTTPError:
-        logger.warn('Check if repository is already enabled, else retrigger')
+        server_reposet.enable(
+            data={'basearch': arch, 'releasever': '7Server', 'organization_id': org.id})
+    except requests.exceptions.HTTPError as exp:
+        logger.warn(exp)
     time.sleep(20)
     # Sync enabled Repo from cdn
     server_repo = entities.Repository(
@@ -275,9 +277,9 @@ def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
             name=rhelcontents['tools']['repo'].format(sat_ver=to_ver, os_ver=rhelver),
             product=captools_product).search()[0]
         try:
-            cap_reposet.enable(data={'basearch': arch})
-        except requests.exceptions.HTTPError:
-            logger.warn('Check if repository is already enabled, else retrigger')
+            cap_reposet.enable(data={'basearch': arch, 'organization_id': org.id})
+        except requests.exceptions.HTTPError as exp:
+            logger.warn(exp)
         time.sleep(5)
         captools_repo = entities.Repository(
             name=rhelcontents['tools']['repofull'].format(

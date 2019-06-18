@@ -95,6 +95,7 @@ def sync_capsule_repos_to_upgrade(capsules):
     RHEV_CAPSULE_AK
         The AK name used in capsule subscription
     """
+    setup_foreman_maintain()
     logger.info('Disabling the sync plan ...')
     run('foreman-maintain advanced procedure run sync-plans-disable')
     logger.info('Syncing latest capsule repos in Satellite ...')

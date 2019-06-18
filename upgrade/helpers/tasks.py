@@ -98,6 +98,8 @@ def sync_capsule_repos_to_upgrade(capsules):
     setup_foreman_maintain()
     logger.info('Disabling the sync plan ...')
     run('foreman-maintain advanced procedure run sync-plans-disable')
+    logger.info('Status of running foreman-maintain task')
+    run('foreman-maintain health check --label foreman-tasks-not-running -y')
     logger.info('Syncing latest capsule repos in Satellite ...')
     to_version = os.environ.get('TO_VERSION')
     os_ver = os.environ.get('OS')[-1]

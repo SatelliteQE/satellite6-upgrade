@@ -489,11 +489,15 @@ def assert_templates(template_type, pre, post):
     diff = Differ()
     difference = list(diff.compare(pre.splitlines(), post.splitlines()))
     del diff
-    added_elements = [added for added in difference if added.startswith('+')]
-    removed_elements = [added for added in difference if added.startswith('-')]
-    for changed_element in added_elements+removed_elements:
-        for expected_varients in template_varients[template_type]:
-            if changed_element in expected_varients:
-                return True
+    added_lines = [added for added in difference if added.startswith('+')]
+    removed_lines = [removed for removed in difference if removed.startswith('-')]
+    all_changed_lines = added_lines + removed_lines
+    # Check if all the changed lines are expected changes
+    for changed_line in all_changed_lines:
+        if changed_line not in template_varients[template_type]:
+            all_changed_lines_expected = False
+            break
+    else:
+        all_changed_lines_expected = True
     pprint(difference)
-    return False
+    return all_changed_lines_expected

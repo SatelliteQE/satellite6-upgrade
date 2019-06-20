@@ -141,6 +141,7 @@ def sync_capsule_repos_to_upgrade(capsules):
     logger.info("Enabling the sync plan...")
     run('foreman-maintain advanced procedure run sync-plans-enable')
 
+
 def _sync_capsule_subscription_to_capsule_ak(ak):
     """Syncs to_version capsule contents, adds to the CV and attaches contents to the AK through
     which Capsule is registered

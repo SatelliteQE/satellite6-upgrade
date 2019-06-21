@@ -95,7 +95,9 @@ def sync_capsule_repos_to_upgrade(capsules):
     RHEV_CAPSULE_AK
         The AK name used in capsule subscription
     """
-    check_status_of_running_task()
+    command = "foreman-maintain health check --label " \
+              "foreman-tasks-not-running -y"
+    check_status_of_running_task(command, 3)
     logger.info('Syncing latest capsule repos in Satellite ...')
     to_version = os.environ.get('TO_VERSION')
     os_ver = os.environ.get('OS')[-1]
@@ -857,21 +859,25 @@ def add_custom_product_subscription_to_hosts(product, hosts):
                 data={'subscriptions': [{'id': sub.id, 'quantity': 1}]})
 
 
-def check_status_of_running_task():
+def check_status_of_running_task(command, attempt):
     """
         This function is used to check the running tasks status via foreman-maintain,
         If task is running then wait for their completion otherwise move to
         the next step.
     """
-    attempt = 0
-    while attempt <= 2:
-        status = run("foreman-maintain health check --label "
-                     "foreman-tasks-not-running -y 2>&1 1>dev/null; echo $?")
+    retry = 0
+    while retry <= attempt:
+        status = run("{} >/dev/null 2>&1; echo $?".format(command))
         if status:
-            logger.info("Attempt{}:Task is still in running state".format(attempt))
-            attempt += 1
+            logger.info("Attempt{}: Command: {}\n"
+                        "Task is still in running state".
+                        format(retry, command))
+            retry += 1
         else:
-            logger.info("Check for running tasks:: [OK]")
+            logger.info("Command: {}\n "
+                        "Check for running tasks:: [OK]".format(command))
             return 0
     else:
-        logger.info("Exceeded the maximum attempt to check the tasks running status")
+        logger.info("Command: {}\n"
+                    "Exceeded the maximum attempt to check the "
+                    "tasks running status".format(command))

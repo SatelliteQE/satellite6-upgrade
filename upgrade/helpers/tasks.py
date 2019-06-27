@@ -173,7 +173,7 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
         ).search()[0]
         try:
             cap_reposet.enable(
-                data={'basearch': 'x86_64', 'releasever': '7Server', 'organization_id': org.id})
+                data={'basearch': 'x86_64', 'organization_id': org.id})
         except requests.exceptions.HTTPError as exp:
             logger.warn(exp)
         cap_repo = entities.Repository(

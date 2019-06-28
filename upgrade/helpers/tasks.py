@@ -104,6 +104,9 @@ def sync_capsule_repos_to_upgrade(capsules):
     RHEV_CAPSULE_AK
         The AK name used in capsule subscription
     """
+    command = "foreman-maintain health check --label " \
+              "foreman-tasks-not-running -y"
+    check_status_of_running_task(command, 3)
     if bz_bug_is_open('1721055'):
         setup_foreman_maintain()
         logger.info('Disabling the sync plan ...')
@@ -870,3 +873,27 @@ def add_custom_product_subscription_to_hosts(product, hosts):
             host = entities.Host().search(query={'search': 'name={}'.format(host)})[0]
             entities.HostSubscription(host=host).add_subscriptions(
                 data={'subscriptions': [{'id': sub.id, 'quantity': 1}]})
+
+
+def check_status_of_running_task(command, attempt):
+    """
+        This function is used to check the running tasks status via foreman-maintain,
+        If task is running then wait for their completion otherwise move to
+        the next step.
+    """
+    retry = 0
+    while retry <= attempt:
+        status = run("{} >/dev/null 2>&1; echo $?".format(command))
+        if status:
+            logger.info("Attempt{}: Command: {}\n"
+                        "Task is still in running state".
+                        format(retry, command))
+            retry += 1
+        else:
+            logger.info("Command: {}\n "
+                        "Check for running tasks:: [OK]".format(command))
+            return 0
+    else:
+        logger.info("Command: {}\n"
+                    "Exceeded the maximum attempt to check the "
+                    "tasks running status".format(command))

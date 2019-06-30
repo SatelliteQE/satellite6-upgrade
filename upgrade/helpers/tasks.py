@@ -25,6 +25,7 @@ from upgrade.helpers.docker import (
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tools import call_entity_method_with_timeout
 from fabric.api import env, execute, put, run, warn_only
+from fabric.context_managers import shell_env
 if sys.version_info[0] == 2:
     from StringIO import StringIO  # (import-error) pylint:disable=F0401
 else:  # pylint:disable=F0401,E0611
@@ -95,13 +96,13 @@ def sync_capsule_repos_to_upgrade(capsules):
     RHEV_CAPSULE_AK
         The AK name used in capsule subscription
     """
-    command = "foreman-maintain health check --label " \
-              "foreman-tasks-not-running -y"
-    check_status_of_running_task(command, 3)
     if bz_bug_is_open('1721055'):
         setup_foreman_maintain()
         logger.info('Disabling the sync plan ...')
         run('foreman-maintain advanced procedure run sync-plans-disable')
+    command = "foreman-maintain health check --label " \
+              "foreman-tasks-not-running -y"
+    check_status_of_running_task(command, 3)
     logger.info('Syncing latest capsule repos in Satellite ...')
     to_version = os.environ.get('TO_VERSION')
     os_ver = os.environ.get('OS')[-1]
@@ -650,9 +651,16 @@ def upgrade_using_foreman_maintain():
             '--target-version {} '
             '-y'.format(os.environ.get('TO_VERSION') + ".z"))
     else:
-        run('foreman-maintain upgrade run '
-            '--whitelist="disk-performance" '
-            '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
+        # use beta until 6.6 is GA
+        if os.environ.get('TO_VERSION') == '6.6':
+            with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
+                run('foreman-maintain upgrade run '
+                    '--whitelist="disk-performance" '
+                    '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
+        else:
+            run('foreman-maintain upgrade run '
+                '--whitelist="disk-performance" '
+                '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
 
 
 def upgrade_puppet3_to_puppet4():

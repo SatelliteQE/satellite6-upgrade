@@ -176,7 +176,7 @@ def delete_openstack_instance(instance_name):
 
     """
     openstack_client = get_openstack_client()
-    if openstack_client.delete_server(instance_name):
+    if openstack_client.delete_server(instance_name, timeout=300):
         logger.info('Success! The instance {0} has been deleted from '
                     'Openstack.'.format(instance_name))
     else:

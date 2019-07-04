@@ -371,7 +371,8 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
         logger.warning('The AK details are not provided for {0} Client '
                        'upgrade!'.format(client_os))
         sys.exit(1)
-    org = entities.Organization(id=1).read()
+    org = entities.Organization().search(
+        query={'search': 'name="{}"'.format("Default Organization")})[0]
     ak = entities.ActivationKey(organization=org).search(
         query={'search': 'name={}'.format(ak_name)})[0]
     cv = ak.content_view.read()

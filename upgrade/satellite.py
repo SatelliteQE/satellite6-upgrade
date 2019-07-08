@@ -7,7 +7,6 @@ from upgrade.helpers.tools import (
     reboot
 )
 from automation_tools import (
-    enable_ostree,
     setup_satellite_firewall,
     subscribe,
     install_prerequisites
@@ -172,9 +171,6 @@ def satellite6_upgrade():
     # Test the Upgrade is successful
     run('hammer ping', warn_only=True)
     run('katello-service status', warn_only=True)
-    # Enable ostree feature only for rhel7 and sat6.2
-    if to_version == '6.2' and major_ver == 7:
-        enable_ostree(sat_version='6.2')
 
 
 def satellite6_zstream_upgrade():

@@ -174,17 +174,10 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
                         "root@{0}:/home/".format(cap_host)), host=sat_host)
     setup_capsule_firewall()
     preup_time = datetime.now().replace(microsecond=0)
-    if to_version == '6.1':
-        run('capsule-installer --upgrade --certs-tar '
-            '/home/{0}-certs.tar'.format(cap_host))
-    elif float(to_version) >= 6.2:
-        run('satellite-installer --scenario capsule --upgrade '
-            '--certs-tar /home/{0}-certs.tar '
-            '--certs-update-all --regenerate true '
-            '--deploy true'.format(cap_host))
-    else:
-        run('satellite-installer --scenario capsule --upgrade '
-            '--certs-tar /home/{0}-certs.tar'.format(cap_host))
+    run('satellite-installer --scenario capsule --upgrade '
+        '--certs-tar-file /home/{0}-certs.tar '
+        '--certs-update-all --regenerate true '
+        '--deploy true'.format(cap_host))
     postup_time = datetime.now().replace(microsecond=0)
     logger.highlight('Time taken for Capsule Upgrade - {}'.format(
         str(postup_time-preup_time)))

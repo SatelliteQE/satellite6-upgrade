@@ -176,8 +176,7 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     preup_time = datetime.now().replace(microsecond=0)
     run('satellite-installer --scenario capsule --upgrade '
         '--certs-tar-file /home/{0}-certs.tar '
-        '--certs-update-all --regenerate true '
-        '--deploy true'.format(cap_host))
+        '--certs-update-all'.format(cap_host))
     postup_time = datetime.now().replace(microsecond=0)
     logger.highlight('Time taken for Capsule Upgrade - {}'.format(
         str(postup_time-preup_time)))

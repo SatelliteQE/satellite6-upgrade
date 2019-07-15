@@ -96,7 +96,8 @@ def sync_capsule_repos_to_upgrade(capsules):
     RHEV_CAPSULE_AK
         The AK name used in capsule subscription
     """
-    if bz_bug_is_open('1721055'):
+    to_version = os.environ.get('TO_VERSION')
+    if float(to_version) == 6.6:
         setup_foreman_maintain()
         logger.info('Disabling the sync plan ...')
         run('foreman-maintain advanced procedure run sync-plans-disable')
@@ -104,7 +105,6 @@ def sync_capsule_repos_to_upgrade(capsules):
               "foreman-tasks-not-running -y"
     check_status_of_running_task(command, 3)
     logger.info('Syncing latest capsule repos in Satellite ...')
-    to_version = os.environ.get('TO_VERSION')
     os_ver = os.environ.get('OS')[-1]
     capsule_repo = os.environ.get('CAPSULE_URL')
     capsuletools_url = os.environ.get('TOOLS_URL_RHEL{}'.format(os_ver))
@@ -140,7 +140,7 @@ def sync_capsule_repos_to_upgrade(capsules):
         if capsuletools_url:
             add_custom_product_subscription_to_hosts(
                 customcontents['capsule_tools']['prod'], capsules)
-    if bz_bug_is_open('1721055'):
+    if float(to_version) == 6.6:
         logger.info("Enabling the sync plan...")
         run('foreman-maintain advanced procedure run sync-plans-enable')
 

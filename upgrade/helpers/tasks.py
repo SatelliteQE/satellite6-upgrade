@@ -103,7 +103,7 @@ def sync_capsule_repos_to_upgrade(capsules):
         run('foreman-maintain advanced procedure run sync-plans-disable')
     command = "foreman-maintain health check --label " \
               "foreman-tasks-not-running -y"
-    check_status_of_running_task(command, 3)
+    check_status_of_running_task(command, 10)
     logger.info('Syncing latest capsule repos in Satellite ...')
     os_ver = os.environ.get('OS')[-1]
     capsule_repo = os.environ.get('CAPSULE_URL')

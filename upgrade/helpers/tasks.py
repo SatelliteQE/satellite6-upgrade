@@ -172,7 +172,7 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
             product=cap_product
         ).search()[0]
         try:
-            cap_reposet.enable(data={'releasever': '7Server'})
+            cap_reposet.enable(data={'basearch': 'x86_64', 'organization_id': org.id})
         except requests.exceptions.HTTPError:
             logger.warn('Check if reposet is already enabled, else retrigger')
         cap_repo = entities.Repository(

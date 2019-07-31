@@ -22,7 +22,7 @@ rhelcontents = {
     },
     'capsule': {
         'prod': 'Red Hat Satellite Capsule',
-        'repofull': 'Red Hat Satellite Capsule {cap_ver} (for RHEL {os_ver} Server) (RPMs)',
+        'repofull': 'Red Hat Satellite Capsule {cap_ver} for RHEL {os_ver} Server RPMs {arch}',
         'repo': 'Red Hat Satellite Capsule {cap_ver} (for RHEL {os_ver} Server) (RPMs)',
         'label': 'rhel-{os_ver}-server-satellite-capsule-{cap_ver}-rpms'
     },

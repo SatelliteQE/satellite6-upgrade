@@ -380,7 +380,7 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
     entities.Repository(id=tools_repo.id).sync()
     cv.repository += [tools_repo]
     cv.update(['repository'])
-    call_entity_method_with_timeout(cv.read().publish, timeout=3500)
+    call_entity_method_with_timeout(cv.read().publish, timeout=2500)
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
     published_ver.promote(data={'environment_id': lenv.id, 'force': False})

@@ -22,7 +22,8 @@ from upgrade.helpers.rhevm4 import (
 )
 from upgrade.helpers.tasks import (
     setup_foreman_maintain,
-    upgrade_using_foreman_maintain
+    upgrade_using_foreman_maintain,
+    repository_setup
 )
 if sys.version_info[0] == 2:
     from StringIO import StringIO  # (import-error) pylint:disable=F0401
@@ -129,12 +130,7 @@ def satellite6_upgrade():
         # Else, consider this as Downstream upgrade
         else:
             # Add Sat6 repo from latest compose
-            satellite_repo = StringIO()
-            satellite_repo.write('[sat6]\n')
-            satellite_repo.write('name=satellite 6\n')
-            satellite_repo.write('baseurl={0}\n'.format(base_url))
-            satellite_repo.write('enabled=1\n')
-            satellite_repo.write('gpgcheck=0\n')
+            satellite_repo = repository_setup("[sat6]", "satellite 6", base_url, 1, 0)
             put(local_path=satellite_repo,
                 remote_path='/etc/yum.repos.d/sat6.repo')
             satellite_repo.close()
@@ -142,8 +138,6 @@ def satellite6_upgrade():
         run('yum repolist')
         # Stop katello services, except mongod
         run('katello-service stop')
-        if to_version == '6.1':
-            run('service-wait mongod start')
         run('yum clean all', warn_only=True)
         # Updating the packages again after setting sat6 repo
         logger.info('Updating satellite packages ... ')
@@ -154,10 +148,7 @@ def satellite6_upgrade():
             str(postyum_time-preyum_time)))
         # Running Upgrade
         preup_time = datetime.now().replace(microsecond=0)
-        if to_version == '6.1':
-            run('katello-installer --upgrade')
-        else:
-            run('satellite-installer --scenario satellite --upgrade')
+        run('satellite-installer --scenario satellite --upgrade')
         postup_time = datetime.now().replace(microsecond=0)
         logger.highlight('Time taken for Satellite Upgrade - {}'.format(
             str(postup_time-preup_time)))
@@ -222,12 +213,7 @@ def satellite6_zstream_upgrade():
         # Else, consider this as Downstream upgrade
         else:
             # Add Sat6 repo from latest compose
-            satellite_repo = StringIO()
-            satellite_repo.write('[sat6]\n')
-            satellite_repo.write('name=satellite 6\n')
-            satellite_repo.write('baseurl={0}\n'.format(base_url))
-            satellite_repo.write('enabled=1\n')
-            satellite_repo.write('gpgcheck=0\n')
+            satellite_repo = repository_setup("[sat6]", "satellite 6", base_url, 1, 0)
             put(local_path=satellite_repo,
                 remote_path='/etc/yum.repos.d/sat6.repo')
             satellite_repo.close()

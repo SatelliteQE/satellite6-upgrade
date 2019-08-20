@@ -540,30 +540,12 @@ def setup_foreman_maintain():
     # setting up foreman-maintain repo
     setup_foreman_maintain_repo()
     if os.environ.get('DISTRIBUTION') != 'CDN':
+        base_url = "{}".format(os.environ.get('BASE_URL'))
         # Add Sat6 repo from latest compose
-        satellite_repo = StringIO()
-        satellite_repo.write('[sat6]\n')
-        satellite_repo.write('name=satellite 6\n')
-        satellite_repo.write('baseurl={0}\n'.format(
-            os.environ.get('BASE_URL')
-        ))
-        satellite_repo.write('enabled=1\n')
-        satellite_repo.write('gpgcheck=0\n')
-        put(local_path=satellite_repo,
-            remote_path='/etc/yum.repos.d/sat6.repo')
-        satellite_repo.close()
-        # Add sattools repo from latest compose
-        tools_repo = StringIO()
-        tools_repo.write('[sat6tools7]\n')
-        tools_repo.write('name=satellite6-tools7\n')
-        tools_repo.write('baseurl={0}\n'.format(
-            os.environ.get('TOOLS_RHEL7')
-        ))
-        tools_repo.write('enabled=1\n')
-        tools_repo.write('gpgcheck=0\n')
-        put(local_path=tools_repo,
-            remote_path='/etc/yum.repos.d/sat6tools7.repo')
-        tools_repo.close()
+        repository_setup("[sat6]", "satellite 6", base_url, 1, 0)
+        tools_url = "{}".format(os.environ.get('TOOLS_RHEL7'))
+        repository_setup("[sat6tools7]", "satellite6-tools7", tools_url, 1, 0)
+
     # repolist
     run('yum repolist')
     # install foreman-maintain
@@ -587,18 +569,9 @@ def setup_foreman_maintain_repo():
     if os.environ.get('DISTRIBUTION') == 'CDN':
         enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
     else:
-        maintain_repo = StringIO()
-        maintain_repo.write('[foreman-maintain]\n')
-        maintain_repo.write('name=foreman-maintain\n')
-        maintain_repo.write('baseurl={0}\n'.format(
-            os.environ.get('MAINTAIN_REPO')
-        ))
-        maintain_repo.write('enabled=1\n')
-        maintain_repo.write('gpgcheck=0\n')
-        put(local_path=maintain_repo,
-            remote_path='/etc/yum.repos.d/foreman-maintain.repo')
-        maintain_repo.close()
-
+        maintain_repo_url = "{}".format(os.environ.get('MAINTAIN_REPO'))
+        repository_setup("[foreman-maintain]", "foreman-maintain",
+                         maintain_repo_url, 1, 0)
 
 def upgrade_using_foreman_maintain():
     """Task which upgrades the product using foreman-maintain tool.
@@ -672,17 +645,9 @@ def upgrade_puppet3_to_puppet4():
     if os.environ.get('DISTRIBUTION') == 'CDN':
         enable_repos('rhel-7-server-satellite-6.3-puppet4-rpms')
     else:
-        satellite_repo = StringIO()
-        satellite_repo.write('[Puppet4]\n')
-        satellite_repo.write('name=puppet4\n')
-        satellite_repo.write('baseurl={0}\n'.format(
-            os.environ.get('PUPPET4_REPO')
-        ))
-        satellite_repo.write('enabled=1\n')
-        satellite_repo.write('gpgcheck=0\n')
-        put(local_path=satellite_repo,
-            remote_path='/etc/yum.repos.d/puppet4.repo')
-        satellite_repo.close()
+        puppet_repo_url = "{}".format(os.environ.get('PUPPET4_REPO'))
+        repository_setup("[Puppet4]", "puppet4",
+                         puppet_repo_url, 1, 0)
 
     # repolist
     run('yum repolist')
@@ -705,15 +670,8 @@ def add_baseOS_repo(base_url):
 
     :param base_url: Url of the latest baseos repo to be added.
     """
-    rhel_repo = StringIO()
-    rhel_repo.write('[rhel]\n')
-    rhel_repo.write('name=rhel\n')
-    rhel_repo.write('baseurl={0}\n'.format(base_url))
-    rhel_repo.write('enabled=1\n')
-    rhel_repo.write('gpgcheck=0\n')
-    put(local_path=rhel_repo,
-        remote_path='/etc/yum.repos.d/rhel.repo')
-    rhel_repo.close()
+    repository_setup("[rhel]", "rhel",
+                     base_url, 1, 0)
 
 
 def setup_satellite_clone():
@@ -737,17 +695,9 @@ def setup_satellite_clone():
     if os.environ.get('DISTRIBUTION') == 'CDN':
         enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
     else:
-        satellite_repo = StringIO()
-        satellite_repo.write('[maintainrepo]\n')
-        satellite_repo.write('name=maintain\n')
-        satellite_repo.write('baseurl={0}\n'.format(
-            os.environ.get('MAINTAIN_REPO')
-        ))
-        satellite_repo.write('enabled=1\n')
-        satellite_repo.write('gpgcheck=0\n')
-        put(local_path=satellite_repo,
-            remote_path='/etc/yum.repos.d/maintain.repo')
-        satellite_repo.close()
+        maintain_repo_url = "{}".format(os.environ.get('MAINTAIN_REPO'))
+        repository_setup("[maintainrepo]", "maintain",
+                         maintain_repo_url, 1, 0)
 
     # repolist
     run('yum repolist')
@@ -887,3 +837,25 @@ def check_status_of_running_task(command, attempt):
         logger.info("Command: {}\n"
                     "Exceeded the maximum attempt to check the "
                     "tasks running status".format(command))
+
+
+def repository_setup(repository, repository_name, base_url, enable, gpgcheck):
+    """
+    This is generic fucntion which is used to setup the repository
+    :param repository: uniq repository ID
+    :param repository_name: repository name in string
+    :param base_url: repository url
+    :param enable: repoitory enable(1) or disable(0)
+    :param gpgcheck: verify GPG authenticity pass 1 otherwise pass 0
+    :return:
+    """
+    satellite_repo = StringIO()
+    satellite_repo.write('{}\n'.format(repository))
+    satellite_repo.write('name=s{}\n'.format(repository_name))
+    satellite_repo.write('baseurl={0}\n'.format(base_url))
+    satellite_repo.write('enabled={}\n'.format(enable))
+    satellite_repo.write('gpgcheck={}\n'.format(gpgcheck))
+    put(local_path=satellite_repo,
+        remote_path='/etc/yum.repos.d/{}.repo'.format(repository.
+                                                      replace("[", '').replace("]", '')))
+    satellite_repo.close()

@@ -14,7 +14,7 @@ from automation_tools import (
 from automation_tools.repository import enable_repos, disable_repos
 from automation_tools.utils import distro_info, update_packages
 from datetime import datetime
-from fabric.api import env, execute, put, run
+from fabric.api import env, execute, run
 from upgrade.helpers.logger import logger
 from upgrade.helpers.rhevm4 import (
     create_rhevm4_instance,

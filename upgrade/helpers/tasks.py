@@ -573,6 +573,7 @@ def setup_foreman_maintain_repo():
         repository_setup("[foreman-maintain]", "foreman-maintain",
                          maintain_repo_url, 1, 0)
 
+
 def upgrade_using_foreman_maintain():
     """Task which upgrades the product using foreman-maintain tool.
 

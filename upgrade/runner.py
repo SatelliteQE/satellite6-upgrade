@@ -18,8 +18,7 @@ from upgrade.client import (
 )
 from upgrade.satellite import (
     satellite6_setup,
-    satellite6_upgrade,
-    satellite6_zstream_upgrade
+    satellite6_upgrade
 )
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import (
@@ -183,7 +182,7 @@ def product_upgrade(product):
                 if from_version != to_version:
                     execute(satellite6_upgrade, host=sat_host)
                 else:
-                    execute(satellite6_zstream_upgrade, host=sat_host)
+                    execute(satellite6_upgrade, 'zStream', host=sat_host)
                 upgraded = execute(
                     get_sat_cap_version, 'sat', host=sat_host)[sat_host]
                 if LooseVersion(upgraded) > LooseVersion(current):

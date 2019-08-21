@@ -99,7 +99,7 @@ def satellite6_upgrade(upgrade_type=None):
     logger.highlight('\n========== SATELLITE UPGRADE =================\n')
     to_version = os.environ.get('TO_VERSION')
     from_version = os.environ.get('FROM_VERSION')
-    if upgrade_type == "zStream":
+    if upgrade_type:
         if not from_version == to_version:
             logger.warning('zStream Upgrade on Satellite cannot be performed as '
                            'FROM and TO versions are not same!')
@@ -114,7 +114,7 @@ def satellite6_upgrade(upgrade_type=None):
         foreman_maintain_upgrade(base_url)
     else:
         setup_satellite_firewall()
-        if upgrade_type != "zStream":
+        if not upgrade_type:
             run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')
             logger.info('Updating system packages ... ')
             setup_foreman_maintain()
@@ -128,7 +128,9 @@ def satellite6_upgrade(upgrade_type=None):
             # Remove old custom sat repo
             repository_cleanup('sat')
         else:
-            repository_setup("[sat6]", "satellite 6", base_url, 1, 0)
+            repository_setup("[sat6]",
+                             "satellite 6",
+                             base_url, 1, 0)
         upgrade_task()
     # Rebooting the satellite for kernel update if any
     reboot(180)

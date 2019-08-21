@@ -540,11 +540,15 @@ def setup_foreman_maintain():
     # setting up foreman-maintain repo
     setup_foreman_maintain_repo()
     if os.environ.get('DISTRIBUTION') != 'CDN':
-        base_url = "{}".format(os.environ.get('BASE_URL'))
         # Add Sat6 repo from latest compose
-        repository_setup("[sat6]", "satellite 6", base_url, 1, 0)
-        tools_url = "{}".format(os.environ.get('TOOLS_RHEL7'))
-        repository_setup("[sat6tools7]", "satellite6-tools7", tools_url, 1, 0)
+        repository_setup("[sat6]",
+                         "satellite 6",
+                         "{}".format(os.environ.get('BASE_URL')),
+                         1, 0)
+        repository_setup("[sat6tools7]",
+                         "satellite6-tools7",
+                         "{}".format(os.environ.get('TOOLS_RHEL7')),
+                         1, 0)
 
     # repolist
     run('yum repolist')
@@ -569,9 +573,10 @@ def setup_foreman_maintain_repo():
     if os.environ.get('DISTRIBUTION') == 'CDN':
         enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
     else:
-        maintain_repo_url = "{}".format(os.environ.get('MAINTAIN_REPO'))
-        repository_setup("[foreman-maintain]", "foreman-maintain",
-                         maintain_repo_url, 1, 0)
+        repository_setup("[foreman-maintain]",
+                         "foreman-maintain",
+                         "{}".format(os.environ.get('MAINTAIN_REPO')),
+                         1, 0)
 
 
 def upgrade_using_foreman_maintain():
@@ -646,9 +651,10 @@ def upgrade_puppet3_to_puppet4():
     if os.environ.get('DISTRIBUTION') == 'CDN':
         enable_repos('rhel-7-server-satellite-6.3-puppet4-rpms')
     else:
-        puppet_repo_url = "{}".format(os.environ.get('PUPPET4_REPO'))
-        repository_setup("[Puppet4]", "puppet4",
-                         puppet_repo_url, 1, 0)
+        repository_setup("[Puppet4]",
+                         "puppet4",
+                         "{}".format(os.environ.get('PUPPET4_REPO')),
+                         1, 0)
 
     # repolist
     run('yum repolist')
@@ -696,9 +702,10 @@ def setup_satellite_clone():
     if os.environ.get('DISTRIBUTION') == 'CDN':
         enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
     else:
-        maintain_repo_url = "{}".format(os.environ.get('MAINTAIN_REPO'))
-        repository_setup("[maintainrepo]", "maintain",
-                         maintain_repo_url, 1, 0)
+        repository_setup("[maintainrepo]",
+                         "maintain",
+                         "{}".format(os.environ.get('MAINTAIN_REPO')),
+                         1, 0)
 
     # repolist
     run('yum repolist')

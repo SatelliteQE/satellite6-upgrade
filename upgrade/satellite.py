@@ -48,7 +48,7 @@ def satellite6_setup(os_version):
         # Check if image name and Hostname in jenkins are set
         if missing_vars:
             logger.warning('The following environment variable(s) must be set '
-                           'in jenkin environment: {0}.'.format(
+                           'in jenkins environment: {0}.'.format(
                                 ', '.join(missing_vars)))
             sys.exit(1)
         sat_image = os.environ.get('RHEV_SAT_IMAGE')
@@ -71,37 +71,54 @@ def satellite6_setup(os_version):
     return sat_host
 
 
-def satellite6_upgrade():
-    """Upgrades satellite from old version to latest version.
+def satellite6_upgrade(upgrade_type=None):
+    """This function is used to perform the satellite upgrade of two type
+        - Upgrades Satellite Server from old version to latest
+            The following environment variables affect this command:
 
-    The following environment variables affect this command:
+            BASE_URL
+                Optional, defaults to available satellite version in CDN.
+                URL for the compose repository
+            TO_VERSION
+                Satellite version to upgrade to and enable repos while upgrading.
+                e.g '6.1','6.2', '6.3'
+            PERFORM_FOREMAN_MAINTAIN_UPGRADE
+                use foreman-maintain for satellite upgrade
 
-    BASE_URL
-        Optional, defaults to available satellite version in CDN.
-        URL for the compose repository
-    TO_VERSION
-        Satellite version to upgrade to and enable repos while upgrading.
-        e.g '6.1','6.2', '6.3'
-    PERFORM_FOREMAN_MAINTAIN_UPGRADE
-        use foreman-maintain for satellite upgrade
+        - Upgrades Satellite Server to its latest zStream version
+            Note: For zstream upgrade both 'To' and 'From' version should be same
+
+            FROM_VERSION
+                Current satellite version which will be upgraded to latest version
+            TO_VERSION
+                Next satellite version to which satellite will be upgraded
+            PERFORM_FOREMAN_MAINTAIN_UPGRADE
+                use foreman-maintain for satellite upgrade
+
     """
     logger.highlight('\n========== SATELLITE UPGRADE =================\n')
     to_version = os.environ.get('TO_VERSION')
+    from_version = os.environ.get('FROM_VERSION')
+    if upgrade_type == "zStream":
+        if not from_version == to_version:
+            logger.warning('zStream Upgrade on Satellite cannot be performed as '
+                           'FROM and TO versions are not same!')
+            sys.exit(1)
     base_url = os.environ.get('BASE_URL')
     major_ver = distro_info()[1]
     disable_repo_name = ["*"]
     enable_repos_name = ['rhel-{0}-server-rpms'.format(major_ver),
                          'rhel-server-rhscl-{0}-rpms'.format(major_ver)]
-
     if os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == 'true' \
             and os.environ.get('OS') == 'rhel7':
         foreman_maintain_upgrade(base_url)
     else:
         setup_satellite_firewall()
-        run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')
-        logger.info('Updating system packages ... ')
-        setup_foreman_maintain()
-        update_packages(quiet=True)
+        if upgrade_type != "zStream":
+            run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')
+            logger.info('Updating system packages ... ')
+            setup_foreman_maintain()
+            update_packages(quiet=True)
         # Following disables the old satellite repo and extra repos enabled
         # during subscribe e.g Load balancer Repo
         enable_disable_repo(disable_repo_name, enable_repos_name)
@@ -109,53 +126,6 @@ def satellite6_upgrade():
             enable_disable_repo([], ['rhel-{0}-server-satellite-{1}-rpms'.format(
                 major_ver, to_version)])
             # Remove old custom sat repo
-            repository_cleanup('sat')
-        else:
-            repository_setup("[sat6]", "satellite 6", base_url, 1, 0)
-        upgrade_task()
-    # Rebooting the satellite for kernel update if any
-    reboot(180)
-    host_ssh_availability_check(env.get('satellite_host'))
-    # Test the Upgrade is successful
-    upgrade_validation()
-
-
-def satellite6_zstream_upgrade():
-    """Upgrades Satellite Server to its latest zStream version
-
-    Note: For zstream upgrade both 'To' and 'From' version should be same
-
-    FROM_VERSION
-        Current satellite version which will be upgraded to latest version
-    TO_VERSION
-        Next satellite version to which satellite will be upgraded
-    PERFORM_FOREMAN_MAINTAIN_UPGRADE
-        use foreman-maintain for satellite upgrade
-    """
-    logger.highlight('\n========== SATELLITE UPGRADE =================\n')
-    from_version = os.environ.get('FROM_VERSION')
-    to_version = os.environ.get('TO_VERSION')
-    if not from_version == to_version:
-        logger.warning('zStream Upgrade on Satellite cannot be performed as '
-                       'FROM and TO versions are not same!')
-        sys.exit(1)
-    base_url = os.environ.get('BASE_URL')
-    major_ver = distro_info()[1]
-    disable_repo_name = ["*"]
-    enable_repos_name = ['rhel-{0}-server-rpms'.format(major_ver),
-                         'rhel-server-rhscl-{0}-rpms'.format(major_ver)]
-    if os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == "true" \
-            and os.environ.get('OS') == 'rhel7':
-        foreman_maintain_upgrade(base_url)
-    else:
-        setup_satellite_firewall()
-        # Following disables the old satellite repo and extra repos enabled
-        # during subscribe e.g Load balancer Repo
-        enable_disable_repo(disable_repo_name, enable_repos_name)
-        # If CDN upgrade then enable satellite latest version repo
-        if base_url is None:
-            enable_disable_repo([], ['rhel-{0}-server-satellite-{1}-rpms'.format(
-                major_ver, to_version)])
             repository_cleanup('sat')
         else:
             repository_setup("[sat6]", "satellite 6", base_url, 1, 0)

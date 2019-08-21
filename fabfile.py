@@ -15,8 +15,7 @@ from upgrade.runner import (
 )
 from upgrade.satellite import (
     satellite6_setup,
-    satellite6_upgrade,
-    satellite6_zstream_upgrade
+    satellite6_upgrade
 )
 from upgrade.helpers.docker import (
     docker_execute_command,

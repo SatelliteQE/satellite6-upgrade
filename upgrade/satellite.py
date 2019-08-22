@@ -11,7 +11,6 @@ from automation_tools import (
     subscribe,
     install_prerequisites
 )
-from automation_tools.repository import enable_repos, disable_repos
 from automation_tools.utils import distro_info, update_packages
 from datetime import datetime
 from fabric.api import env, execute, run
@@ -21,9 +20,11 @@ from upgrade.helpers.rhevm4 import (
     delete_rhevm4_instance
 )
 from upgrade.helpers.tasks import (
-    setup_foreman_maintain,
-    upgrade_using_foreman_maintain,
-    repository_setup
+    enable_disable_repo,
+    foreman_maintain_upgrade,
+    repository_setup,
+    repository_cleanup,
+    setup_foreman_maintain
 )
 
 logger = logger()
@@ -72,19 +73,26 @@ def satellite6_setup(os_version):
 
 
 def satellite6_upgrade(upgrade_type=None):
-    """This function is used to perform the satellite upgrade of two type
+    """This function is used to perform the satellite upgrade of two type based on
+    their passed parameter.
+    :param upgrade_type:
+
+    if upgrade_type==None:
         - Upgrades Satellite Server from old version to latest
             The following environment variables affect this command:
 
             BASE_URL
                 Optional, defaults to available satellite version in CDN.
                 URL for the compose repository
+            FROM_VERSION
+                Current satellite version which will be upgraded to latest version
             TO_VERSION
                 Satellite version to upgrade to and enable repos while upgrading.
                 e.g '6.1','6.2', '6.3'
             PERFORM_FOREMAN_MAINTAIN_UPGRADE
                 use foreman-maintain for satellite upgrade
 
+    else:
         - Upgrades Satellite Server to its latest zStream version
             Note: For zstream upgrade both 'To' and 'From' version should be same
 
@@ -128,10 +136,10 @@ def satellite6_upgrade(upgrade_type=None):
             # Remove old custom sat repo
             repository_cleanup('sat')
         else:
-            repository_setup("[sat6]",
+            repository_setup("sat6",
                              "satellite 6",
                              base_url, 1, 0)
-        upgrade_task()
+        nonfm_upgrade()
     # Rebooting the satellite for kernel update if any
     reboot(180)
     host_ssh_availability_check(env.get('satellite_host'))
@@ -139,54 +147,7 @@ def satellite6_upgrade(upgrade_type=None):
     upgrade_validation()
 
 
-def foreman_maintain_upgrade(base_url):
-    """
-    The purpose of this function is to setup the foreman-maintain and perform the
-    foreman-mantain upgrade"
-    :param base_url: It is used to check the repository selection whether
-    it from CDN or from Downstream
-    """
-    if base_url is None:
-        os.environ['DISTRIBUTION'] = "CDN"
-    else:
-        os.environ['DISTRIBUTION'] = "DOWNSTREAM"
-    # setup foreman-maintain
-    setup_foreman_maintain()
-    preup_time = datetime.now().replace(microsecond=0)
-    # perform upgrade using foreman-maintain
-    upgrade_using_foreman_maintain()
-    postup_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for Satellite Upgrade - {}'.format(
-        str(postup_time - preup_time)))
-
-
-def enable_disable_repo(enable_repo_name, disable_repo_name):
-    """
-    The purpose of this function is to enable and disable the
-    repository as per requirements.
-    :param enable_repo_name: This will take the list of
-    repository which you are going to enable
-    :param disable_repo_name: This will take the
-    list of repository which you are going to disable
-    """
-    if disable_repo_name:
-        [disable_repos('{}'.format(repo), silent=True) for repo in disable_repo_name]
-    if enable_repo_name:
-        [enable_repos('{}'.format(repo)) for repo in disable_repo_name]
-
-
-def repository_cleanup(repo_name):
-    """
-    The purpose of this function to perform the repository cleanup on the basis of
-    their name.
-    :param repo_name: repository name
-    """
-    for fname in os.listdir('/etc/yum.repos.d/'):
-        if repo_name in fname.lower():
-            os.remove('/etc/yum.repos.d/{}'.format(fname))
-
-
-def upgrade_task():
+def nonfm_upgrade():
     """
     The purpose of this module to perform the upgrade task without foreman-maintain.
     In this function we setup the repository, stop the katello services,

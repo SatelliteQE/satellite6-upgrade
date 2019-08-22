@@ -8,13 +8,14 @@ import sys
 import time
 import requests
 import socket
+from datetime import datetime
 
 from automation_tools import (
     setup_alternate_capsule_ports,
     setup_fake_manifest_certificate,
 )
 from automation_tools import setup_foreman_discovery, setup_avahi_discovery
-from automation_tools.repository import enable_repos
+from automation_tools.repository import enable_repos, disable_repos
 from automation_tools.utils import get_discovery_image
 from nailgun import entities
 from robozilla.decorators import bz_bug_is_open
@@ -541,11 +542,11 @@ def setup_foreman_maintain():
     setup_foreman_maintain_repo()
     if os.environ.get('DISTRIBUTION') != 'CDN':
         # Add Sat6 repo from latest compose
-        repository_setup("[sat6]",
+        repository_setup("sat6",
                          "satellite 6",
                          "{}".format(os.environ.get('BASE_URL')),
                          1, 0)
-        repository_setup("[sat6tools7]",
+        repository_setup("sat6tools7",
                          "satellite6-tools7",
                          "{}".format(os.environ.get('TOOLS_RHEL7')),
                          1, 0)
@@ -573,7 +574,7 @@ def setup_foreman_maintain_repo():
     if os.environ.get('DISTRIBUTION') == 'CDN':
         enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
     else:
-        repository_setup("[foreman-maintain]",
+        repository_setup("foreman-maintain",
                          "foreman-maintain",
                          "{}".format(os.environ.get('MAINTAIN_REPO')),
                          1, 0)
@@ -651,7 +652,7 @@ def upgrade_puppet3_to_puppet4():
     if os.environ.get('DISTRIBUTION') == 'CDN':
         enable_repos('rhel-7-server-satellite-6.3-puppet4-rpms')
     else:
-        repository_setup("[Puppet4]",
+        repository_setup("Puppet4",
                          "puppet4",
                          "{}".format(os.environ.get('PUPPET4_REPO')),
                          1, 0)
@@ -677,7 +678,7 @@ def add_baseOS_repo(base_url):
 
     :param base_url: Url of the latest baseos repo to be added.
     """
-    repository_setup("[rhel]", "rhel",
+    repository_setup("rhel", "rhel",
                      base_url, 1, 0)
 
 
@@ -702,7 +703,7 @@ def setup_satellite_clone():
     if os.environ.get('DISTRIBUTION') == 'CDN':
         enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
     else:
-        repository_setup("[maintainrepo]",
+        repository_setup("maintainrepo",
                          "maintain",
                          "{}".format(os.environ.get('MAINTAIN_REPO')),
                          1, 0)
@@ -858,12 +859,58 @@ def repository_setup(repository, repository_name, base_url, enable, gpgcheck):
     :return:
     """
     satellite_repo = StringIO()
-    satellite_repo.write('{}\n'.format(repository))
+    satellite_repo.write('[{}]\n'.format(repository))
     satellite_repo.write('name=s{}\n'.format(repository_name))
     satellite_repo.write('baseurl={0}\n'.format(base_url))
     satellite_repo.write('enabled={}\n'.format(enable))
     satellite_repo.write('gpgcheck={}\n'.format(gpgcheck))
     put(local_path=satellite_repo,
-        remote_path='/etc/yum.repos.d/{}.repo'.format(repository.
-                                                      replace("[", '').replace("]", '')))
+        remote_path='/etc/yum.repos.d/{}.repo'.format(repository))
     satellite_repo.close()
+
+
+def foreman_maintain_upgrade(base_url):
+    """
+    The purpose of this function is to setup the foreman-maintain and perform the
+    foreman-mantain upgrade"
+    :param base_url: It is used to check the repository selection whether
+    it from CDN or from Downstream
+    """
+    if base_url is None:
+        os.environ['DISTRIBUTION'] = "CDN"
+    else:
+        os.environ['DISTRIBUTION'] = "DOWNSTREAM"
+    # setup foreman-maintain
+    setup_foreman_maintain()
+    preup_time = datetime.now().replace(microsecond=0)
+    # perform upgrade using foreman-maintain
+    upgrade_using_foreman_maintain()
+    postup_time = datetime.now().replace(microsecond=0)
+    logger.highlight('Time taken for Satellite Upgrade - {}'.format(
+        str(postup_time - preup_time)))
+
+
+def enable_disable_repo(enable_repo_name, disable_repo_name):
+    """
+    The purpose of this function is to enable and disable the
+    repository as per requirements.
+    :param enable_repo_name: This will take the list of
+    repository which you are going to enable
+    :param disable_repo_name: This will take the
+    list of repository which you are going to disable
+    """
+    if disable_repo_name:
+        [disable_repos('{}'.format(repo), silent=True) for repo in disable_repo_name]
+    if enable_repo_name:
+        [enable_repos('{}'.format(repo)) for repo in disable_repo_name]
+
+
+def repository_cleanup(repo_name):
+    """
+    The purpose of this function to perform the repository cleanup on the basis of
+    their name.
+    :param repo_name: repository name
+    """
+    for fname in os.listdir('/etc/yum.repos.d/'):
+        if repo_name in fname.lower():
+            os.remove('/etc/yum.repos.d/{}'.format(fname))

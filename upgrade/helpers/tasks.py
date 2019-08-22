@@ -222,7 +222,16 @@ def _sync_rh_repos_to_satellite(org):
     scl_repo = entities.Repository(
         name=rhelcontents['rhscl']['repofull'].format(os_ver=rhelver, arch=arch)
     ).search(query={'organization_id': org.id, 'per_page': 100})[0]
-    call_entity_method_with_timeout(entities.Repository(id=scl_repo.id).sync, timeout=2500)
+    attempt = 0
+    # Fixed upgrade issue: #368
+    while attempt <= 3:
+        try:
+            call_entity_method_with_timeout(
+                entities.Repository(id=scl_repo.id).sync, timeout=2500)
+            break
+        except requests.exceptions.HTTPError as exp:
+            logger.warn("Retry{} after exception: {}".format(attempt, exp))
+            attempt += 1
     # Enable RHEL 7 Server repository
     server_product = entities.Product(
         name=rhelcontents['server']['prod'], organization=org).search(query={'per_page': 100})[0]

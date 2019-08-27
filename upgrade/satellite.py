@@ -72,10 +72,10 @@ def satellite6_setup(os_version):
     return sat_host
 
 
-def satellite6_upgrade(upgrade_type=None):
+def satellite6_upgrade(zstream=False):
     """This function is used to perform the satellite upgrade of two type based on
     their passed parameter.
-    :param upgrade_type:
+    :param zstream:
 
     if upgrade_type==None:
         - Upgrades Satellite Server from old version to latest
@@ -107,7 +107,7 @@ def satellite6_upgrade(upgrade_type=None):
     logger.highlight('\n========== SATELLITE UPGRADE =================\n')
     to_version = os.environ.get('TO_VERSION')
     from_version = os.environ.get('FROM_VERSION')
-    if upgrade_type:
+    if zstream:
         if not from_version == to_version:
             logger.warning('zStream Upgrade on Satellite cannot be performed as '
                            'FROM and TO versions are not same!')
@@ -122,7 +122,7 @@ def satellite6_upgrade(upgrade_type=None):
         foreman_maintain_upgrade(base_url)
     else:
         setup_satellite_firewall()
-        if not upgrade_type:
+        if not zstream:
             run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')
             logger.info('Updating system packages ... ')
             setup_foreman_maintain()

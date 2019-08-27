@@ -182,7 +182,7 @@ def product_upgrade(product):
                 if from_version != to_version:
                     execute(satellite6_upgrade, host=sat_host)
                 else:
-                    execute(satellite6_upgrade, 'zStream', host=sat_host)
+                    execute(satellite6_upgrade, True, host=sat_host)
                 upgraded = execute(
                     get_sat_cap_version, 'sat', host=sat_host)[sat_host]
                 if LooseVersion(upgraded) > LooseVersion(current):

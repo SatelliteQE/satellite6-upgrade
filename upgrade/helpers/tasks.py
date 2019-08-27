@@ -860,11 +860,11 @@ def check_status_of_running_task(command, attempt):
 def repository_setup(repository, repository_name, base_url, enable, gpgcheck):
     """
     This is generic fucntion which is used to setup the repository
-    :param repository: uniq repository ID
-    :param repository_name: repository name in string
-    :param base_url: repository url
-    :param enable: repoitory enable(1) or disable(0)
-    :param gpgcheck: verify GPG authenticity pass 1 otherwise pass 0
+    :param str repository: uniq repository ID
+    :param str repository_name: repository name in string
+    :param str base_url: repository url
+    :param int enable: repoitory enable(1) or disable(0)
+    :param int gpgcheck: verify GPG authenticity pass 1 otherwise pass 0
     :return:
     """
     satellite_repo = StringIO()
@@ -882,7 +882,7 @@ def foreman_maintain_upgrade(base_url):
     """
     The purpose of this function is to setup the foreman-maintain and perform the
     foreman-mantain upgrade"
-    :param base_url: It is used to check the repository selection whether
+    :param str base_url: It is used to check the repository selection whether
     it from CDN or from Downstream
     """
     if base_url is None:
@@ -903,9 +903,9 @@ def enable_disable_repo(enable_repo_name, disable_repo_name):
     """
     The purpose of this function is to enable and disable the
     repository as per requirements.
-    :param enable_repo_name: This will take the list of
+    :param list enable_repo_name: This will take the list of
     repository which you are going to enable
-    :param disable_repo_name: This will take the
+    :param list disable_repo_name: This will take the
     list of repository which you are going to disable
     """
     if disable_repo_name:
@@ -918,7 +918,7 @@ def repository_cleanup(repo_name):
     """
     The purpose of this function to perform the repository cleanup on the basis of
     their name.
-    :param repo_name: repository name
+    :param str repo_name: repository name
     """
     for fname in os.listdir('/etc/yum.repos.d/'):
         if repo_name in fname.lower():

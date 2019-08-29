@@ -14,9 +14,11 @@ from automation_tools import (
     setup_alternate_capsule_ports,
     setup_fake_manifest_certificate,
 )
+from automation_tools import setup_capsule_firewall
 from automation_tools import setup_foreman_discovery, setup_avahi_discovery
 from automation_tools.repository import enable_repos, disable_repos
-from automation_tools.utils import get_discovery_image
+from automation_tools.utils import get_discovery_image, update_packages
+from automation_tools.satellite6.capsule import generate_capsule_certs
 from nailgun import entities
 from robozilla.decorators import bz_bug_is_open
 from upgrade.helpers.constants import customcontents, rhelcontents
@@ -923,3 +925,76 @@ def repository_cleanup(repo_name):
     for fname in os.listdir('/etc/yum.repos.d/'):
         if repo_name in fname.lower():
             os.remove('/etc/yum.repos.d/{}'.format(fname))
+
+
+def nonfm_upgrade(satellite_upgrade=True,
+                  cap_host=None, sat_host=None):
+    """
+    The purpose of this module to perform the upgrade task without foreman-maintain.
+    In this function we setup the repository, stop the katello services,
+    cleanup, and execute satellite upgrade task"
+    :param bool satellite_upgrade: If satellite_upgrade is True then upgrade
+    type satellite otherwise capsule
+    :param bool zstream: Capsule zStream upgrade
+    :param str cap_host: hostname of capsule it used to generate certificate for
+    capsules major version upgrade.
+    :param str sat_host: hostname of satellite used to generate certificate for
+    capsules major version upgrade.
+    :
+    """
+    # Check what repos are set
+    upgrade_type = "satellite" if satellite_upgrade else "capsule"
+    run('yum repolist')
+    # Stop katello services, except mongod
+    run('katello-service stop')
+    run('yum clean all', warn_only=True)
+    # Updating the packages again after setting sat6 repo
+    logger.info('Updating system and {} packages... '.format(upgrade_type))
+    preyum_time = datetime.now().replace(microsecond=0)
+    update_packages(quiet=False)
+    postyum_time = datetime.now().replace(microsecond=0)
+    logger.highlight('Time taken for system and {} packages update'
+                     ' - {}'.format(upgrade_type, str(postyum_time - preyum_time)))
+    # non zStream capsule upgrade
+    if sat_host and cap_host:
+        execute(
+            generate_capsule_certs,
+            cap_host,
+            True,
+            host=sat_host
+        )
+        execute(lambda: run("scp -o 'StrictHostKeyChecking no' {0}-certs.tar "
+                            "root@{0}:/home/".format(cap_host)), host=sat_host)
+        setup_capsule_firewall()
+        preup_time = datetime.now().replace(microsecond=0)
+        upgrade_task(upgrade_type, cap_host)
+    else:
+        preup_time = datetime.now().replace(microsecond=0)
+        upgrade_task(upgrade_type)
+    postup_time = datetime.now().replace(microsecond=0)
+    logger.highlight('Time taken for Satellite Upgrade - {}'.format(
+        str(postup_time - preup_time)))
+
+
+def upgrade_task(upgrade_type, cap_host=None):
+    """
+    :param str upgrade_type: upgrade type would be an string either it is
+    satellite or capsule
+    :param str cap_host: hostname for capsule's major version upgrade
+    """
+    if cap_host:
+        run('satellite-installer --scenario {0} --upgrade '
+            '--certs-tar-file /home/{1}-certs.tar '
+            '--certs-update-all'.format(upgrade_type, cap_host))
+    else:
+        run('satellite-installer --scenario {} --upgrade'.format(upgrade_type))
+
+
+def upgrade_validation(upgrade_type=False):
+    """
+    In this function we check the system states after upgrade.
+    :param bool upgrade_type: if upgrade_type is True then we check both the services.
+    """
+    if upgrade_type:
+        run('hammer ping', warn_only=True)
+    run('katello-service status', warn_only=True)

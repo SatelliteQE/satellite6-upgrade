@@ -2,10 +2,7 @@ import os
 import sys
 
 from automation_tools import setup_capsule_firewall
-from automation_tools.repository import enable_repos
-from automation_tools.satellite6.capsule import generate_capsule_certs
-from automation_tools.utils import distro_info, update_packages
-from datetime import datetime
+from automation_tools.utils import distro_info
 from fabric.api import env, execute, run
 from upgrade.helpers.logger import logger
 from upgrade.helpers.rhevm4 import (
@@ -15,7 +12,10 @@ from upgrade.helpers.rhevm4 import (
 from upgrade.helpers.tasks import (
     sync_capsule_repos_to_upgrade,
     add_baseOS_repo,
-    setup_foreman_maintain_repo
+    nonfm_upgrade,
+    upgrade_validation,
+    setup_foreman_maintain_repo,
+
 )
 from upgrade.helpers.tools import (
     copy_ssh_key,
@@ -121,70 +121,26 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     """
     logger.highlight('\n========== CAPSULE UPGRADE =================\n')
     from_version = os.environ.get('FROM_VERSION')
-    to_version = os.environ.get('TO_VERSION')
     setup_capsule_firewall()
     major_ver = distro_info()[1]
-    # Re-register Capsule for 6.2 and 6.3
-    # AS per host unification feature: if there is a host registered where the
-    # Host and Content Host are in different organizations (e.g. host not in
-    # org, and content host in one), the content host will be unregistered as
-    # part of the upgrade process.
-    if float(to_version) >= 6.2:
-        ak_name = os.environ.get('CAPSULE_AK') if os.environ.get(
-            'CAPSULE_AK') else os.environ.get('RHEV_CAPSULE_AK')
-        run('subscription-manager register --org="Default_Organization" '
-            '--activationkey={0} --force'.format(ak_name))
+    ak_name = os.environ.get('CAPSULE_AK') if os.environ.get(
+        'CAPSULE_AK') else os.environ.get('RHEV_CAPSULE_AK')
+    run('subscription-manager register --org="Default_Organization" '
+        '--activationkey={0} --force'.format(ak_name))
     disable_old_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
         major_ver, from_version))
-    if from_version == '6.1' and major_ver == '6':
-        enable_repos('rhel-server-rhscl-{0}-rpms'.format(major_ver))
     # setup foreman-maintain
-    if to_version not in ['6.1', '6.2', '6.3']:
-        setup_foreman_maintain_repo()
+    setup_foreman_maintain_repo()
     # Check what repos are set
-    run('yum repolist')
-    if from_version == '6.0':
-        # Stop katello services, except mongod
-        run('for i in qpidd pulp_workers pulp_celerybeat '
-            'pulp_resource_manager httpd; do service $i stop; done')
-    else:
-        # Stop katello services
-        run('katello-service stop')
-    run('yum clean all', warn_only=True)
-    logger.info('Updating system and capsule packages ... ')
-    preyum_time = datetime.now().replace(microsecond=0)
-    update_packages(quiet=False)
-    postyum_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for capsule packages update - {}'.format(
-        str(postyum_time-preyum_time)))
-    if from_version == '6.0':
-        run('yum install -y capsule-installer', warn_only=True)
-        # Copy answer file from katello to capule installer
-        run('cp /etc/katello-installer/answers.capsule-installer.yaml.rpmsave '
-            '/etc/capsule-installer/answers.capsule-installer.yaml',
-            warn_only=True)
-    execute(
-        generate_capsule_certs,
-        cap_host,
-        True,
-        host=sat_host
-    )
-    # Copying the capsule cert to capsule
-    execute(lambda: run("scp -o 'StrictHostKeyChecking no' {0}-certs.tar "
-                        "root@{0}:/home/".format(cap_host)), host=sat_host)
-    setup_capsule_firewall()
-    preup_time = datetime.now().replace(microsecond=0)
-    run('satellite-installer --scenario capsule --upgrade '
-        '--certs-tar-file /home/{0}-certs.tar '
-        '--certs-update-all'.format(cap_host))
-    postup_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for Capsule Upgrade - {}'.format(
-        str(postup_time-preup_time)))
+
+    nonfm_upgrade(satellite_upgrade=False,
+                  cap_host=cap_host,
+                  sat_host=sat_host)
     # Rebooting the capsule for kernel update if any
     reboot(160)
     host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
-    run('katello-service status', warn_only=True)
+    upgrade_validation()
 
 
 def satellite6_capsule_zstream_upgrade(cap_host):
@@ -212,34 +168,9 @@ def satellite6_capsule_zstream_upgrade(cap_host):
         disable_old_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
             major_ver, from_version))
     # Check what repos are set
-    run('yum repolist')
-    if from_version == '6.0':
-        # Stop katello services, except mongod
-        run('for i in qpidd pulp_workers pulp_celerybeat '
-            'pulp_resource_manager httpd; do service $i stop; done')
-    else:
-        # Stop katello services
-        run('katello-service stop')
-    run('yum clean all', warn_only=True)
-    logger.info('Updating system and capsule packages ... ')
-    preyum_time = datetime.now().replace(microsecond=0)
-    update_packages(quiet=False)
-    postyum_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for capsule packages update - {}'.format(
-        str(postyum_time-preyum_time)))
-    setup_capsule_firewall()
-    preup_time = datetime.now().replace(microsecond=0)
-    if to_version == '6.0':
-        run('katello-installer --upgrade')
-    elif to_version == '6.1':
-        run('capsule-installer --upgrade')
-    else:
-        run('satellite-installer --scenario capsule --upgrade ')
-    postup_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for Capsule Upgrade - {}'.format(
-        str(postup_time-preup_time)))
+    nonfm_upgrade(satellite_upgrade=False)
     # Rebooting the capsule for kernel update if any
     reboot(160)
     host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
-    run('katello-service status', warn_only=True)
+    upgrade_validation()

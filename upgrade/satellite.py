@@ -12,7 +12,6 @@ from automation_tools import (
     install_prerequisites
 )
 from automation_tools.utils import distro_info, update_packages
-from datetime import datetime
 from fabric.api import env, execute, run
 from upgrade.helpers.logger import logger
 from upgrade.helpers.rhevm4 import (
@@ -24,7 +23,9 @@ from upgrade.helpers.tasks import (
     foreman_maintain_upgrade,
     repository_setup,
     repository_cleanup,
-    setup_foreman_maintain
+    setup_foreman_maintain,
+    nonfm_upgrade,
+    upgrade_validation
 )
 
 logger = logger()
@@ -144,38 +145,4 @@ def satellite6_upgrade(zstream=False):
     reboot(180)
     host_ssh_availability_check(env.get('satellite_host'))
     # Test the Upgrade is successful
-    upgrade_validation()
-
-
-def nonfm_upgrade():
-    """
-    The purpose of this module to perform the upgrade task without foreman-maintain.
-    In this function we setup the repository, stop the katello services,
-    cleanup, and execute satellite upgrade task"
-    """
-    # Check what repos are set
-    run('yum repolist')
-    # Stop katello services, except mongod
-    run('katello-service stop')
-    run('yum clean all', warn_only=True)
-    # Updating the packages again after setting sat6 repo
-    logger.info('Updating system and satellite packages... ')
-    preyum_time = datetime.now().replace(microsecond=0)
-    update_packages(quiet=False)
-    postyum_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for system and satellite packages update'
-                     ' - {}'.format(str(postyum_time - preyum_time)))
-    # Running Upgrade
-    preup_time = datetime.now().replace(microsecond=0)
-    run('satellite-installer --scenario satellite --upgrade')
-    postup_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for Satellite Upgrade - {}'.format(
-        str(postup_time - preup_time)))
-
-
-def upgrade_validation():
-    """
-    In this function we check the system states after upgrade.
-    """
-    run('hammer ping', warn_only=True)
-    run('katello-service status', warn_only=True)
+    upgrade_validation(True)

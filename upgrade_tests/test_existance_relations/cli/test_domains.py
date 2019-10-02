@@ -6,7 +6,7 @@
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: Networking
 
 :TestType: nonfunctional
 

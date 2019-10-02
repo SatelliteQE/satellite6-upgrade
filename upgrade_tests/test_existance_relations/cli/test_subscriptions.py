@@ -7,7 +7,7 @@ upgrade
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: SubscriptionManagement
 
 :TestType: nonfunctional
 
@@ -39,6 +39,7 @@ def test_positive_subscriptions_by_name(pre, post):
 
     :id: upgrade-535d6529-27cb-4c6f-959e-6d0684e77aa6
 
+
     :expectedresults: All subscriptions should be retained post upgrade by
         names
     """
@@ -49,7 +50,7 @@ def test_positive_subscriptions_by_name(pre, post):
 def test_positive_subscriptions_by_uuid(pre, post):
     """Test all subscriptions uuids are existing after upgrade
 
-    :id: upgrade-535d6529-27cb-4c6f-959e-6d0684e77aa6
+    :id: upgrade-b5b47ce8-81c7-43ec-a9b1-a2861b2f2eab
 
     :expectedresults: All subscriptions uuids should be retained post upgrade
     """
@@ -60,7 +61,7 @@ def test_positive_subscriptions_by_uuid(pre, post):
 def test_positive_subscriptions_by_support(pre, post):
     """Test all subscriptions support status is retained after upgrade
 
-    :id: upgrade-535d6529-27cb-4c6f-959e-6d0684e77aa6
+    :id: upgrade-4e3352b8-3ddf-49bd-9002-95ed2fc3e84a
 
     :expectedresults: All subscriptions support status should be retained post
         upgrade
@@ -72,7 +73,7 @@ def test_positive_subscriptions_by_support(pre, post):
 def test_positive_subscriptions_by_quantity(pre, post):
     """Test all subscriptions quantities are retained after upgrade
 
-    :id: upgrade-535d6529-27cb-4c6f-959e-6d0684e77aa6
+    :id: upgrade-fe42065a-01c3-4557-b7e9-330c68cd612d
 
     :expectedresults: All subscriptions quantities should be retained post
         upgrade
@@ -84,7 +85,7 @@ def test_positive_subscriptions_by_quantity(pre, post):
 def test_positive_subscriptions_by_consumed(pre, post):
     """Test all subscriptions consumed status is retained after upgrade
 
-    :id: upgrade-535d6529-27cb-4c6f-959e-6d0684e77aa6
+    :id: upgrade-fe859a5a-9d83-45fc-8dcf-1274301df446
 
     :expectedresults: All subscriptions consumed status should be retained post
         upgrade
@@ -96,7 +97,7 @@ def test_positive_subscriptions_by_consumed(pre, post):
 def test_positive_subscriptions_by_end_date(pre, post):
     """Test all subscriptions end date status is retained after upgrade
 
-    :id: upgrade-535d6529-27cb-4c6f-959e-6d0684e77aa6
+    :id: upgrade-980139c0-d31d-43d0-b0e6-eeb5bff8d0aa
 
     :expectedresults: All subscriptions end date status should be retained post
         upgrade

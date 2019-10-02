@@ -6,7 +6,7 @@
 
 :CaseLevel: System
 
-:CaseComponent: API
+:CaseComponent: Networking
 
 :TestType: nonfunctional
 

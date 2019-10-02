@@ -7,7 +7,7 @@ associations post upgrade
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: OrganizationsLocations
 
 :TestType: nonfunctional
 

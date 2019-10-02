@@ -7,7 +7,7 @@ existence post upgrade
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: Puppet
 
 :TestType: nonfunctional
 

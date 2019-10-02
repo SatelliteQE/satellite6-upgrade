@@ -7,7 +7,7 @@
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: Puppet
 
 :TestType: nonfunctional
 

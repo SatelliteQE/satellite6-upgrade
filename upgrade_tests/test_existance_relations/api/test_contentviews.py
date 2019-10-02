@@ -7,7 +7,7 @@ post upgrade
 
 :CaseLevel: System
 
-:CaseComponent: API
+:CaseComponent: ContentViews
 
 :TestType: nonfunctional
 

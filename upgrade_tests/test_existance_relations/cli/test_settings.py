@@ -6,7 +6,7 @@
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: Settings
 
 :TestType: nonfunctional
 

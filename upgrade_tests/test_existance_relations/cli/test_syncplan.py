@@ -7,7 +7,7 @@ association post upgrade
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: SyncPlans
 
 :TestType: nonfunctional
 

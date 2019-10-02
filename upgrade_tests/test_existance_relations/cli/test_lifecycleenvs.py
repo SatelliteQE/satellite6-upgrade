@@ -7,7 +7,7 @@ post upgrade
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: LifecycleEnvironments
 
 :TestType: nonfunctional
 

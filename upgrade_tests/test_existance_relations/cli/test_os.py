@@ -6,7 +6,7 @@
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: ContentManagement
 
 :TestType: nonfunctional
 

@@ -7,7 +7,7 @@ post upgrade
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: UsersRoles
 
 :TestType: nonfunctional
 

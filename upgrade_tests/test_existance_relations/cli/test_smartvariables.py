@@ -7,7 +7,7 @@ and associations post upgrade
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: SmartVariables
 
 :TestType: nonfunctional
 

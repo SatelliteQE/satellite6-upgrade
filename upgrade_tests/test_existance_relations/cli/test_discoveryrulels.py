@@ -7,7 +7,7 @@ its associations post upgrade
 
 :CaseLevel: System
 
-:CaseComponent: CLI
+:CaseComponent: DiscoveryPlugin
 
 :TestType: nonfunctional
 

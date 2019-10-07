@@ -125,11 +125,14 @@ def sync_capsule_repos_to_upgrade(capsules):
         run('for i in pulp_resource_manager pulp_workers pulp_celerybeat; '
             'do service $i restart; done')
     _sync_capsule_subscription_to_capsule_ak(ak)
+    logger.info("_Sync operation completed successfully for capsule")
     if float(to_version) >= 6.3:
         _add_additional_subscription_for_capsule(ak, capsuletools_url)
     # Publishing and promoting the CV with all newly added capsule, capsuletools, rhscl and
     # server repos combine
-    call_entity_method_with_timeout(cv.read().publish, timeout=2000)
+    logger.info("Additional subscription option  for capsule added successfully")
+    call_entity_method_with_timeout(cv.read().publish, timeout=3500)
+    logger.info("Content view published successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
     published_ver.promote(data={'environment_id': lenv.id, 'force': False})
@@ -229,7 +232,9 @@ def _sync_rh_repos_to_satellite(org):
     scl_repo = entities.Repository(
         name=rhelcontents['rhscl']['repofull'].format(os_ver=rhelver, arch=arch)
     ).search(query={'organization_id': org.id, 'per_page': 100})[0]
-    call_entity_method_with_timeout(entities.Repository(id=scl_repo.id).sync, timeout=2500)
+    logger.info("Starting call_entity method with timeout, previous timeout=2500 "
+                "now it is 4500")
+    call_entity_method_with_timeout(entities.Repository(id=scl_repo.id).sync, timeout=4500)
     # Enable RHEL 7 Server repository
     server_product = entities.Product(
         name=rhelcontents['server']['prod'], organization=org).search(query={'per_page': 100})[0]
@@ -246,7 +251,8 @@ def _sync_rh_repos_to_satellite(org):
     server_repo = entities.Repository(
         name=rhelcontents['server']['repofull'].format(os_ver=rhelver, arch=arch)
     ).search(query={'organization_id': org.id, 'per_page': 100})[0]
-    call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync, timeout=3600)
+    logger.info("Call Entity sync operation, Increased timeout value from 3600 to 5000")
+    call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync, timeout=5000)
     scl_repo.repo_id = rhelcontents['rhscl']['label'].format(os_ver=rhelver)
     server_repo.repo_id = rhelcontents['server']['label'].format(os_ver=rhelver)
     return scl_repo, server_repo
@@ -286,7 +292,9 @@ def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
             name=rhelcontents['tools']['repofull'].format(
                 sat_ver=to_ver, os_ver=rhelver, arch=arch)
         ).search(query={'organization_id': org.id, 'per_page': 100})[0]
-    call_entity_method_with_timeout(entities.Repository(id=captools_repo.id).sync, timeout=2500)
+    logger.info("Starting call_entity_method_with_timeout method and increase the "
+                "timeout value from 2500 to 4000")
+    call_entity_method_with_timeout(entities.Repository(id=captools_repo.id).sync, timeout=4000)
     captools_repo.repo_id = rhelcontents['tools']['label'].format(
         os_ver=rhelver, sat_ver=to_ver)
     return captools_repo

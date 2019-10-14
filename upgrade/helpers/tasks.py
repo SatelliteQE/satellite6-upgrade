@@ -998,3 +998,59 @@ def upgrade_validation(upgrade_type=False):
     if upgrade_type:
         run('hammer ping', warn_only=True)
     run('katello-service status', warn_only=True)
+
+
+def update_scap_content():
+    """ The purpose of this function is to perform deletion of old scap-contents
+        and then uploading new scap-contents. It also deletes scap-policies and creates
+         new scap-policies with new scap-contents. """
+
+    def create_policy(scap_content, policy_name):
+        """This function is used for creating scap policy
+
+        :param scap_content: Name of scap-content to be used while creating policy.
+        :param str policy_name: Name of policy to be created.
+        """
+        org = entities.Organization().search(
+            query={'search': 'name="{}"'.format("Default Organization")})[0]
+        loc = entities.Location().search(query={'search': 'name="Default Location"'})[0]
+        scap_content_profile_id = entities.ScapContents(
+            id=scap_content.id).read().scap_content_profiles[0]['id']
+        entities.CompliancePolicies(
+            name=policy_name,
+            scap_content_id=scap_content.id,
+            scap_content_profile_id=scap_content_profile_id,
+            deploy_by='puppet',
+            organization=[org],
+            location=[loc],
+            period='weekly',
+            weekday='monday',
+        ).create()
+
+    def scap(content_type, content_name):
+        """This function is used for deleting old scap contents and policy
+        and it use create_policy for creating new policies.
+
+        :param content_type: Search result of scap-content or compliance-policy entity.
+        :param str content_name: Name assigned to searched entity.
+        """
+        for entity in range(len(content_type)):
+            if content_name == "updated_scap_content":
+                if updated_scap_content[entity].title == scap_content_name[0]:
+                    create_policy(updated_scap_content[entity], compliance_policies[0])
+                elif updated_scap_content[entity].title == scap_content_name[1]:
+                    create_policy(updated_scap_content[entity], compliance_policies[1])
+            elif content_name == "policies_search":
+                entities.CompliancePolicies(id=policies_search[entity].id).delete()
+            elif content_name == "scap_content_search":
+                entities.ScapContents(id=scap_content_search[entity].id).delete()
+
+    compliance_policies = ['RHEL 7 policy', 'RHEL 6 policy']
+    scap_content_name = ['Red Hat rhel7 default content', 'Red Hat rhel6 default content']
+    scap_content_search = entities.ScapContents().search()
+    policies_search = entities.CompliancePolicies().search()
+    scap(policies_search, "policies_search")
+    scap(scap_content_search, "scap_content_search")
+    run('foreman-rake foreman_openscap:bulk_upload:default')
+    updated_scap_content = entities.ScapContents().search()
+    scap(updated_scap_content, "updated_scap_content")

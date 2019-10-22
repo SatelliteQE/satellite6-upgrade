@@ -1054,3 +1054,20 @@ def update_scap_content():
     run('foreman-rake foreman_openscap:bulk_upload:default')
     updated_scap_content = entities.ScapContents().search()
     scap(updated_scap_content, "updated_scap_content")
+
+
+def mongo_db_engine_upgrade(upgrade_type):
+    """
+    The purpose of this method to perform the upgrade of mongo DB database engine
+    from MMAPv1 to WiredTiger.
+    :param str upgrade_type:  If user select the upgrade_type 'Satellite' then mongodb
+    upgrade would be performed on Satellite otherwise it would be happened on Capsule
+    """
+    logger.highlight('\n========== MongoDB DataBase Engine Upgrade =================\n')
+    logger.info("Upgrading the MongoDb Database on {}".format(upgrade_type))
+    preup_time = datetime.now().replace(microsecond=0)
+    run("satellite-installer --upgrade-mongo-storage-engine")
+    postup_time = datetime.now().replace(microsecond=0)
+    logger.info("MongoDB DataBase Engine Upgraded Successfully")
+    logger.highlight('Time taken by MongoDB DataBase Engine Upgrade - {}'.format(
+        str(postup_time - preup_time)))

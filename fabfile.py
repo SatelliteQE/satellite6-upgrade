@@ -40,6 +40,7 @@ from upgrade.helpers.tasks import (
     sync_tools_repos_to_upgrade,
     setup_foreman_maintain,
     setup_satellite_clone,
+    update_scap_content,
     upgrade_using_foreman_maintain,
     upgrade_puppet3_to_puppet4
 )

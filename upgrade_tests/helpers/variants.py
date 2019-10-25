@@ -23,9 +23,12 @@ class VersionError(Exception):
 _entity_varients = {
     'capsule': [
         ['tftp, dns, dhcp, puppet, puppet ca, bmc, pulp node, templates, discovery, openscap, dynflow, ssh']*3 + # noqa
-        ['puppet, puppet ca, pulp node, templates, discovery, tftp, dns, dhcp, bmc, openscap, dynflow, ssh, ansible']*2, # noqa
-        ['tftp, dns, dhcp, puppet, puppet ca, bmc, pulp, discovery, openscap, dynflow, ssh']*3 + # noqa
-        ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible']*2 # noqa
+        ['puppet, puppet ca, pulp node, templates, discovery, tftp, dns, dhcp, bmc, openscap, dynflow, ssh, ansible'] +  # noqa
+        ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, dhcp, puppet ca, puppet, httpboot'],  # noqa
+        ['tftp, dns, dhcp, puppet, puppet ca, bmc, pulp, discovery, openscap, dynflow, ssh']*2 +  # noqa
+        ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible'] +  # noqa
+        ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible, templates'] +  # noqa
+        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, dhcp, puppet ca, puppet, httpboot', 'capsule']  # noqa
     ],
     'compute-resource': [
         ['rhev']*2+['rhv']*3],
@@ -72,8 +75,10 @@ _entity_varients = {
         ['view_gpg_keys']*3 + ['view_gpg_keys, view_content_credentials']*2,
         ['view_hosts, create_hosts, build_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*3 + # noqa
         ['view_hosts, create_hosts, edit_hosts, build_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*2, # noqa
-        ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*3 + # noqa
-        ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts, play_roles_on_host']*2 # noqa
+        ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*3 +  # noqa
+        ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts, play_roles_on_host']*2,  # noqa
+        ['auto_provision_discovered_hosts,build_hosts,console_hosts,create_hosts,destroy_discovered_hosts,destroy_hosts,edit_discovered_hosts,edit_hosts,ipmi_boot_hosts,play_roles_on_host,power_hosts,provision_discovered_hosts,puppetrun_hosts,submit_discovered_hosts,view_discovered_hosts,view_hosts']*4 +  # noqa
+        ['auto_provision_discovered_hosts,build_hosts,cockpit_hosts,console_hosts,create_hosts,destroy_discovered_hosts,destroy_hosts,edit_discovered_hosts,edit_hosts,ipmi_boot_hosts,play_roles_on_host,power_hosts,provision_discovered_hosts,puppetrun_hosts,submit_discovered_hosts,view_discovered_hosts,view_hosts']  # noqa
     ],
     'organization': [
         ['default_organization']*3+['default organization']*2],  # noqa
@@ -97,6 +102,13 @@ _entity_varients = {
         ['["lo", "usb*", "vnet*", "macvtap*", "_vdsmdummy_", "veth*", '
          '"docker*", "tap*", "qbr*", "qvb*", "qvo*", "qr-*", "qg-*", '
          '"vlinuxbr*", "vovsbr*"]']*3,
+        ['["lo", "en*v*", "usb*", "vnet*", "macvtap*", "_vdsmdummy_", '
+         '"veth*", "docker*", "tap*", "qbr*", "qvb*", "qvo*", "qr-*", '
+         '"qg-*", "vlinuxbr*", "vovsbr*"]']*4 +
+        ['["lo", "en*v*", "usb*", "vnet*", "macvtap*", "_vdsmdummy_", '
+         '"veth*", "docker*", "tap*", "qbr*", "qvb*", "qvo*", "qr-*", '
+         '"qg-*", "vlinuxbr*", "vovsbr*", "mountpoints", "partitions", '
+         '"blockdevice*"]'],
         # Description Variants
         ['fact name to use for primary interface detection and hostname']*2 +
          ['fact name to use for primary interface detection']*3,
@@ -141,7 +153,15 @@ _entity_varients = {
         ['satellite atomic kickstart default'] * 3 + ['atomic kickstart default']*2,  # noqa
         ['default_location'] * 3 + ['default location']*2,
         ['what command should be used to switch to the effective user. one of ["sudo", "su"]']*3 +  # noqa
-         ['what command should be used to switch to the effective user. one of ["sudo", "dzdo", "su"]']*2],  # noqa
+         ['what command should be used to switch to the effective user. one of ["sudo", "dzdo", "su"]']*2,  # noqa
+        ["exclude pattern for all types of imported facts (rhsm, puppet e.t.c.). those facts won't be stored "  # noqa
+         "in foreman's database. you can use * wildcard to match names with indexes e.g. macvtap*"]*4 +  # noqa
+        ["exclude pattern for all types of imported facts (puppet, ansible, rhsm). those facts won't be "  # noqa
+         "stored in foreman's database. you can use * wildcard to match names with indexes e.g. ignore* will "  # noqa
+         "filter out ignore, ignore123 as well as a::ignore or even a::ignore123::b"],
+        ["url hosts will retrieve templates from during build (normally http as many installers don't support https)"]*4 +  # noqa
+        ["url hosts will retrieve templates from during build, when it starts with https unattended/userdata controllers "  # noqa
+         "cannot be accessed via http"]],
     'subscription': [
         # Validity Variants
         ['-1']*2+['unlimited']*3],
@@ -156,9 +176,375 @@ _entity_varients = {
 }
 
 template_varients = {
-    'template': [],
+    'template': [
+        # Preseed default user data, Preseed default finish, Atomic Kickstart default,
+        # AutoYaST default user data, AutoYaST default, Preseed default user data,
+        # XenServer default finish, AutoYaST SLES default
+        '- /usr/bin/wget --quiet --output-document=/dev/null --no-check-certificate ',
+        "+ <%= snippet 'built' %>"
+        # Preseed default finish
+        '+ <%= snippet_if_exists(template_name + " custom snippet") %>',
+        "- /usr/bin/wget --no-proxy --quiet --output-document=/dev/null --no-check-certificate <%= foreman_url('built') %>",  # noqa
+        "+ <%= snippet 'efibootmgr_netboot' %>",
+        # freeipa_register
+        '-   <% if @host.operatingsystem.major.to_i > 6 -%>',
+        '+   <% os_major = @host.operatingsystem.major.to_i %>',
+        '+   <% if os_major == 7 -%>',
+        '+   <% elsif os_major > 7 %>',
+        '+     /usr/libexec/openssh/sshd-keygen',
+        # Atomic Kickstart default
+        "+ <%= snippet 'efibootmgr_netboot' %>",
+        "- curl -s -o /dev/null --insecure <%= foreman_url('built') %>",
+        # PXEGrub2 global default
+        "+ echo Default PXE global template entry is set to \'<%= global_setting(\"default_pxe_item_global\", \"local\") %>\'",  # noqa
+        '+ <%= snippet "pxegrub2_mac" %>',
+        '+ ',
+        '+ # Only grub2 from redhat has MAC-based config loading patch, load explicitly',
+        '- # On Debian/Ubuntu grub2 does not have patch for loading MAC-based configs. Also due to bug',  # noqa
+        '- # in RHEL 7.4 files are loaded with an extra ":" character at the end. This workarounds both',  # noqa
+        '- # cases, make sure "regexp.mod" file is present on the TFTP. For more info see:',
+        '- # https://bugzilla.redhat.com/show_bug.cgi?id=1370642#c70',
+        '- insmod regexp',
+        '- regexp --set=1:m1 --set=2:m2 --set=3:m3 --set=4:m4 --set=5:m5 --set=6:m6 \'^([0-9a-f]{1,2})\\:([0-9a-f]{1,2})\\:([0-9a-f]{1,2})\\:([0-9a-f]{1,2})\\:([0-9a-f]{1,2})\\:([0-9a-f]{1,2})\' "$net_default_mac"',  # noqa
+        '- mac=${m1}-${m2}-${m3}-${m4}-${m5}-${m6}',
+        '+ # And if that fails render chain and discovery menu',
+        '- ',
+        # Preseed default PXEGrub2
+        '+ <%= snippet_if_exists(template_name + " custom menu") %>',
+        # redhat_register
+        '+ -%>',
+        '+ <%#',
+        '+ #',
+        '+ #   subscription_manager_override_repos_cost = <cost>  Override repository cost',
+        "+   <% if host_param('subscription_manager_override_repos_cost') %>",
+        '+     for repo in $(subscription-manager repos --list-enabled | grep "Repo ID:" | awk -F\' \' \'{ print $3 }\'); do',  # noqa
+        '+       <%= "subscription-manager repo-override --list --repo $repo | grep \'cost:\' &>/dev/null || subscription-manager repo-override --repo $repo --add=cost:#{host_param(\'subscription_manager_override_repos_cost\')}" %>',  # noqa
+        '+     done',
+        '+   <% end %>',
+        # AutoYaST default user data
+        "- /usr/bin/curl -o /dev/null -k '<%= foreman_url('built') %>'",
+        # Kickstart default iPXE
+        "+ <%- if @host.operatingsystem.name != 'Fedora' && @host.operatingsystem.major.to_i >= 7 && host_param_true?('fips_enabled') %>",  # noqa
+        "+ <%-   fips = 'fips=1' -%>",
+        '+ <%- else -%>',
+        "+ <%-   fips = '' -%>",
+        '+ <%- end -%>',
+        '- kernel <%= "#{@host.url_for_boot(:kernel)}" %> initrd=initrd.img ks=<%= foreman_url(\'provision\')%><%= static %> inst.stage2=<%= @host.operatingsystem.medium_uri(@host) %> <%= stage2 %> ksdevice=<%= @host.mac %> network kssendmac ks.sendmac inst.ks.sendmac <%= net_options %>',  # noqa
+        '+ kernel <%= "#{@host.url_for_boot(:kernel)}" %> initrd=initrd.img ks=<%= foreman_url(\'provision\')%><%= static %> inst.stage2=<%= @host.operatingsystem.medium_uri(@host) %> <%= stage2 %> ksdevice=<%= @host.mac %> network kssendmac ks.sendmac inst.ks.sendmac <%= net_options %> <%= fips %>',  # noqa
+        '+ imgstat',
+        '+ sleep 2',
+        # AutoYaST SLES default
+        '+ <% if os_major >= 15 -%>',
+        '+   <ntp-client>',
+        '+     <ntp_policy>auto</ntp_policy>',
+        '+     <ntp_servers config:type="list">',
+        '+       <ntp_server>',
+        "+         <address><%= host_param('ntp-server') || '0.opensuse.pool.ntp.org' %></address>",  # noqa
+        '+         <iburst config:type="boolean">false</iburst>',
+        '+         <offline config:type="boolean">true</offline>',
+        '+       </ntp_server>',
+        '+     </ntp_servers>',
+        '+     <ntp_sync>15</ntp_sync>',
+        '+   </ntp-client>',
+        '+ <% else -%>',
+        '+ <% end -%>',
+        '+     <products config:type="list">',
+        '+       <product>SLES</product>',
+        '+     </products>',
+        '+     <patterns config:type="list">',
+        '+       <pattern>enhanced_base</pattern>',
+        '+     </patterns>',
+        "- /usr/bin/curl -o /dev/null -k '<%= foreman_url('built') %>'",
+        '+ <% if os_major >= 15 -%>',
+        '+       <listentry>',
+        "+         <media_url><%= host_param('sle-module-basesystem-url') %></media_url>",
+        '+         <product_dir>/Module-Basesystem</product_dir>',
+        '+         <product>sle-module-basesystem</product>',
+        '+       </listentry>',
+        "+ <% if host_param_true?('enable-puppetlabs-pc1-repo') or host_param_true?('enable-puppetlabs-puppet5-repo') -%>",  # noqa
+        '+ <%',
+        "+   puppet_repo_url_base = 'http://yum.puppetlabs.com'",
+        "- <% if host_param_true?('enable-puppetlabs-pc1-repo') -%>",
+        "+   if host_param_true?('enable-puppetlabs-pc1-repo')",
+        '+     puppet_repo_url = "#{puppet_repo_url_base}/sles/#{os_major}/PC1/#{@host.architecture}/"',  # noqa
+        "+   elsif host_param_true?('enable-puppetlabs-puppet5-repo')",
+        '+     puppet_repo_url = "#{puppet_repo_url_base}/puppet5/sles/#{os_major}/#{@host.architecture}/"',  # noqa
+        '+   end',
+        '-         <media_url><![CDATA[http://yum.puppetlabs.com/sles/<%= os_major %>/PC1/<%= @host.architecture %>/]]></media_url>',  # noqa
+        '+         <media_url><![CDATA[<%= puppet_repo_url %>]]></media_url>',
+        # AutoYaST default
+        '+   os_major = @host.operatingsystem.major.to_i',
+        '+   <%# NTP client configuration has incompatible changes in Leap 15 -%>',
+        '+   <% if os_major <= 12 || os_major == 42 -%>',
+        '+   <ntp-client>',
+        '+    <ntp_policy>auto</ntp_policy>',
+        '+    <ntp_servers config:type="list">',
+        '+     <ntp_server>',
+        '+      <iburst config:type="boolean">false</iburst>',
+        "+      <address><%= host_param('ntp-server') || '0.opensuse.pool.ntp.org' %></address>",
+        '+      <offline config:type="boolean">true</offline>',
+        '+     </ntp_server>',
+        '+    </ntp_servers>',
+        '+    <ntp_sync>systemd</ntp_sync>',
+        '+    </ntp-client>',
+        "- /usr/bin/curl -o /dev/null -k '<%= foreman_url('built') %>'",
+        # Alterator default finish
+        "- /usr/bin/wget -q -O /dev/null --no-check-certificate <%= foreman_url('built') %>",
+        # iPXE global default
+        '- item --key l local     Continue local boot',
+        '+ item --key l local     Local boot (next entry)',
+        '- item --key d discovery Foreman Discovery',
+        '+ item --key d discovery Discovery from ${next-server}:8000 (httpboot module)',
+        '+ item --key d discovery8448 Discovery from ${next-server}:8448 (httpboot module)',
+        '+ item --key d discovery80 Discovery from ${next-server}:80 (custom script)',
+        '- kernel ${next-server}/boot/fdi-image/vmlinuz0 rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nomodeset proxy.url=<%= foreman_server_url %> proxy.type=foreman BOOTIF=01-${net0/mac}',  # noqa
+        '+ kernel http://${next-server}:8000/boot/fdi-image/vmlinuz0 initrd=initrd0.img rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nomodeset nokaslr proxy.url=<%= foreman_server_url %> proxy.type=foreman BOOTIF=01-${net0/mac}',  # noqa
+        '- initrd ${next-server}/boot/fdi-image/initrd0.img',
+        '+ initrd http://${next-server}:8000/boot/fdi-image/initrd0.img',
+        '+ imgstat',
+        '+ sleep 2',
+        '+ :discovery80',
+        '+ dhcp',
+        '+ kernel http://${next-server}/httpboot/boot/fdi-image/vmlinuz0 initrd=initrd0.img rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nomodeset nokaslr proxy.url=<%= foreman_server_url %> proxy.type=foreman BOOTIF=01-${net0/mac}',  # noqa
+        '+ initrd http://${next-server}/httpboot/boot/fdi-image/initrd0.img',
+        '+ imgstat',
+        '+ sleep 2',
+        '+ boot || goto failed',
+        '+ goto start',
+        '+ :discovery8000',
+        '+ kernel http://${next-server}:8000/httpboot/boot/fdi-image/vmlinuz0 initrd=initrd0.img rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nomodeset nokaslr proxy.url=<%= foreman_server_url %> proxy.type=foreman BOOTIF=01-${net0/mac}',  # noqa
+        '+ initrd http://${next-server}:8000/httpboot/boot/fdi-image/initrd0.img',
+        '+ boot || goto failed',
+        # Example foreman_bootdisk host template
+        '+ # Note: When multiple DNS servers are specified, only the first',
+        '+ # server will be used. See: http://ipxe.org/cfg/dns',
+        '- <% if interface.subnet.dns_primary.present? %>',
+        '- # Note, iPXE can only use one DNS server',
+        '- echo Using DNS <%= interface.subnet.dns_primary %>',
+        '- set dns <%= interface.subnet.dns_primary %>',
+        '+ <% dns = interface.subnet.dns_servers.first -%>',
+        '+ <% if dns.present? -%>',
+        '+ echo Using DNS <%= dns %>',
+        '+ set dns <%= dns %>',
+        # Preseed default user data
+        "- /usr/bin/wget --quiet --output-document=/dev/null --no-check-certificate <%= foreman_url('built') %>",  # noqa
+        # pxelinux_discovery
+        '-   APPEND initrd=boot/fdi-image/initrd0.img rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nomodeset proxy.url=<%= foreman_server_url %> proxy.type=foreman',  # noqa
+        '+   APPEND initrd=boot/fdi-image/initrd0.img rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nokaslr nomodeset proxy.url=<%= foreman_server_url %> proxy.type=foreman',  # noqa
+        '- kernel http://foreman_url/pub/vmlinuz0 rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nomodeset proxy.url=https://foreman_url proxy.type=foreman BOOTIF=01-${net0/mac}',  # noqa
+        '+ kernel http://foreman_url/pub/vmlinuz0 rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nokaslr nomodeset proxy.url=https://foreman_url proxy.type=foreman BOOTIF=01-${net0/mac}',  # noqa
+        # Preseed default
+        "+   ansible_enabled = plugin_present?('foreman_ansible')",
+        "+   additional_packages = ['lsb-release']",
+        "+   additional_packages << host_param('additional-packages')",
+        "+   additional_packages << 'python' if ansible_enabled",
+        "+   additional_packages << 'salt-minion' if salt_enabled",
+        '+   additional_packages = additional_packages.join(" ").split().uniq().join(" ")',
+        '- d-i pkgsel/include string <%= salt_package %> lsb-release',
+        '+ d-i pkgsel/include string <%= additional_packages %>'
+        # pxegrub2_discovery
+        '+ <% ["efi", ""].each do |suffix| %>',
+        "- menuentry 'Foreman Discovery Image' --id discovery {",
+        "+ menuentry 'Foreman Discovery Image <%= suffix %>' --id discovery<%= suffix %> {",
+        '-   linuxefi boot/fdi-image/vmlinuz0 rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nomodeset proxy.url=<%= foreman_server_url %> proxy.type=foreman BOOTIF=01-$mac',  # noqa
+        '+   linux<%= suffix %> boot/fdi-image/vmlinuz0 rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nokaslr nomodeset proxy.url=<%= foreman_server_url %> proxy.type=foreman BOOTIF=01-$mac',  # noqa
+        '-   initrdefi boot/fdi-image/initrd0.img',
+        '+   initrd<%= suffix %> boot/fdi-image/initrd0.img',
+        '+ <% end %>',
+        # Kickstart default
+        '+ - fips_enabled: boolean (default=false)',
+        "- repo --name <%= medium[:name] %> --baseurl <%= medium[:url] %> <%= medium[:install] ? ' --install' : '' %>",  # noqa
+        "+ repo --name <%= medium[:name] %> --baseurl <%= medium[:url] %> <%= medium[:install] ? ' --install' : '' %><%= proxy_string %>",  # noqa
+        '+ <%= snippet_if_exists(template_name + " custom packages") %>',
+        "+ <% if host_param_true?('fips_enabled') -%>",
+        "+ <%=   snippet 'fips_packages' %>",
+        '+ <% end -%>',
+        '+ ',
+        '+ <%= snippet_if_exists(template_name + " custom pre") %>',
+        '- %post',
+        '+ <%#',
+        '+ Main post script, if it fails the last post is still executed.',
+        '+ %>',
+        '+ %post --log=/mnt/sysimage/root/install.post.log',
+        '- (',
+        '+ <%= snippet_if_exists(template_name + " custom post") %>',
+        "+ <%= snippet 'efibootmgr_netboot' %>",
+        '+ ',
+        '+ touch /tmp/foreman_built',
+        '+ <%= section_end -%>',
+        '+ ',
+        '+ <%#',
+        '+ The last post section halts Anaconda to prevent endless loop',
+        '+ %>',
+        '+ <% if (is_fedora && os_major < 20) || (rhel_compatible && os_major < 7) -%>',
+        '+ %post',
+        '+ <% else -%>',
+        '+ %post --erroronfail',
+        '+ <% end -%>',
+        '+ if test -f /tmp/foreman_built; then',
+        '+   echo "calling home: build is done!"',
+        "+   <%= indent(2, skip1: true) { snippet('built', :variables => { :endpoint => 'built', :method => 'POST', :body_file => '/mnt/sysimage/root/install.post.log' }) } -%>",  # noqa
+        '+ else',
+        '+   echo "calling home: build failed!"',
+        "+   <%= indent(2, skip1: true) { snippet('built', :variables => { :endpoint => 'failed', :method => 'POST', :body_file => '/mnt/sysimage/root/install.post.log' }) } -%>",  # noqa
+        '+ fi',
+        '+ ',
+        '- ',
+        '- # Inform the build system that we are done.',
+        '- echo "Informing Foreman that we are built"',
+        "- wget -q -O /dev/null --no-check-certificate <%= foreman_url('built') %>",
+        '- ) 2>&1 | tee /root/install.post.log',
+        '- exit 0',
+        '- ',
+        # Kickstart default user data
+        "- /usr/bin/curl -o /dev/null -k '<%= foreman_url('built') %>'",
+        # Preseed default PXELinux
+        '+ ',
+        '+ <%= snippet_if_exists(template_name + " custom menu") %>',
+        # coreos_cloudconfig
+        '+       hostname: <%= @host.name %>',
+        #  Discovery Debian kexec
+        '-   options = ["nomodeset", "auto=true"]',
+        '+   options = ["nomodeset", "nokaslr", "auto=true"]',
+        # Kickstart default PXEGrub
+        "+   if @host.operatingsystem.name != 'Fedora' && @host.operatingsystem.major.to_i >= 7 && host_param_true?('fips_enabled')",  # noqa
+        "+     options.push('fips=1')",
+        '+   end',
+        '+ ',
+        '+ ',
+        '+ <%= snippet_if_exists(template_name + " custom menu") %>',
+        # Discovery Red Hat kexec
+        "+   if @host.operatingsystem.name != 'Fedora' && @host.operatingsystem.major.to_i >= 7 && host_param_true?('fips_enabled')",  # noqa
+        "+     options.push('fips=1')",
+        '+   end',
+        '-   "append": "ks=<%= foreman_url(\'provision\') + "&static=yes" %> inst.ks.sendmac <%= "ip=#{ip}::#{gw}:#{mask}:::none nameserver=#{dns} ksdevice=bootif BOOTIF=#{bootif} nomodeset " + options.compact.join(\' \') %>",',  # noqa
+        '+   "append": "ks=<%= foreman_url(\'provision\') + "&static=yes" %> inst.ks.sendmac <%= "ip=#{ip}::#{gw}:#{mask}:::none nameserver=#{dns} ksdevice=bootif BOOTIF=#{bootif} nomodeset nokaslr " + options.compact.join(\' \') %>",',  # noqa
+        '-   "append": "ks=<%= foreman_url(\'provision\') + "&static=yes" %> kssendmac nicdelay=5 <%= "ip=#{ip} netmask=#{mask} gateway=#{gw} dns=#{dns} ksdevice=#{mac} BOOTIF=#{bootif} " + options.compact.join(\' \') %>",',  # noqa
+        '+   "append": "ks=<%= foreman_url(\'provision\') + "&static=yes" %> kssendmac nicdelay=5 <%= "ip=#{ip} netmask=#{mask} gateway=#{gw} dns=#{dns} ksdevice=#{mac} BOOTIF=#{bootif} nomodeset nokaslr " + options.compact.join(\' \') %>",',  # noqa
+        # Kickstart default PXELinux
+        "+   if @host.operatingsystem.name != 'Fedora' && @host.operatingsystem.major.to_i >= 7 && host_param_true?('fips_enabled')",  # noqa
+        "+     options.push('fips=1')",
+        '+   end',
+        '+ ',
+        '+ ',
+        '+ <%= snippet_if_exists(template_name + " custom menu") %>',
+        # pxegrub2_chainload
+        '-   paths = ["fedora", "redhat", "centos", "debian", "ubuntu", "sles", "opensuse", "Microsoft", "EFI"]',  # noqa
+        '+   paths = [',
+        "+     '/EFI/fedora/shim.efi',",
+        "+     '/EFI/fedora/grubx64.efi',",
+        "+     '/EFI/redhat/shim.efi',",
+        "+     '/EFI/redhat/grubx64.efi',",
+        "+     '/EFI/centos/shim.efi',",
+        "+     '/EFI/centos/grubx64.efi',",
+        "+     '/EFI/debian/grubx64.efi',",
+        "+     '/EFI/ubuntu/grubx64.efi',",
+        "+     '/EFI/sles/grubx64.efi',",
+        "+     '/EFI/opensuse/grubx64.efi',",
+        "+     '/EFI/Microsoft/boot/bootmgfw.efi'",
+        '+   ]',
+        '+ insmod part_gpt',
+        '+ insmod fat',
+        '+ insmod chain',
+        '+ ',
+        "- menuentry 'Chainload Grub2 EFI from ESP' --id local {",
+        "+ menuentry 'Chainload Grub2 EFI from ESP' --id local_chain_hd0 {",
+        '-   unset root',
+        '-   echo Chainloading Grub2 EFI from ESP, available devices:',
+        '+   echo Chainloading Grub2 EFI from ESP, enabled devices for booting:',
+        '-   echo -n "Probing ESP partition ... "',
+        '-   search --file --no-floppy --set=root /EFI/BOOT/BOOTX64.EFI',
+        '-   echo found $root',
+        '+ <%',
+        '+   paths.each do |path|',
+        '+ -%>',
+        '+   echo "Trying <%= path %> "',
+        '+   unset chroot',
+        '+   search --file --no-floppy --set=chroot <%= path %>',
+        '+   if [ -f ($chroot)<%= path %> ]; then',
+        '+     chainloader ($chroot)<%= path %>',
+        '+     echo "Found <%= path %> at $chroot, attempting to chainboot it..."',
+        '-   sleep 2',
+        '+     sleep 2',
+        '+     boot',
+        '-   if [ -f ($root)/EFI/BOOT/grubx64.efi ]; then',
+        '-     chainloader ($root)/EFI/BOOT/grubx64.efi',
+        '-   <% paths.each do |path| %>',
+        '-   elif [ -f ($root)/EFI/<%= path %>/grubx64.efi ]; then',
+        '-     chainloader ($root)/EFI/<%= path %>/grubx64.efi',
+        '-   <% end -%>',
+        '-   else',
+        '-     echo File grubx64.efi not found on ESP.',
+        "-     echo Update 'pxegrub2_chainload' paths array with:",
+        '-     ls ($root)/EFI',
+        '-     echo The system will halt in 2 minutes or',
+        '-     echo press ESC to halt immediately.',
+        '-     sleep -i 120',
+        '-     halt --no-apm',
+        '+ <%',
+        '+   end',
+        '+ -%>',
+        '+   echo Partition with known EFI file not found, you may want to drop to grub shell',
+        "+   echo and investigate available files updating 'pxegrub2_chainload' template and",
+        '+   echo the list of known filepaths for probing. Contents of \\EFI directory:',
+        '+   ls ($chroot)/EFI',
+        '+   echo The system will halt in 2 minutes or press ESC to halt immediately.',
+        '+   sleep -i 120',
+        '+   halt --no-apm',
+        "- menuentry 'Chainload into BIOS bootloader on first disk' --id local_chain_hd0 {",
+        "+ menuentry 'Chainload into BIOS bootloader on first disk' --id local_chain_legacy_hd0 {",
+        '+   boot',
+        "- menuentry 'Chainload into BIOS bootloader on second disk' --id local_chain_hd1 {",
+        "+ menuentry 'Chainload into BIOS bootloader on second disk' --id local_chain_legacy_hd1 {",  # noqa
+        '+   boot',
+        # Kickstart default PXEGrub2
+        "+   if @host.operatingsystem.name != 'Fedora' && @host.operatingsystem.major.to_i >= 7 && host_param_true?('fips_enabled')",  # noqa
+        "+     options.push('fips=1')",
+        '+   end',
+        '+ ',
+        '-   # efi grub commands are RHEL7+ only, this prevents "Kernel is too old"',
+        '+   # Grub EFI commands are RHEL7+ only (prevents "Kernel is too old") or for non-EFI arch',  # noqa
+        "-   if @host.operatingsystem.family == 'Redhat' && major < 7",
+        "+   if (@host.operatingsystem.family == 'Redhat' && major < 7) || !@host.pxe_loader.include?('EFI')",  # noqa
+        '+ ',
+        '+ <%= snippet_if_exists(template_name + " custom menu") %>',
+        # PXEGrub2 default local boot
+        '+ echo Default PXE local template entry is set to \'<%= global_setting("default_pxe_item_local", "local") %>\'',  # noqa
+        '+ <%= snippet "pxegrub2_mac" %>',
+        '+ <%= snippet "pxegrub2_discovery" %>',
+        # Kickstart oVirt-RHVH
+        "+ <%= snippet 'efibootmgr_netboot' %>",
+        # puppet_setup
+        '-   <%= host_param_true?(\'run-puppet-in-installer\') ? \'\' : \'"--tags no_such_tag",\' %>',  # noqa
+        '+   <%= host_param_true?(\'run-puppet-in-installer\') || @full_puppet_run ? \'\' : \'"--tags no_such_tag",\' %>',  # noqa
+        '- <%= bin_path %>/puppet agent --config <%= etc_path %>/puppet.conf --onetime <%= host_param_true?(\'run-puppet-in-installer\') ? \'\' : \'--tags no_such_tag\' %> <%= @host.puppetmaster.blank? ? \'\' : "--server #{@host.puppetmaster}" %> --no-daemonize',  # noqa
+        '+ <%= bin_path %>/puppet agent --config <%= etc_path %>/puppet.conf --onetime <%= host_param_true?(\'run-puppet-in-installer\') || @full_puppet_run ? \'\' : \'--tags no_such_tag\' %> <%= @host.puppetmaster.blank? ? \'\' : "--server #{@host.puppetmaster}" %> --no-daemonize',  # noqa
+        '+ <% end -%>',
+        '- <% end -%>',
+        # puppet.conf
+        "+ <% if host_param_true?('fips_enabled') -%>",
+        '+ digest_algorithm = sha256',
+        '+ <% end -%>',
+        # pxegrub_discovery
+        '-   kernel boot/fdi-image/vmlinuz0 rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nomodeset proxy.url=<%= foreman_server_url %> proxy.type=foreman BOOTIF=01-$net_default_mac',  # noqa
+        '+   kernel boot/fdi-image/vmlinuz0 rootflags=loop root=live:/fdi.iso rootfstype=auto ro rd.live.image acpi=force rd.luks=0 rd.md=0 rd.dm=0 rd.lvm=0 rd.bootif=0 rd.neednet=0 nokaslr nomodeset proxy.url=<%= foreman_server_url %> proxy.type=foreman BOOTIF=01-$net_default_mac',  # noqa
+        # XenServer default finish
+        "- /usr/bin/wget --output-document=/dev/null <%= foreman_url('built') %>",
+    ],
     'partition-table': [],
-    'job-template': []
+    'job-template': [
+        # Ansible Roles - Ansible Default
+        '-   tasks:',
+        '+   pre_tasks:',
+        '-         var: foreman_params',
+        '+         var: foreman',
+        # Run Command - Ansible Default
+        '-     - shell: |',
+        '+     - shell:',
+        '+         cmd: |',
+        "- <%=     indent(8) { input('command') } %>",
+        "+ <%=       indent(10) { input('command') } %>",
+    ]
 }
 
 # Depreciated component entities satellite version wise
@@ -166,6 +552,10 @@ _depreciated = {
     '6.4': {
         'settings': [
             'use_pulp_oauth', 'use_gravatar', 'trusted_puppetmaster_hosts', 'force_post_sync_actions']  # noqa
+    },
+    '6.6': {
+        'settings': [
+            'remote_execution_without_proxy', 'top_level_ansible_vars']
     }
 }
 

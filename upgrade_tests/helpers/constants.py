@@ -24,7 +24,8 @@ class cli_const:
             'discovery-rule' if to_version is not None and float(to_version) >= 6.3
             else 'discovery_rule',
             'domain',
-            'environment',
+            'puppet-environment' if to_version is not None and float(to_version) >= 6.6
+            else 'environment',
             'filter',
             'host',
             'hostgroup',

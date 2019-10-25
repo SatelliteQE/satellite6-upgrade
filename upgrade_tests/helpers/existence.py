@@ -54,6 +54,8 @@ def csv_reader(component, subcommand):
     )[sat_host]
     csv_read = csv.DictReader(data.lower().split('\n'))
     for row in csv_read:
+        if 'warning:' in row:
+            continue
         entity_list.append(row)
     comp_dict[component] = entity_list
     return comp_dict

@@ -113,6 +113,8 @@ def sync_capsule_repos_to_upgrade(capsules):
     org = entities.Organization(id=1).read()
     ak = entities.ActivationKey(organization=org).search(
         query={'search': 'name={}'.format(ak_name)})[0]
+    logger.info("Activation key {} used for capsule subscription has found".
+                format(ak_name))
     cv = ak.content_view.read()
     lenv = ak.environment.read()
     # Fix dead pulp tasks
@@ -120,14 +122,21 @@ def sync_capsule_repos_to_upgrade(capsules):
         run('for i in pulp_resource_manager pulp_workers pulp_celerybeat; '
             'do service $i restart; done')
     _sync_capsule_subscription_to_capsule_ak(ak)
+    logger.info("Capsule subscription to AK {} has added successfully".format(ak.name))
     if float(to_version) >= 6.3:
         _add_additional_subscription_for_capsule(ak, capsuletools_url)
     # Publishing and promoting the CV with all newly added capsule, capsuletools, rhscl and
     # server repos combine
+    logger.info("Content view publish operation has started successfully")
     call_entity_method_with_timeout(cv.read().publish, timeout=2000)
+    logger.info("Content view publish operation has completed successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
+    logger.info("Content view {} promotion has started successfully".
+                format(cv.name))
     published_ver.promote(data={'environment_id': lenv.id, 'force': False})
+    logger.info("Content view {} promotion has completed successfully".
+                format(cv.name))
     # Add capsule and tools custom prod subscription to capsules
     if capsule_repo:
         add_custom_product_subscription_to_hosts(
@@ -157,15 +166,22 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
         cap_repo = entities.Repository(
             name=customcontents['capsule']['repo'], product=cap_product, url=capsule_repo,
             organization=org, content_type='yum').create()
+        logger.info("Capsule repository {} created successfully for product {}".
+                    format(customcontents['capsule']['repo'],
+                           customcontents['capsule']['prod']))
     else:
         cap_product = entities.Product(
             name=rhelcontents['capsule']['prod'],
             organization=org
         ).search(query={'per_page': 100})[0]
+        logger.info("RHEL Capsule Product {} is found enabled.".format(
+            rhelcontents['capsule']['prod']))
         cap_reposet = entities.RepositorySet(
             name=rhelcontents['capsule']['repo'].format(cap_ver=to_version, os_ver=os_ver),
             product=cap_product
         ).search()[0]
+        logger.info("Entities of Repository {} search completed successfully".
+                    format(rhelcontents['capsule']['repo']))
         try:
             cap_reposet.enable(
                 data={'basearch': 'x86_64', 'releasever': '7Server', 'organization_id': org.id})
@@ -175,7 +191,14 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
             name=rhelcontents['capsule']['repofull'].format(
                 cap_ver=to_version, os_ver=os_ver, arch='x86_64')
         ).search(query={'organization_id': org.id, 'per_page': 100})[0]
+        logger.info("Capsule Repository's repofull {} search completed successfully".
+                    format(rhelcontents['capsule']['repofull']))
+
+    logger.info("Entities repository sync operation started successfully for name {}".
+                format(cap_repo.name))
     call_entity_method_with_timeout(entities.Repository(id=cap_repo.id).sync, timeout=2500)
+    logger.info("Entities repository sync operation completed successfully for name {}".
+                format(cap_repo.name))
     # Add repos to CV
     cv.repository += [cap_repo]
     cv.update(['repository'])
@@ -187,6 +210,9 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
             'quantity': 1,
             'subscription_id': cap_sub.id,
         })
+        logger.info("subscription {} in Activation key used for Capsule subscription "
+                    "added successfully for subscription {}".
+                    format(cap_sub.id, cap_sub.name))
     else:
         ak.content_override(
             data={
@@ -196,6 +222,9 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
                     'value': '1'}
             }
         )
+        logger.info("Activation key content override successfully for content label:{}".
+                    format(rhelcontents['capsule']['label'].format(cap_ver=to_version,
+                                                                   os_ver=os_ver)))
 
 
 def _sync_rh_repos_to_satellite(org):
@@ -211,12 +240,17 @@ def _sync_rh_repos_to_satellite(org):
     scl_product = entities.Product(
         name=rhelcontents['rhscl_sat64']['prod'], organization=org
     ).search(query={'per_page': 100})[0]
+    logger.info("Red Hat Software Collection for product {} is enabled and found".
+                format(rhelcontents['rhscl_sat64']['prod']))
     scl_reposet = entities.RepositorySet(
         name=rhelcontents['rhscl']['repo'].format(os_ver=rhelver), product=scl_product
     ).search()[0]
+    logger.info("Red Hat Software Collection for repos {} is already enabled and found".
+                format(rhelcontents['rhscl']['repo'].format(os_ver=rhelver)))
     try:
         scl_reposet.enable(
             data={'basearch': arch, 'releasever': '7Server', 'organization_id': org.id})
+        logger.info("Red Hat Software collection repository enabled successfully")
     except requests.exceptions.HTTPError as exp:
         logger.warn(exp)
     time.sleep(20)
@@ -237,12 +271,17 @@ def _sync_rh_repos_to_satellite(org):
     # Enable RHEL 7 Server repository
     server_product = entities.Product(
         name=rhelcontents['server']['prod'], organization=org).search(query={'per_page': 100})[0]
+    logger.info("Product {} is already enabled and found".
+                format(rhelcontents['server']['prod']))
     server_reposet = entities.RepositorySet(
         name=rhelcontents['server']['repo'].format(os_ver=rhelver), product=server_product
     ).search()[0]
+    logger.info("Repository {} is already enabled and found".
+                format(rhelcontents['server']['repo']))
     try:
         server_reposet.enable(
             data={'basearch': arch, 'releasever': '7Server', 'organization_id': org.id})
+        logger.info("Repository enabled successfully for base arch {}, 7Server".format(arch))
     except requests.exceptions.HTTPError as exp:
         logger.warn(exp)
     time.sleep(20)
@@ -250,7 +289,11 @@ def _sync_rh_repos_to_satellite(org):
     server_repo = entities.Repository(
         name=rhelcontents['server']['repofull'].format(os_ver=rhelver, arch=arch)
     ).search(query={'organization_id': org.id, 'per_page': 100})[0]
+    logger.info("Entities repository sync operation has started successfully"
+                " for name {}".format(server_repo.name))
     call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync, timeout=3600)
+    logger.info("Entities repository sync operation has completed successfully"
+                " for name {}".format(server_repo.name))
     scl_repo.repo_id = rhelcontents['rhscl']['label'].format(os_ver=rhelver)
     server_repo.repo_id = rhelcontents['server']['label'].format(os_ver=rhelver)
     return scl_repo, server_repo
@@ -274,6 +317,9 @@ def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
             name=customcontents['capsule_tools']['repo'],
             product=captools_product, url=capsuletools_url, organization=org, content_type='yum'
         ).create()
+        logger.info("The custom tools product {} and repository {} is created from "
+                    "capsule tools url".format(customcontents['capsule_tools']['prod'],
+                                               customcontents['capsule_tools']['repo']))
     else:
         captools_product = entities.Product(
             name=rhelcontents['tools']['prod'], organization=org
@@ -281,8 +327,13 @@ def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
         cap_reposet = entities.RepositorySet(
             name=rhelcontents['tools']['repo'].format(sat_ver=to_ver, os_ver=rhelver),
             product=captools_product).search()[0]
+        logger.info("The custom tools product {} and repository {} is created from "
+                    "capsule tools url".format(rhelcontents['tools']['prod'],
+                                               rhelcontents['tools']['repo']))
         try:
             cap_reposet.enable(data={'basearch': arch, 'organization_id': org.id})
+            logger.info("Capsule repository enabled successfully for arch {} and org {}".
+                        format(arch, org.id))
         except requests.exceptions.HTTPError as exp:
             logger.warn(exp)
         time.sleep(5)
@@ -290,7 +341,15 @@ def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
             name=rhelcontents['tools']['repofull'].format(
                 sat_ver=to_ver, os_ver=rhelver, arch=arch)
         ).search(query={'organization_id': org.id, 'per_page': 100})[0]
-    call_entity_method_with_timeout(entities.Repository(id=captools_repo.id).sync, timeout=2500)
+        logger.info("Entities repository search completed successfully for tools "
+                    "repo {}".format(rhelcontents['tools']['repofull'].
+                                     format(sat_ver=to_ver, os_ver=rhelver, arch=arch)))
+    logger.info("Entities repository sync started successfully for capsule repo name{}".
+                format(captools_repo.name))
+    call_entity_method_with_timeout(entities.Repository(id=captools_repo.id).sync,
+                                    timeout=2500)
+    logger.info("Entities repository sync completed successfully for capsule repo name {}".
+                format(captools_repo.name))
     captools_repo.repo_id = rhelcontents['tools']['label'].format(
         os_ver=rhelver, sat_ver=to_ver)
     return captools_repo
@@ -308,13 +367,19 @@ def _add_additional_subscription_for_capsule(ak, capsuletools_url):
     cv = ak.content_view.read()
     org = ak.organization
     scl_repo, server_repo = _sync_rh_repos_to_satellite(org)
+    logger.info("Sync operation of SCL and Server repositories  on satellite has "
+                "completed successfully")
     captools_repo = _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org)
+    logger.info("Sync Operation of Tools repository repositories  to Satellite for "
+                "Capsule has completed successfully")
     cv.repository += [scl_repo, server_repo, captools_repo]
     cv.update(['repository'])
     ak = ak.read()
     ak.content_override(
         data={'content_override': {'content_label': scl_repo.repo_id, 'value': '1'}}
     )
+    logger.info("Activation key successfully override for content_label {}".
+                format(scl_repo.repo_name))
     ak.content_override(
         data={'content_override': {'content_label': server_repo.repo_id, 'value': '1'}}
     )
@@ -323,6 +388,8 @@ def _add_additional_subscription_for_capsule(ak, capsuletools_url):
             data={
                 'content_override': {'content_label': captools_repo.repo_id, 'value': '1'}
             })
+        logger.info("Activation key successfully override for capsule content_label {}".
+                    format(captools_repo.repo_name))
     else:
         captools_sub = entities.Subscription().search(
             query={'search': 'name={0}'.format(customcontents['capsule_tools']['prod'])})[0]
@@ -330,6 +397,8 @@ def _add_additional_subscription_for_capsule(ak, capsuletools_url):
             'quantity': 1,
             'subscription_id': captools_sub.id,
         })
+        logger.info("Capsule Tools subscription {} added successfully to capsule AK".
+                    format(captools_sub.id))
 
 
 def sync_tools_repos_to_upgrade(client_os, hosts):
@@ -386,19 +455,29 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
     tools_repo = entities.Repository(
         name=toolsrepo_name, product=tools_product, url=tools_repo_url,
         organization=org, content_type='yum').create()
+    logger.info("Entities product {} and repository {} is created successfully".
+                format(tools_product, toolsrepo_name))
     entities.Repository(id=tools_repo.id).sync()
+    logger.info("Entities repository sync operation has completed successfully for tool "
+                "repos name {}".format(tools_repo.name))
     cv.repository += [tools_repo]
     cv.update(['repository'])
+    logger.info("Content view publish operation is started successfully")
     call_entity_method_with_timeout(cv.read().publish, timeout=2500)
+    logger.info("Content view has published successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
+    logger.info("Published version promotion is started successfully")
     published_ver.promote(data={'environment_id': lenv.id, 'force': False})
+    logger.info("Published version has promoted successfully")
     tools_sub = entities.Subscription().search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
     ak.add_subscriptions(data={
         'quantity': 1,
         'subscription_id': tools_sub.id,
     })
+    logger.info("Subscription added successfully in capsule activation key for name {}".
+                format(tools_sub.name))
     # Add this latest tools repo to hosts to upgrade
     sub = entities.Subscription().search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]

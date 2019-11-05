@@ -41,7 +41,8 @@ from upgrade.helpers.tasks import (
     setup_satellite_clone,
     update_scap_content,
     upgrade_using_foreman_maintain,
-    upgrade_puppet3_to_puppet4
+    upgrade_puppet3_to_puppet4,
+    mongo_db_engine_upgrade
 )
 from upgrade.helpers.tools import (
     copy_ssh_key,

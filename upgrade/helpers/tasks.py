@@ -714,8 +714,8 @@ def upgrade_using_foreman_maintain():
             '--target-version {} '
             '-y'.format(os.environ.get('TO_VERSION') + ".z"))
     else:
-        # use beta until 6.6 is GA
-        if os.environ.get('TO_VERSION') == '6.6':
+        # use beta until 6.7 is GA
+        if os.environ.get('TO_VERSION') == '6.7':
             with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
                 run('foreman-maintain upgrade run '
                     '--whitelist="disk-performance" '

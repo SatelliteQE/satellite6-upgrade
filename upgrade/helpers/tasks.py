@@ -181,7 +181,8 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
             product=cap_product
         ).search()[0]
         logger.info("Entities of Repository {} search completed successfully".
-                    format(rhelcontents['capsule']['repo']))
+                    format(rhelcontents['capsule']['repo']
+                           .format(cap_ver=to_version, os_ver=os_ver)))
         try:
             cap_reposet.enable(
                 data={'basearch': 'x86_64', 'releasever': '7Server', 'organization_id': org.id})
@@ -192,7 +193,8 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
                 cap_ver=to_version, os_ver=os_ver, arch='x86_64')
         ).search(query={'organization_id': org.id, 'per_page': 100})[0]
         logger.info("Capsule Repository's repofull {} search completed successfully".
-                    format(rhelcontents['capsule']['repofull']))
+                    format(rhelcontents['capsule']['repofull'].
+                           format(cap_ver=to_version, os_ver=os_ver, arch='x86_64')))
 
     logger.info("Entities repository sync operation started successfully for name {}".
                 format(cap_repo.name))
@@ -344,7 +346,7 @@ def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
         logger.info("Entities repository search completed successfully for tools "
                     "repo {}".format(rhelcontents['tools']['repofull'].
                                      format(sat_ver=to_ver, os_ver=rhelver, arch=arch)))
-    logger.info("Entities repository sync started successfully for capsule repo name{}".
+    logger.info("Entities repository sync started successfully for capsule repo name {}".
                 format(captools_repo.name))
     call_entity_method_with_timeout(entities.Repository(id=captools_repo.id).sync,
                                     timeout=2500)
@@ -379,7 +381,7 @@ def _add_additional_subscription_for_capsule(ak, capsuletools_url):
         data={'content_override': {'content_label': scl_repo.repo_id, 'value': '1'}}
     )
     logger.info("Activation key successfully override for content_label {}".
-                format(scl_repo.repo_name))
+                format(scl_repo.name))
     ak.content_override(
         data={'content_override': {'content_label': server_repo.repo_id, 'value': '1'}}
     )
@@ -389,7 +391,7 @@ def _add_additional_subscription_for_capsule(ak, capsuletools_url):
                 'content_override': {'content_label': captools_repo.repo_id, 'value': '1'}
             })
         logger.info("Activation key successfully override for capsule content_label {}".
-                    format(captools_repo.repo_name))
+                    format(captools_repo.name))
     else:
         captools_sub = entities.Subscription().search(
             query={'search': 'name={0}'.format(customcontents['capsule_tools']['prod'])})[0]

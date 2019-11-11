@@ -463,7 +463,7 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
     cv.repository += [tools_repo]
     cv.update(['repository'])
     logger.info("Content view publish operation is started successfully")
-    call_entity_method_with_timeout(cv.read().publish, timeout=2500)
+    call_entity_method_with_timeout(cv.read().publish, timeout=5000)
     logger.info("Content view has published successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()

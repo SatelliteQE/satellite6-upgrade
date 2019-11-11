@@ -1,5 +1,6 @@
 
 import os
+import re
 import shade
 import sys
 import yaml
@@ -101,7 +102,10 @@ def create_openstack_instance(instance_name, image_name, volume_size,
     SSH_KEY
         ssh key to be added into the instance from openstack
     """
-    env.user = 'root'
+    if float(re.search(r'\d{1,2}.\d{1,2}', os.environ["RHEL7_IMAGE"]).group()) >= 7.7:
+        env.user = "cloud-user"
+    else:
+        env.user = 'root'
     env.disable_known_hosts = True
     if flavor_name is None:
         flavor_name = flavor_name or os.environ.get('FLAVOR_NAME')
@@ -148,6 +152,15 @@ def create_openstack_instance(instance_name, image_name, volume_size,
     logger.info('Pinging the Hostname:{0} ..........'.format(hostname))
     host_pings(hostname)
     logger.info('SUCCESS !! The obtained hostname from IP is pinged !!')
+    if env.user == "cloud-user":
+        # Copied the authorized key from cloud-user to root
+        execute(lambda: run("sudo cp ~/.ssh/authorized_keys /root/.ssh/authorized_keys"),
+                host=hostname)
+        # To activate the root access need to execute cloud-init init
+        execute(lambda: run("sudo cloud-init init 2>/dev/null 1>/dev/null"),
+                host=hostname)
+        env.user = "root"
+
     # Update the /etc/hosts file
     execute(lambda: run("hostnamectl set-hostname {0}".format(
         hostname)), host=hostname)

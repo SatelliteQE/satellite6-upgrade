@@ -12,6 +12,7 @@ from upgrade.helpers.rhevm4 import (
 from upgrade.helpers.tasks import (
     sync_capsule_repos_to_upgrade,
     add_baseOS_repo,
+    foreman_packages_installation_check,
     nonfm_upgrade,
     upgrade_validation,
     setup_foreman_maintain_repo,
@@ -130,6 +131,7 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     disable_old_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
         major_ver, from_version))
     # setup foreman-maintain
+    foreman_packages_installation_check(state="unlock")
     setup_foreman_maintain_repo()
     # Check what repos are set
 
@@ -137,6 +139,7 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
                   cap_host=cap_host,
                   sat_host=sat_host)
     # Rebooting the capsule for kernel update if any
+    foreman_packages_installation_check(state="lock")
     reboot(160)
     host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
@@ -168,7 +171,9 @@ def satellite6_capsule_zstream_upgrade(cap_host):
         disable_old_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
             major_ver, from_version))
     # Check what repos are set
+    foreman_packages_installation_check(state="unlock")
     nonfm_upgrade(satellite_upgrade=False)
+    foreman_packages_installation_check(state="lock")
     # Rebooting the capsule for kernel update if any
     reboot(160)
     host_ssh_availability_check(cap_host)

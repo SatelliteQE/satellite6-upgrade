@@ -20,6 +20,7 @@ from upgrade.helpers.rhevm4 import (
 )
 from upgrade.helpers.tasks import (
     enable_disable_repo,
+    foreman_packages_installation_check,
     foreman_maintain_upgrade,
     repository_setup,
     repository_cleanup,
@@ -122,10 +123,13 @@ def satellite6_upgrade(zstream=False):
             and os.environ.get('OS') == 'rhel7':
         foreman_maintain_upgrade(base_url)
     else:
+        # To install the package using foreman-maintain and it is applicable
+        # above 6.6 version.
         setup_satellite_firewall()
         if not zstream:
             run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')
             logger.info('Updating system packages ... ')
+            foreman_packages_installation_check(state="unlock")
             setup_foreman_maintain()
             update_packages(quiet=True)
         # Following disables the old satellite repo and extra repos enabled
@@ -141,6 +145,7 @@ def satellite6_upgrade(zstream=False):
                              "satellite 6",
                              base_url, 1, 0)
         nonfm_upgrade()
+        foreman_packages_installation_check(state="lock")
     # Rebooting the satellite for kernel update if any
     reboot(180)
     host_ssh_availability_check(env.get('satellite_host'))

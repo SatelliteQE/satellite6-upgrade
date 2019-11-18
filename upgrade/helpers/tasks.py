@@ -1077,6 +1077,9 @@ def upgrade_validation(upgrade_type=False):
     :param bool upgrade_type: if upgrade_type is True then we check both the services.
     """
     if upgrade_type:
+        # This command will be used only with 6.7 for more reference Please
+        # look into BZ#1771531
+        run('hammer --reload-cache')
         run('hammer ping', warn_only=True)
     run('katello-service status', warn_only=True)
 

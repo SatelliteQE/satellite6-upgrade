@@ -125,10 +125,27 @@ def sync_capsule_repos_to_upgrade(capsules):
     logger.info("Capsule subscription to AK {} has added successfully".format(ak.name))
     if float(to_version) >= 6.3:
         _add_additional_subscription_for_capsule(ak, capsuletools_url)
-    # Publishing and promoting the CV with all newly added capsule, capsuletools, rhscl and
-    # server repos combine
+    # Publishing and promoting the CV with all newly added capsule, capsuletools,
+    # rhscl and server repos combine
     logger.info("Content view publish operation has started successfully")
-    call_entity_method_with_timeout(cv.read().publish, timeout=2000)
+    try:
+        start_time = job_execution_time("CV_Publish")
+        call_entity_method_with_timeout(cv.read().publish, timeout=5000)
+        job_execution_time("Content view {} publish operation(In past time-out value was "
+                           "2500 but in current execution we set it 5000)"
+                           .format(cv.name), start_time)
+    except Exception as exp:
+        logger.critical("Content view {} publish failed with exception {}"
+                        .format(cv.name, exp))
+        if bz_bug_is_open(1770940):
+            output = run(
+                "sleep 100; hammer task resume|grep ') Task identifier:'|"
+                "awk -F':' '{print $2}'; sleep 100")
+            for task_id in output.split():
+                run('hammer task progress --id {}'.format(task_id))
+        job_execution_time("Content view {} publish operation(In past time-out value was "
+                           "2500 but in current execution we set it 5000) "
+                           .format(cv.name), start_time)
     logger.info("Content view publish operation has completed successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
@@ -198,7 +215,12 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
 
     logger.info("Entities repository sync operation started successfully for name {}".
                 format(cap_repo.name))
-    call_entity_method_with_timeout(entities.Repository(id=cap_repo.id).sync, timeout=2500)
+    start_time = job_execution_time("Entity repository sync")
+    # Expected value 2500
+    call_entity_method_with_timeout(entities.Repository(id=cap_repo.id).sync, timeout=4000)
+    job_execution_time("Entity repository {} sync (In past time-out value was 2500 "
+                       "but in current execution we set it 4000)"
+                       .format(cap_repo.name), start_time)
     logger.info("Entities repository sync operation completed successfully for name {}".
                 format(cap_repo.name))
     # Add repos to CV
@@ -265,10 +287,12 @@ def _sync_rh_repos_to_satellite(org):
     while attempt <= 3:
         try:
             call_entity_method_with_timeout(
-                entities.Repository(id=scl_repo.id).sync, timeout=2500)
+                entities.Repository(id=scl_repo.id).sync, timeout=3500)
             break
         except requests.exceptions.HTTPError as exp:
             logger.warn("Retry{} after exception: {}".format(attempt, exp))
+            # Wait 10 seconds to reattempt the same retry option
+            time.sleep(10)
             attempt += 1
     # Enable RHEL 7 Server repository
     server_product = entities.Product(
@@ -293,7 +317,12 @@ def _sync_rh_repos_to_satellite(org):
     ).search(query={'organization_id': org.id, 'per_page': 100})[0]
     logger.info("Entities repository sync operation has started successfully"
                 " for name {}".format(server_repo.name))
-    call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync, timeout=3600)
+    start_time = job_execution_time("Repository sync")
+    call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync,
+                                    timeout=6000)
+    job_execution_time("Repository {} sync (In past time-out value was 3600 but in "
+                       "current execution we set it 6000) ".format(server_repo.name),
+                       start_time)
     logger.info("Entities repository sync operation has completed successfully"
                 " for name {}".format(server_repo.name))
     scl_repo.repo_id = rhelcontents['rhscl']['label'].format(os_ver=rhelver)
@@ -348,10 +377,14 @@ def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
                                      format(sat_ver=to_ver, os_ver=rhelver, arch=arch)))
     logger.info("Entities repository sync started successfully for capsule repo name {}".
                 format(captools_repo.name))
+    start_time = job_execution_time("Entities repository sync")
     call_entity_method_with_timeout(entities.Repository(id=captools_repo.id).sync,
-                                    timeout=2500)
-    logger.info("Entities repository sync completed successfully for capsule repo name {}".
-                format(captools_repo.name))
+                                    timeout=5000)
+    job_execution_time("Entities repository {} sync(In past time-out value was 2500 "
+                       "but in current execution we set it 5000)"
+                       .format(captools_repo.name), start_time)
+    logger.info("Entities repository sync completed successfully for capsule repo name {}"
+                .format(captools_repo.name))
     captools_repo.repo_id = rhelcontents['tools']['label'].format(
         os_ver=rhelver, sat_ver=to_ver)
     return captools_repo
@@ -459,19 +492,47 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
         organization=org, content_type='yum').create()
     logger.info("Entities product {} and repository {} is created successfully".
                 format(tools_product, toolsrepo_name))
+    start_time = job_execution_time("tools repo sync operation")
     entities.Repository(id=tools_repo.id).sync()
+    job_execution_time("tools repo {} sync operation".format(toolsrepo_name), start_time)
     logger.info("Entities repository sync operation has completed successfully for tool "
                 "repos name {}".format(tools_repo.name))
     cv.repository += [tools_repo]
     cv.update(['repository'])
     logger.info("Content view publish operation is started successfully")
-    call_entity_method_with_timeout(cv.read().publish, timeout=5000)
+    try:
+        start_time = job_execution_time("CV_Publish")
+        call_entity_method_with_timeout(cv.read().publish, timeout=5000)
+        # expected time out value is 3500
+        job_execution_time("Content view {} publish operation(In past time-out value was "
+                           "3500 but in current execution we set it 5000) "
+                           .format(cv.name), start_time)
+    except Exception as exp:
+        logger.critical("Content view {} publish failed with exception {}"
+                        .format(cv.name, exp))
+        if bz_bug_is_open(1770940):
+            logger.info("Resuming the cancelled content view {} publish task"
+                        .format(cv.name))
+            output = run("sleep 100; hammer task resume|grep ') Task identifier:'|"
+                         "awk -F':' '{print $2}'; sleep 100")
+            logger.info("The CV publish task {} has resumed successfully, "
+                        "waiting for their completion".format(output))
+            for task_id in output.split():
+                run('hammer task progress --id {}'.format(task_id))
+        job_execution_time("Content view {} publish operation(In past time-out value was "
+                           "3500 but in current execution we set it 5000) "
+                           .format(cv.name), start_time)
+
     logger.info("Content view has published successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
-    logger.info("Published version promotion is started successfully")
+
+    start_time = job_execution_time("CV_Promotion")
+    logger.info("Published CV {} version promotion is started successfully"
+                .format(cv.name))
     published_ver.promote(data={'environment_id': lenv.id, 'force': False})
-    logger.info("Published version has promoted successfully")
+    job_execution_time("Content view {} promotion ".format(cv.name), start_time)
+    logger.info("Published CV {} version has promoted successfully".format(cv.name))
     tools_sub = entities.Subscription().search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
     ak.add_subscriptions(data={
@@ -591,7 +652,9 @@ def capsule_sync(cap_host):
                 format(cap_host))
     capsule = entities.Capsule().search(
         query={'search': 'name={}'.format(cap_host)})[0]
+    start_time = job_execution_time("Capsule content sync operation")
     capsule.content_sync()
+    job_execution_time("Capsule content sync operation", start_time)
 
 
 def katello_restart():
@@ -1171,3 +1234,22 @@ def foreman_packages_installation_check(state="unlock"):
     else:
         logger.info("Failed to apply the {} state on foreman-maintain packages , "
                     "because PERFORM_FOREMAN_MAINTAIN_UPGRADE is true")
+
+
+def job_execution_time(task_name, start_time=None):
+    """
+    This function is used to collect the information of start and end time and
+    also calculate the total execution time
+    :param str task_name: Provide the action need to perform
+    :param datetime start_time: If start_time is None then we capture the start time
+    details.
+    :return: start_time
+    """
+    if start_time:
+        end_time = datetime.now().replace(microsecond=0)
+        total_job_execution_time = str(end_time - start_time)
+        logger.highlight('Time taken by task {} - {}'.format(task_name,
+                                                             total_job_execution_time))
+    else:
+        start_time = datetime.now().replace(microsecond=0)
+        return start_time

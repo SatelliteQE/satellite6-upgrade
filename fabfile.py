@@ -5,6 +5,7 @@
 from automation_tools import (
     partition_disk,
     product_install,
+    subscribe,
     vm_create,
     vm_destroy
 )

@@ -42,7 +42,8 @@ class cli_const:
             'subnet',
             'user',
             'template',
-            'user-group'
+            'user-group',
+            'virt-who-config'
         ],
         'org_required':
         [
@@ -90,7 +91,8 @@ class cli_const:
             'sync-plan',
             'template',
             'user',
-            'user-group'
+            'user-group',
+            'virt-who-config'
         ],
         'id'
      )

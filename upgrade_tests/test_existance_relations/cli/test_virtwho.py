@@ -60,14 +60,3 @@ def test_positive_virt_who_by_status(pre, post):
     :expectedresults: All virt-who configs status should be retained post upgrade
     """
     assert existence(pre, post)
-
-
-@pytest.mark.parametrize("pre,post", virtwho_last_report, ids=pytest_ids(virtwho_last_report))
-def test_positive_virt_who_by_last_report_time(pre, post):
-    """Test all virt-who configs last report time are existing post upgrade
-
-    :id: upgrade-a093e4a9-8cf8-4af6-a236-549e09e33c32
-
-    :expectedresults: All virt-who configs last report time should be retained post upgrade
-    """
-    assert existence(pre, post)

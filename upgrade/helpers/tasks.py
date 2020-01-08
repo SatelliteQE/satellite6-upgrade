@@ -128,7 +128,11 @@ def sync_capsule_repos_to_upgrade(capsules):
     # Publishing and promoting the CV with all newly added capsule, capsuletools, rhscl and
     # server repos combine
     logger.info("Content view publish operation has started successfully")
-    call_entity_method_with_timeout(cv.read().publish, timeout=2000)
+    start_time = job_execution_time("CV_Publish")
+    call_entity_method_with_timeout(cv.read().publish, timeout=3600)
+    job_execution_time("Content view {} publish operation(In past time-out value was "
+                       "2000 but in current execution we set it 3600)"
+                       .format(cv.name), start_time)
     logger.info("Content view publish operation has completed successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
@@ -198,7 +202,11 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
 
     logger.info("Entities repository sync operation started successfully for name {}".
                 format(cap_repo.name))
-    call_entity_method_with_timeout(entities.Repository(id=cap_repo.id).sync, timeout=2500)
+    start_time = job_execution_time("Entity repository sync")
+    call_entity_method_with_timeout(entities.Repository(id=cap_repo.id).sync, timeout=4000)
+    job_execution_time("Entity repository {} sync (In past time-out value was 2500 "
+                       "but in current execution we set it 4000)"
+                       .format(cap_repo.name), start_time)
     logger.info("Entities repository sync operation completed successfully for name {}".
                 format(cap_repo.name))
     # Add repos to CV
@@ -293,7 +301,11 @@ def _sync_rh_repos_to_satellite(org):
     ).search(query={'organization_id': org.id, 'per_page': 100})[0]
     logger.info("Entities repository sync operation has started successfully"
                 " for name {}".format(server_repo.name))
-    call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync, timeout=3600)
+    start_time = job_execution_time("Repository sync")
+    call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync, timeout=6000)
+    job_execution_time("Repository {} sync (In past time-out value was 3600 but in "
+                       "current execution we set it 6000) ".format(server_repo.name),
+                       start_time)
     logger.info("Entities repository sync operation has completed successfully"
                 " for name {}".format(server_repo.name))
     scl_repo.repo_id = rhelcontents['rhscl']['label'].format(os_ver=rhelver)
@@ -348,8 +360,12 @@ def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
                                      format(sat_ver=to_ver, os_ver=rhelver, arch=arch)))
     logger.info("Entities repository sync started successfully for capsule repo name {}".
                 format(captools_repo.name))
+    start_time = job_execution_time("Entities repository sync")
     call_entity_method_with_timeout(entities.Repository(id=captools_repo.id).sync,
-                                    timeout=2500)
+                                    timeout=5000)
+    job_execution_time("Entities repository {} sync(In past time-out value was 2500 "
+                       "but in current execution we set it 5000)"
+                       .format(captools_repo.name), start_time)
     logger.info("Entities repository sync completed successfully for capsule repo name {}".
                 format(captools_repo.name))
     captools_repo.repo_id = rhelcontents['tools']['label'].format(
@@ -459,18 +475,26 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
         organization=org, content_type='yum').create()
     logger.info("Entities product {} and repository {} is created successfully".
                 format(tools_product, toolsrepo_name))
+    start_time = job_execution_time("tools repo sync operation")
     entities.Repository(id=tools_repo.id).sync()
+    job_execution_time("tools repo {} sync operation".format(toolsrepo_name), start_time)
     logger.info("Entities repository sync operation has completed successfully for tool "
                 "repos name {}".format(tools_repo.name))
     cv.repository += [tools_repo]
     cv.update(['repository'])
     logger.info("Content view publish operation is started successfully")
-    call_entity_method_with_timeout(cv.read().publish, timeout=2500)
+    start_time = job_execution_time("CV_Publish")
+    call_entity_method_with_timeout(cv.read().publish, timeout=5000)
+    job_execution_time("Content view {} publish operation(In past time-out value was "
+                       "2500 but in current execution we set it 5000) "
+                       .format(cv.name), start_time)
     logger.info("Content view has published successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
     logger.info("Published version promotion is started successfully")
+    start_time = job_execution_time("CV_Promotion")
     published_ver.promote(data={'environment_id': lenv.id, 'force': False})
+    job_execution_time("Content view {} promotion ".format(cv.name), start_time)
     logger.info("Published version has promoted successfully")
     tools_sub = entities.Subscription().search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
@@ -591,7 +615,9 @@ def capsule_sync(cap_host):
                 format(cap_host))
     capsule = entities.Capsule().search(
         query={'search': 'name={}'.format(cap_host)})[0]
+    start_time = job_execution_time("Capsule content sync operation")
     capsule.content_sync()
+    job_execution_time("Capsule content sync operation", start_time)
 
 
 def katello_restart():
@@ -1152,3 +1178,22 @@ def mongo_db_engine_upgrade(upgrade_type):
     logger.info("MongoDB DataBase Engine Upgraded Successfully")
     logger.highlight('Time taken by MongoDB DataBase Engine Upgrade - {}'.format(
         str(postup_time - preup_time)))
+
+
+def job_execution_time(task_name, start_time=None):
+    """
+    This function is used to collect the information of start and end time and
+    also calculate the total execution time
+    :param str task_name: Provide the action need to perform
+    :param datetime start_time: If start_time is None then we capture the start time
+    details.
+    :return: start_time
+    """
+    if start_time:
+        end_time = datetime.now().replace(microsecond=0)
+        total_job_execution_time = str(end_time - start_time)
+        logger.highlight('Time taken by task {} - {}'.format(task_name,
+                                                             total_job_execution_time))
+    else:
+        start_time = datetime.now().replace(microsecond=0)
+        return start_time

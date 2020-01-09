@@ -25,7 +25,6 @@ component = 'virt-who-config'
 virtwho_name = compare_postupgrade(component, 'name')
 virtwho_interval = compare_postupgrade(component, 'interval')
 virtwho_status = compare_postupgrade(component, 'status')
-virtwho_last_report = compare_postupgrade(component, 'last report at')
 
 
 # Tests

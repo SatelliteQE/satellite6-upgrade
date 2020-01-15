@@ -137,12 +137,14 @@ def sync_capsule_repos_to_upgrade(capsules):
     except Exception as exp:
         logger.critical("Content view {} publish failed with exception {}"
                         .format(cv.name, exp))
-        if bz_bug_is_open(1770940):
-            output = run(
-                "sleep 100; hammer task resume|grep ') Task identifier:'|"
-                "awk -F':' '{print $2}'; sleep 100")
-            for task_id in output.split():
-                run('hammer task progress --id {}'.format(task_id))
+        # Fix of 1770940, 1773601
+        logger.info("Resuming the cancelled content view {} publish task"
+                    .format(cv.name))
+        output = run(
+            "sleep 100; hammer task resume|grep ') Task identifier:'|"
+            "awk -F':' '{print $2}'; sleep 100")
+        for task_id in output.split():
+            run('hammer task progress --id {}'.format(task_id))
         job_execution_time("Content view {} publish operation(In past time-out value was "
                            "2500 but in current execution we set it 5000) "
                            .format(cv.name), start_time)
@@ -510,15 +512,15 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
     except Exception as exp:
         logger.critical("Content view {} publish failed with exception {}"
                         .format(cv.name, exp))
-        if bz_bug_is_open(1770940):
-            logger.info("Resuming the cancelled content view {} publish task"
-                        .format(cv.name))
-            output = run("sleep 100; hammer task resume|grep ') Task identifier:'|"
-                         "awk -F':' '{print $2}'; sleep 100")
-            logger.info("The CV publish task {} has resumed successfully, "
-                        "waiting for their completion".format(output))
-            for task_id in output.split():
-                run('hammer task progress --id {}'.format(task_id))
+        # Fix of 1770940, 1773601
+        logger.info("Resuming the cancelled content view {} publish task"
+                    .format(cv.name))
+        output = run("sleep 100; hammer task resume|grep ') Task identifier:'|"
+                     "awk -F':' '{print $2}'; sleep 100")
+        logger.info("The CV publish task {} has resumed successfully, "
+                    "waiting for their completion".format(output))
+        for task_id in output.split():
+            run('hammer task progress --id {}'.format(task_id))
         job_execution_time("Content view {} publish operation(In past time-out value was "
                            "3500 but in current execution we set it 5000) "
                            .format(cv.name), start_time)

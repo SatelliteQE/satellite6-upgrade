@@ -782,9 +782,14 @@ def upgrade_using_foreman_maintain():
         # use beta until 6.7 is GA
         if os.environ.get('TO_VERSION') == '6.7':
             with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
-                run('foreman-maintain upgrade run '
-                    '--whitelist="disk-performance" '
-                    '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
+                if bz_bug_is_open(1781128):
+                    run('foreman-maintain upgrade run '
+                        '--whitelist="disk-performance, foreman-tasks-not-paused" '
+                        '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
+                else:
+                    run('foreman-maintain upgrade run '
+                        '--whitelist="disk-performance" '
+                        '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
         else:
             run('foreman-maintain upgrade run '
                 '--whitelist="disk-performance" '

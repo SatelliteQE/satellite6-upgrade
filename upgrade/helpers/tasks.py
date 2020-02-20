@@ -128,11 +128,22 @@ def sync_capsule_repos_to_upgrade(capsules):
     # Publishing and promoting the CV with all newly added capsule, capsuletools, rhscl and
     # server repos combine
     logger.info("Content view publish operation has started successfully")
-    start_time = job_execution_time("CV_Publish")
-    call_entity_method_with_timeout(cv.read().publish, timeout=3600)
-    job_execution_time("Content view {} publish operation(In past time-out value was "
-                       "2000 but in current execution we set it 3600)"
-                       .format(cv.name), start_time)
+    try:
+        start_time = job_execution_time("CV_Publish")
+        call_entity_method_with_timeout(cv.read().publish, timeout=3600)
+        job_execution_time("Content view {} publish operation(In past time-out value was "
+                           "2000 but in current execution we set it 3600)"
+                           .format(cv.name), start_time)
+    except Exception as exp:
+        logger.highlight("Content view {} publish failed with exception {}"
+                         .format(cv.name, exp))
+        # Fix of 1770940, 1773601
+        logger.info("Resuming the cancelled content view {} publish task"
+                    .format(cv.name))
+        resume_cancelled_task()
+        job_execution_time("Content view {} publish operation(In past time-out value was "
+                           "2500 but in current execution we set it 5000) "
+                           .format(cv.name), start_time)
     logger.info("Content view publish operation has completed successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
@@ -483,11 +494,21 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
     cv.repository += [tools_repo]
     cv.update(['repository'])
     logger.info("Content view publish operation is started successfully")
-    start_time = job_execution_time("CV_Publish")
-    call_entity_method_with_timeout(cv.read().publish, timeout=5000)
-    job_execution_time("Content view {} publish operation(In past time-out value was "
-                       "2500 but in current execution we set it 5000) "
-                       .format(cv.name), start_time)
+    try:
+        start_time = job_execution_time("CV_Publish")
+        call_entity_method_with_timeout(cv.read().publish, timeout=5000)
+        job_execution_time("Content view {} publish operation(In past time-out value was "
+                           "2500 but in current execution we set it 5000) "
+                           .format(cv.name), start_time)
+    except Exception as exp:
+        logger.highlight("Content view {} publish failed with exception {}".format(cv.name, exp))
+        # Fix of 1770940, 1773601
+        logger.info("Resuming the cancelled content view {} publish task"
+                    .format(cv.name))
+        resume_cancelled_task()
+        job_execution_time("Content view {} publish operation(In past time-out value was "
+                           "2500 but in current execution we set it 5000) "
+                           .format(cv.name), start_time)
     logger.info("Content view has published successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
@@ -1197,3 +1218,15 @@ def job_execution_time(task_name, start_time=None):
     else:
         start_time = datetime.now().replace(microsecond=0)
         return start_time
+
+
+def resume_cancelled_task():
+    """
+    This function is used to restart the cancelled job, The purpose behind this to
+    unblock the execution.
+    """
+    output = run(
+        "sleep 100; hammer task resume|grep ') Task identifier:'|"
+        "awk -F':' '{print $2}'; sleep 100")
+    for task_id in output.split():
+        run('hammer task progress --id {}'.format(task_id))

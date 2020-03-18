@@ -81,6 +81,7 @@ class cli_const:
             'organization',
             'os',
             'puppet-class',
+            'puppet-environment',
             'puppet-module',
             'repository',
             'role',

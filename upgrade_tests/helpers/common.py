@@ -4,6 +4,7 @@ import os
 import pytest
 
 from functools import partial
+from pprint import pprint
 from robozilla.decorators import pytest_skip_if_bug_open
 from upgrade_tests.helpers.variants import assert_varients
 from upgrade_tests.helpers.existence import assert_templates
@@ -68,7 +69,13 @@ def existence(pre, post, component=None, template=None):
         return assert_templates(template, pre, post)
     else:
         if isinstance(pre, list) and isinstance(post, list):
-            return sorted(list(pre)) == sorted(list(post))
+            try:
+                return sorted(list(pre)) == sorted(list(post))
+            except TypeError as err:
+                pprint('Sorted module is not supported in python3 for dict to dict '
+                       'comparison and gets error like: {}'.format(err))
+                return pre.sort(key=lambda item: item.get("id")) == \
+                    post.sort(key=lambda item: item.get("id"))
         return pre == post
 
 

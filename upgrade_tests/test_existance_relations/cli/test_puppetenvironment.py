@@ -22,7 +22,7 @@ from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
 
 # Required Data
-component = 'environment'
+component = 'puppet-environment'
 env_name = compare_postupgrade(component, 'name')
 
 

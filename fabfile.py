@@ -42,7 +42,8 @@ from upgrade.helpers.tasks import (
     update_scap_content,
     upgrade_using_foreman_maintain,
     upgrade_puppet3_to_puppet4,
-    mongo_db_engine_upgrade
+    mongo_db_engine_upgrade,
+    job_execution_time
 )
 from upgrade.helpers.tools import (
     copy_ssh_key,

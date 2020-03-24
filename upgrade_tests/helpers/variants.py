@@ -167,11 +167,11 @@ _entity_varients = {
         ['-1']*2+['unlimited']*4],
     'template': [
         # name variants
-        ['idm_register']*3+['deprecated idm_register']*2,
-        ['satellite atomic kickstart default']*3+['deprecated satellite atomic kickstart default']*2, # noqa
-        ['satellite kickstart default']*3+['deprecated satellite kickstart default']*2,  # noqa
-        ['satellite kickstart default finish']*3+['deprecated satellite kickstart default finish']*2, # noqa
-        ['satellite kickstart default user data']*3+['deprecated satellite kickstart default user data']*2 # noqa
+        ['idm_register']*3+['deprecated idm_register']*3,
+        ['satellite atomic kickstart default']*3+['deprecated satellite atomic kickstart default']*3, # noqa
+        ['satellite kickstart default']*3+['deprecated satellite kickstart default']*3,  # noqa
+        ['satellite kickstart default finish']*3+['deprecated satellite kickstart default finish']*3, # noqa
+        ['satellite kickstart default user data']*3+['deprecated satellite kickstart default user data']*3 # noqa
     ]
 }
 

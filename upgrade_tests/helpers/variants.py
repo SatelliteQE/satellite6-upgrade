@@ -24,11 +24,13 @@ _entity_varients = {
     'capsule': [
         ['tftp, dns, dhcp, puppet, puppet ca, bmc, pulp node, templates, discovery, openscap, dynflow, ssh']*3 + # noqa
         ['puppet, puppet ca, pulp node, templates, discovery, tftp, dns, dhcp, bmc, openscap, dynflow, ssh, ansible'] +  # noqa
-        ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, dhcp, puppet ca, puppet, httpboot']*2,  # noqa
+        ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, dhcp, puppet ca, puppet, httpboot'] +  # noqa
+        ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, puppet ca, puppet, dhcp, httpboot'],  # noqa
         ['tftp, dns, dhcp, puppet, puppet ca, bmc, pulp, discovery, openscap, dynflow, ssh']*2 +  # noqa
         ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible'] +  # noqa
         ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible, templates'] +  # noqa
-        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, dhcp, puppet ca, puppet, httpboot', 'capsule']*2  # noqa
+        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, dhcp, puppet ca, puppet, httpboot'] +  # noqa
+        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, puppet ca, puppet, dhcp, httpboot']  # noqa
     ],
     'compute-resource': [
         ['rhev']*2+['rhv']*4],
@@ -55,6 +57,8 @@ _entity_varients = {
         ['compliance viewer']*2+['customized compliance viewer']*4,
         ['compliance manager']*2+['customized compliance manager']*4,
         ['anonymous']*2+['default role']*4,
+        ['import_templates, export_templates']*5 +
+        ['import_templates, export_templates, view_template_syncs'],
         ['commonparameter']*2+['parameter']*4,
         ['execute_template_invocation']*3+['']*3,
         ['create_job_invocations, view_job_invocations']*3 +
@@ -108,7 +112,14 @@ _entity_varients = {
         ['["lo", "en*v*", "usb*", "vnet*", "macvtap*", "_vdsmdummy_", '
          '"veth*", "docker*", "tap*", "qbr*", "qvb*", "qvo*", "qr-*", '
          '"qg-*", "vlinuxbr*", "vovsbr*", "mountpoints", "partitions", '
-         '"blockdevice*"]']*2,
+         '"blockdevice*"]'] +
+        ['["lo", "en*v*", "usb*", "vnet*", "macvtap*", "_vdsmdummy_", '
+         '"veth*", "docker*", "tap*", "qbr*", "qvb*", "qvo*", "qr-*", '
+         '"qg-*", "vlinuxbr*", "vovsbr*"]'],
+        ['']*5 + ['*****'],
+        [f"{os.environ.get('REMOTE_EXECUTION_SSH_PASSWORD')}"]*5 + ['*****'],
+        [f"{os.environ.get('OAUTH_CONSUMER_KEY')}"]*5 + ['*****'],
+        [f"{os.environ.get('OAUTH_CONSUMER_SECRET')}"]*5 + ['*****'],
         # Description Variants
         ['fact name to use for primary interface detection and hostname']*2 +
          ['fact name to use for primary interface detection']*4,
@@ -138,6 +149,37 @@ _entity_varients = {
         ['default user data for new operating systems']*2 +
          ['default user data for new operating systems created from '
          'synced content']*4,
+        ['default metadata export mode, refresh re-renders metadata, keep will keep '
+         'existing metadata, remove exports template withou metadata']*5 +
+        ['default metadata export mode, refresh re-renders metadata, '
+         'keep will keep existing metadata, remove exports template without metadata'],
+        ['negate the prefix (for purging) / filter (for importing/exporting)']*5 +
+        ['negate the filter for import/export'],
+        ['the string all imported templates should begin with']*5 +
+        ['the string that will be added as prefix to imported templates'],
+        ['target path to import and export. different protocols can be used, '
+         'e.g. /tmp/dir, git://example.com, https://example.com, ssh://example.com']*5 +
+        ['target path to import/export. different protocols can be used, '
+         'for example /tmp/dir, git://example.com, https://example.com, '
+         'ssh://example.com. when exporting to /tmp, note that production '
+         'deployments may be configured to use private tmp.'],
+        ['how the logic of solving dependencies in a content view is managed. '
+          'conservative will only add packages to solve the dependencies if '
+         'the packaged needed doesn\'t exist. greedy will pull in the latest package '
+         'to solve a dependency even if it already does exist in the repository.']*5 +
+        ['how the logic of solving dependencies in a content view is managed. '
+         'conservative will only add packages to solve the dependencies if the package '
+         'needed doesn\'t exist. greedy will pull in the latest package to '
+         'solve a dependency even if it already does exist in the repository.'],
+        ['search for remote execution proxy outside of the proxies assigned to the host.'
+         ' if locations or organizations are enabled, the search will be limited '
+         'to the host\'s organization or location.']*5 +
+        ['search for remote execution proxy outside of the proxies assigned to the host.'
+         ' the search will be limited to the host\'s organization and location.'],
+        ['import or export names matching this regex (case-insensitive; snippets '
+         'are not filtered)']*5 +
+        ['import/export names matching this regex (case-insensitive; '
+         'snippets are not filtered)'],
         ['when unregistering host via subscription-manager, also delete '
          'server-side host record']*2 +
          ['when unregistering a host via subscription-manager, also delete'
@@ -544,6 +586,19 @@ template_varients = {
         '+         cmd: |',
         "- <%=     indent(8) { input('command') } %>",
         "+ <%=       indent(10) { input('command') } %>",
+        # Run Command - Ansible Roles
+        '-   roles:',
+        '- <%- if @host.all_ansible_roles.present? -%>',
+        '- <%=   @host.all_ansible_roles.map { |role| "    - #{role.name.strip}" '
+        '}.join("\\n") %>',
+        '- <%- end -%>',
+        '+   tasks:',
+        '+     - name: Apply roles',
+        '+       include_role:',
+        '+         name: "{{ role }}"',
+        '+       loop: "{{ foreman_ansible_roles }}"',
+        '+       loop_control:',
+        '+         loop_var: role',
     ]
 }
 
@@ -556,6 +611,11 @@ _depreciated = {
     '6.6': {
         'settings': [
             'remote_execution_without_proxy', 'top_level_ansible_vars']
+    },
+    '6.7': {
+        'settings': ["host_update_lock", "dns_conflict_timeout",
+                     "host_group_matchers_inheritance",
+                     "ansible_implementation", "puppet_server"]
     }
 }
 

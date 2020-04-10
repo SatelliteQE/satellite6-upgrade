@@ -1116,7 +1116,7 @@ def upgrade_task(upgrade_type, cap_host=None):
     """
     if cap_host:
         run('satellite-installer --scenario {0} --upgrade '
-            '--certs-tar-file /home/{1}-certs.tar '
+            '--certs-tar /home/{1}-certs.tar '
             '--certs-update-all'.format(upgrade_type, cap_host))
     else:
         run('satellite-installer --scenario {} --upgrade'.format(upgrade_type))

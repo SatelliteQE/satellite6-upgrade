@@ -912,8 +912,12 @@ def wait_untill_capsule_sync(capsule):
         logger.info(
             'Wait for background capsule sync to finish on '
             'capsule: {}'.format(cap.name))
+        start_time = job_execution_time("capsule_sync")
         for task in active_tasks:
-            entities.ForemanTask(id=task['id']).poll(timeout=2700)
+            entities.ForemanTask(id=task['id']).poll(timeout=9000)
+        job_execution_time("Background capsule sync operation(In past time-out value was "
+                           "2700 but in current execution we have set it 9000)",
+                           start_time)
 
 
 def pre_upgrade_system_checks(capsules):

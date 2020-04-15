@@ -124,7 +124,7 @@ def satellite6_upgrade(zstream=False):
         foreman_maintain_upgrade(base_url)
     else:
         # To install the package using foreman-maintain and it is applicable
-        # above 6.6 version.
+        # above 6.7 version.
         setup_satellite_firewall()
         if not zstream:
             run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')

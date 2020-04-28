@@ -11,6 +11,7 @@ import socket
 from datetime import datetime
 
 from automation_tools import (
+    setup_rhv_ca,
     setup_alternate_capsule_ports,
     setup_fake_manifest_certificate,
 )
@@ -637,6 +638,9 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     # Run Avahi Task on upgrade boxes for REX tests to run
     execute(lambda: run('yum remove -y epel*'), host=sat_host)
     execute(setup_avahi_discovery, host=sat_host)
+
+    # setup RHEV certificate so it can be added as a CR
+    execute(setup_rhv_ca, host=sat_host)
 
 
 def capsule_sync(cap_host):

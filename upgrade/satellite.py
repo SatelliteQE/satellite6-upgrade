@@ -114,7 +114,7 @@ def satellite6_upgrade(zstream=False):
             logger.warning('zStream Upgrade on Satellite cannot be performed as '
                            'FROM and TO versions are not same!')
             sys.exit(1)
-    base_url = os.environ.get('BASE_URL')
+    base_url = None if not os.environ.get('BASE_URL') else os.environ.get('BASE_URL')
     major_ver = distro_info()[1]
     disable_repo_name = ["*"]
     enable_repos_name = ['rhel-{0}-server-rpms'.format(major_ver),

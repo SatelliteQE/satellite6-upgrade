@@ -15,6 +15,7 @@ from upgrade.helpers.tasks import (
     foreman_service_restart,
     nonfm_upgrade,
     upgrade_validation,
+    upgrade_using_foreman_maintain,
     setup_foreman_maintain_repo,
 
 )
@@ -133,10 +134,12 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     # setup foreman-maintain
     setup_foreman_maintain_repo()
     # Check what repos are set
-
-    nonfm_upgrade(satellite_upgrade=False,
-                  cap_host=cap_host,
-                  sat_host=sat_host)
+    if not os.environ.get("FOREMAN_MAINTAIN_CAPSULE_UPGRADE"):
+        nonfm_upgrade(satellite_upgrade=False,
+                      cap_host=cap_host,
+                      sat_host=sat_host)
+    else:
+        upgrade_using_foreman_maintain(sat_host=False)
     # Rebooting the capsule for kernel update if any
     reboot(160)
     host_ssh_availability_check(cap_host)

@@ -741,7 +741,7 @@ def setup_foreman_maintain_repo():
                          1, 0)
 
 
-def upgrade_using_foreman_maintain():
+def upgrade_using_foreman_maintain(sat_host=True):
     """Task which upgrades the product using foreman-maintain tool.
 
     Environment Variables necessary to proceed Upgrade:
@@ -752,10 +752,12 @@ def upgrade_using_foreman_maintain():
     TO_VERSION
         To which Satellite version to upgrade.
         e.g '6.2','6.3'
+    :param bool sat_host: if sat_host is True then upgrade will be
+     satellite otherwise capsule.
     """
     env.disable_known_hosts = True
     # setup hammer config
-    if os.environ.get('FROM_VERSION') != "6.3":
+    if sat_host:
         run('mkdir -p /root/.hammer/cli.modules.d')
         hammer_file = StringIO()
         hammer_file.write('--- \n')
@@ -769,35 +771,42 @@ def upgrade_using_foreman_maintain():
     with warn_only():
         if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
             # z stream upgrade
-            run('foreman-maintain upgrade check --target-version {}'
-                ' -y'.format(os.environ.get('TO_VERSION') + ".z"))
+            run(f'foreman-maintain upgrade check --target-version '
+                f'{os.environ.get("TO_VERSION")}.z -y')
         else:
-            run('foreman-maintain upgrade check --target-version {}'
-                ' -y'.format(os.environ.get('TO_VERSION')))
+            run(f'foreman-maintain upgrade check --target-version'
+                f' {os.environ.get("TO_VERSION")} -y')
 
-    # whitelist disk-performance check
-    if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
-        # z stream upgrade
-        run('foreman-maintain upgrade run '
-            '--whitelist="disk-performance" '
-            '--target-version {} '
-            '-y'.format(os.environ.get('TO_VERSION') + ".z"))
-    else:
-        # use beta until 6.7 is GA
-        if os.environ.get('TO_VERSION') == '6.7':
-            with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
-                if bz_bug_is_open(1781128):
-                    run('foreman-maintain upgrade run '
-                        '--whitelist="disk-performance, foreman-tasks-not-paused" '
-                        '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
-                else:
-                    run('foreman-maintain upgrade run '
-                        '--whitelist="disk-performance" '
-                        '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
+    def satellite_upgrade():
+        """ This inner function is used to perform Y & Z satellite stream upgrade"""
+        # whitelist disk-performance check
+        if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
+            # z stream satellite upgrade
+            run(f'foreman-maintain upgrade run '
+                f'--whitelist="disk-performance" '
+                f'--target-version {os.environ.get("TO_VERSION")}.z -y')
         else:
-            run('foreman-maintain upgrade run '
-                '--whitelist="disk-performance" '
-                '--target-version {} -y'.format(os.environ.get('TO_VERSION')))
+            # use beta until 6.8 is GA
+            if os.environ.get('TO_VERSION') == '6.8':
+                with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
+                    run(f'foreman-maintain upgrade run --whitelist="disk-performance" '
+                        f'--target-version {os.environ.get("TO_VERSION")} -y')
+            else:
+                run(f'foreman-maintain upgrade run --whitelist="disk-performance" '
+                    f'--target-version {os.environ.get("TO_VERSION")} -y')
+
+    def capsule_upgrade():
+        """ This inner function is used to perform Y & Z stream Capsule upgrade"""
+        if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
+            # z capsule stream upgrade
+            run(f'foreman-maintain upgrade run --target-version '
+                f'{os.environ.get("TO_VERSION")}.z -y')
+        else:
+            run(f'foreman-maintain upgrade run --whitelist="repositories-validate, '
+                f'repositories-setup" --target-version'
+                f' {os.environ.get("TO_VERSION")} -y')
+
+    satellite_upgrade() if sat_host else capsule_upgrade()
 
 
 def upgrade_puppet3_to_puppet4():

@@ -9,9 +9,6 @@ from robozilla.decorators import pytest_skip_if_bug_open
 from upgrade_tests.helpers.variants import assert_varients
 from upgrade_tests.helpers.existence import assert_templates
 
-cur_ver = os.environ.get('FROM_VERSION')
-to_ver = os.environ.get('TO_VERSION')
-
 
 class VersionException(Exception):
     """Version Exception if wrong satellite version provided"""
@@ -58,25 +55,25 @@ def existence(pre, post, component=None, template=None):
     :return: Returns pytest.fail or Boolean value according to pre-upgrade and
      post-upgrade value
     """
-    if isinstance(pre, str) or isinstance(pre, int):
+    if isinstance(pre, (str, int)):
         pre = str(pre)
         post = str(post)
     if ('missing' in pre) or ('missing' in post):
         pytest.fail(msg='{0}{1}'.format(pre, post))
-    elif component:
+    if component:
         return assert_varients(component, pre, post)
-    elif template and not post == 'true':
+    if template and not post == 'true':
         return assert_templates(template, pre, post)
-    else:
-        if isinstance(pre, list) and isinstance(post, list):
-            try:
-                return sorted(list(pre)) == sorted(list(post))
-            except TypeError as err:
-                pprint('Sorted module is not supported in python3 for dict to dict '
-                       'comparison and gets error like: {}'.format(err))
-                return pre.sort(key=lambda item: item.get("id")) == \
-                    post.sort(key=lambda item: item.get("id"))
-        return pre == post
+
+    if isinstance(pre and post, list):
+        try:
+            return sorted(list(pre)) == sorted(list(post))
+        except TypeError as err:
+            pprint('Sorted module is not supported in python3 for dict to dict '
+                   'comparison and gets error like: {}'.format(err))
+            return pre.sort(key=lambda item: item.get("id")) == \
+                post.sort(key=lambda item: item.get("id"))
+    return pre == post
 
 
 def dont_run_to_upgrade(versions):
@@ -108,4 +105,5 @@ def dont_run_to_upgrade(versions):
     """
     versions = [versions] if type(versions) is str else versions
     return pytest.mark.skipif(
-        cur_ver in versions, reason='Not for version {}'.format(cur_ver))
+        f'{os.environ.get("FROM_VERSION")}' in versions,
+        reason=f'Not for version {os.environ.get("FROM_VERSION")}')

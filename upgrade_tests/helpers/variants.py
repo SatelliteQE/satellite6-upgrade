@@ -1,6 +1,7 @@
 """All the variants those changes during upgrade and the helper functions"""
 
 import os
+from upgrade_tests.helpers.constants import SUPPORTED_SAT_VERSIONS
 
 
 class VersionError(Exception):
@@ -661,22 +662,21 @@ def assert_varients(component, pre, post):
         Else compares the actual preupgrade and postupgrade values and returns
         True/False accordingly
     """
-    supported_versions = ['6.2', '6.3', '6.4', '6.5', '6.6', '6.7']
     from_version = os.environ.get('FROM_VERSION')
     to_version = os.environ.get('TO_VERSION')
-    if from_version not in supported_versions:
+    if from_version not in SUPPORTED_SAT_VERSIONS:
         raise VersionError(
             'Unsupported preupgrade version {} provided for '
             'entity variants existence tests'.format(from_version))
 
-    if to_version not in supported_versions:
+    if to_version not in SUPPORTED_SAT_VERSIONS:
         raise VersionError(
             'Unsupported postupgrade version {} provided for '
             'entity variants existence tests'.format(to_version))
 
     if component in _entity_varients:
         for single_list in _entity_varients[component]:
-            if pre == single_list[supported_versions.index(from_version)]:
-                if post == single_list[supported_versions.index(to_version)]:
+            if pre == single_list[SUPPORTED_SAT_VERSIONS.index(from_version)]:
+                if post == single_list[SUPPORTED_SAT_VERSIONS.index(to_version)]:
                     return True
     return pre == post

@@ -5,26 +5,23 @@ from nailgun import entities
 
 # FAKE REPOS
 FAKE_REPO_ZOO3 = 'http://inecas.fedorapeople.org/fakerepos/zoo3/'
-to_version = os.environ.get('TO_VERSION')
+FROM_VERSION = os.environ.get('FROM_VERSION')
+TO_VERSION = os.environ.get('TO_VERSION')
+SUPPORTED_SAT_VERSIONS = ['6.2', '6.3', '6.4', '6.5', '6.6', '6.7']
+ALLOWED_ENDS = ['cli', 'api']
 
 
-class cli_const:
-    """The constants required to run CLI tests"""
-    # Components for which the post upgrade existence will be validated,
-    # org_not_required - The components where org is not required to get the
-    # data about
-    # org_required - The components where org is required to get the data about
-    components = {
-        'org_not_required':
+CLI_COMPONENTS = {
+    'org_not_required':
         [
             'architecture',
             'capsule',
             'compute-resource',
             'discovery',
-            'discovery-rule' if to_version is not None and float(to_version) >= 6.3
+            'discovery-rule' if TO_VERSION is not None and float(TO_VERSION) >= 6.3
             else 'discovery_rule',
             'domain',
-            'puppet-environment' if to_version is not None and float(to_version) >= 6.6
+            'puppet-environment' if TO_VERSION is not None and float(TO_VERSION) >= 6.6
             else 'environment',
             'filter',
             'host',
@@ -59,8 +56,8 @@ class cli_const:
         ]
     }
 
-    # Attributes where 'id' as key to fetch component property data
-    attribute_keys = dict.fromkeys(
+
+CLI_ATTRIBUTES_KEY = dict.fromkeys(
         [
             'activation-key',
             'architecture',
@@ -68,7 +65,7 @@ class cli_const:
             'content-host',
             'compute-resource',
             'discovery',
-            'discovery-rule' if to_version is not None and float(to_version) >= 6.3
+            'discovery-rule' if TO_VERSION is not None and float(TO_VERSION) >= 6.3
             else 'discovery_rule',
             'domain',
             'environment',
@@ -98,37 +95,24 @@ class cli_const:
         'id'
      )
 
-    # Attributes where 'name' as key to fetch component property data
-    attribute_keys.update(dict.fromkeys(
-        [
-            'partition-table',
-            'product',
-            'settings'
-        ],
-        'name'
-     ))
-    # Attributes with different or specific keys to fetch properties data
-    # e.g for content-view there is content view id' and not 'id'
-    attribute_keys['content-view'] = 'content view id'
 
+CLI_ATTRIBUTES_KEY.update(dict.fromkeys(
+    [
+        'partition-table',
+        'product',
+        'settings'
+    ],
+    'name')
+)
 
-class api_const:
-    """The constants required to run API tests"""
-    @classmethod
-    def api_components(cls, id=None):
-        """Components for which the post upgrade existence will be
-        validated from API end
+CLI_ATTRIBUTES_KEY["content-view"] = 'content view id'
 
-        :param str id: The id of an entity to get its data
-        :returns dict: The dict of entities, where each key is component name
-            and value is a list. In list the first item will be used to get
-            list of a component entities and second will be used to get
-            particular component entity data
-        """
-        api_comps = {
-            'domain': [entities.Domain(), entities.Domain(id=id)],
-            'subnet': [entities.Subnet(), entities.Subnet(id=id)],
-            'contentview': [
-                entities.ContentView(), entities.ContentView(id=id)]
-        }
-        return api_comps
+# This lambda function is used to create the constant file for API component
+# The id for an entity to get its data
+
+API_COMPONENTS = (lambda id=None: {
+        'domain': [entities.Domain(), entities.Domain(id=id)],
+        'subnet': [entities.Subnet(), entities.Subnet(id=id)],
+        'contentview': [
+            entities.ContentView(), entities.ContentView(id=id)]
+})

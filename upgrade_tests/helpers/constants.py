@@ -7,7 +7,7 @@ from nailgun import entities
 FAKE_REPO_ZOO3 = 'http://inecas.fedorapeople.org/fakerepos/zoo3/'
 FROM_VERSION = os.environ.get('FROM_VERSION')
 TO_VERSION = os.environ.get('TO_VERSION')
-SUPPORTED_SAT_VERSIONS = ['6.2', '6.3', '6.4', '6.5', '6.6', '6.7']
+SUPPORTED_SAT_VERSIONS = ['6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8']
 ALLOWED_ENDS = ['cli', 'api']
 
 
@@ -21,7 +21,7 @@ CLI_COMPONENTS = {
             'discovery-rule' if TO_VERSION is not None and float(TO_VERSION) >= 6.3
             else 'discovery_rule',
             'domain',
-            'puppet-environment' if TO_VERSION is not None and float(TO_VERSION) >= 6.6
+            'puppet-environment' if TO_VERSION is not None and float(TO_VERSION) >= 6.7
             else 'environment',
             'filter',
             'host',

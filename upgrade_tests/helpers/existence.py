@@ -5,21 +5,24 @@ import csv
 import filecmp
 import json
 import os
-
-from automation_tools.satellite6.hammer import (
-    hammer,
-    set_hammer_config
-)
 from difflib import Differ
+from pprint import pprint
+
+from automation_tools.satellite6.hammer import hammer
+from automation_tools.satellite6.hammer import set_hammer_config
 from fabric.api import execute
 from nailgun.config import ServerConfig
-from pprint import pprint
+
 from upgrade.helpers.tools import get_setup_data
-from upgrade_tests.helpers.constants import api_const, cli_const
-from upgrade_tests.helpers.variants import (
-    depreciated_attrs_less_component_data,
-    template_varients
-)
+from upgrade_tests.helpers.constants import ALLOWED_ENDS
+from upgrade_tests.helpers.constants import API_COMPONENTS
+from upgrade_tests.helpers.constants import CLI_ATTRIBUTES_KEY
+from upgrade_tests.helpers.constants import CLI_COMPONENTS
+from upgrade_tests.helpers.constants import FROM_VERSION
+from upgrade_tests.helpers.constants import SUPPORTED_SAT_VERSIONS
+from upgrade_tests.helpers.constants import TO_VERSION
+from upgrade_tests.helpers.variants import depreciated_attrs_less_component_data
+from upgrade_tests.helpers.variants import template_varients
 
 
 class IncorrectEndpointException(Exception):
@@ -45,13 +48,12 @@ def csv_reader(component, subcommand):
     :param string subcommand: subcommand for above component. e.g list, info
     :returns dict: The dict repr of hammer csv output of given command
     """
-    comp_dict = {}
-    entity_list = []
+    comp_dict = dict()
+    entity_list = list()
     sat_host = get_setup_data()['sat_host']
     set_hammer_config()
     data = execute(
-        hammer, '{0} {1}'.format(component, subcommand), 'csv', host=sat_host
-    )[sat_host]
+        hammer, f'{component} {subcommand}', 'csv', host=sat_host)[sat_host]
     csv_read = csv.DictReader(data.lower().split('\n'))
     for row in csv_read:
         if 'warning:' in row:
@@ -76,7 +78,7 @@ def set_api_server_config(user=None, passwd=None, verify=None):
         'admin' if not user else user,
         'changeme' if not passwd else passwd
     )
-    url = 'https://{}'.format(sat_host)
+    url = f'https://{sat_host}'
     verify = False if not verify else verify
     ServerConfig(auth=auth, url=url, verify=verify).save()
 
@@ -105,11 +107,11 @@ def api_reader(component):
     :param string component: Satellite component name. e.g host, capsule
     :returns dict: The dict repr of entities data of all components
     """
-    comp_data = {}
-    comp_entity_data = []
-    comp_entity_list = api_const.api_components()[component][0].search_json()
+    comp_data = dict()
+    comp_entity_data = list()
+    comp_entity_list = API_COMPONENTS()[component][0].search_json()
     for unique_id in comp_entity_list['results']:
-        single_entity_info = api_const.api_components(
+        single_entity_info = API_COMPONENTS(
             unique_id['id']
         )[component][1].read_json()
         comp_entity_data.append(single_entity_info)
@@ -127,7 +129,7 @@ def template_reader(template_type, template_id):
     set_hammer_config()
     sat_host = get_setup_data()['sat_host']
     template_dump = execute(
-        hammer, '{0} dump --id {1}'.format(template_type, template_id), 'base', host=sat_host
+        hammer, f'{template_type} dump --id {template_id}', 'base', host=sat_host
     )[sat_host]
     return template_dump
 
@@ -140,14 +142,14 @@ def _template_writer(datastorestate, template_type, template_ids):
     :param str template_type: The satellite template type
     :param str template_ids: The template id
     """
-    datastorestate_dir = '{}_templates'.format(datastorestate)
+    datastorestate_dir = f'{datastorestate}_templates'
     if not os.path.exists(datastorestate_dir):
         os.makedirs(datastorestate_dir)
-    templates_dir = '{0}/{1}'.format(datastorestate_dir, template_type)
+    templates_dir = f'{datastorestate_dir}/{template_type}'
     if not os.path.exists(templates_dir):
         os.makedirs(templates_dir)
     for template_id in template_ids:
-        with open('{0}/{1}.erb'.format(templates_dir, template_id), 'w') as tempFile:
+        with open(f'{templates_dir}/{template_id}.erb', 'w') as tempFile:
             tempFile.write(template_reader(template_type, template_id))
 
 
@@ -188,8 +190,7 @@ def _find_on_list_of_dicts(lst, data_key, all_=False):
             return v
 
     raise KeyError(
-        'Unable to find data for key \'{0}\' in satellite.'.format(
-            data_key))
+        f'Unable to find data for key \'{data_key}\' in satellite.')
 
 
 def _find_on_list_of_dicts_using_search_criteria(
@@ -216,11 +217,8 @@ def _find_on_list_of_dicts_using_search_criteria(
         for key, value in tuple(single_dict.items()):
             if search_value == str(value) and key == search_key:
                 return single_dict.get(
-                    attr,
-                    '{0} attribute missing for {1} : {2}'.format(
-                        attr, search_key, search_value)
-                )
-    return '{0} : {1} entity missing'.format(search_key, search_value)
+                    attr, f'{attr} attribute missing for {search_key} : {search_value}')
+    return f'{search_key} : {search_value} entity missing'
 
 
 def set_datastore(datastore, endpoint):
@@ -249,28 +247,26 @@ def set_datastore(datastore, endpoint):
         Optional, by default 'Default_Organization'
 
     """
-    allowed_ends = ['cli', 'api']
-    if endpoint not in allowed_ends:
-        raise IncorrectEndpointException(
-            'Endpoints has to be one of {}'.format(allowed_ends))
     if endpoint == 'cli':
         nonorged_comps_data = [
             csv_reader(
-                component, 'list') for component in cli_const.components[
-                'org_not_required']]
+                component, 'list') for component in CLI_COMPONENTS['org_not_required']]
         orged_comps_data = [
             csv_reader(
                 component, 'list --organization-id 1'
-                ) for component in cli_const.components['org_required']
+                ) for component in CLI_COMPONENTS['org_required']
         ]
         all_comps_data = nonorged_comps_data + orged_comps_data
-    if endpoint == 'api':
+    elif endpoint == 'api':
         set_api_server_config()
-        api_comps = list(api_const.api_components().keys())
+        api_comps = list(API_COMPONENTS().keys())
         all_comps_data = [
             api_reader(component) for component in api_comps
         ]
-    with open('{0}_{1}'.format(datastore, endpoint), 'w') as ds:
+    else:
+        raise IncorrectEndpointException(f'Endpoints has to be one of {ALLOWED_ENDS}')
+
+    with open(f'{datastore}_{endpoint}', 'w') as ds:
         json.dump(all_comps_data, ds)
 
 
@@ -294,11 +290,10 @@ def get_datastore(datastore, endpoint):
     :param str endpoint: An endpoint of satellite to select the correct
         datastore file. It has to be either cli or api.
     """
-    allowed_ends = ['cli', 'api']
-    if endpoint not in allowed_ends:
+    if endpoint not in ALLOWED_ENDS:
         raise IncorrectEndpointException(
-            'Endpoints has to be one of {}'.format(allowed_ends))
-    with open('{0}_{1}'.format(datastore, endpoint)) as ds:
+            'Endpoints has to be one of {}'.format(ALLOWED_ENDS))
+    with open(f'{datastore}_{endpoint}') as ds:
         return json.load(ds)
 
 
@@ -359,13 +354,10 @@ def compare_postupgrade(component, attribute):
     :returns tuple: The tuple containing two items, first attribute value
         before upgrade and second attribute value of post upgrade
     """
-    sat_vers = ['6.2', '6.3', '6.4', '6.5', '6.6', '6.7']
-    from_ver = os.environ.get('FROM_VERSION')
-    to_ver = os.environ.get('TO_VERSION')
     endpoint = os.environ.get('ENDPOINT')
     if isinstance(attribute, tuple):
-        pre_attr = attribute[sat_vers.index(from_ver)]
-        post_attr = attribute[sat_vers.index(to_ver)]
+        pre_attr = attribute[SUPPORTED_SAT_VERSIONS.index(FROM_VERSION)]
+        post_attr = attribute[SUPPORTED_SAT_VERSIONS.index(TO_VERSION)]
     elif isinstance(attribute, str):
         pre_attr = post_attr = attribute
     else:
@@ -375,7 +367,7 @@ def compare_postupgrade(component, attribute):
     predata = get_datastore('preupgrade', endpoint)
     postdata = get_datastore('postupgrade', endpoint)
     entity_values = []
-    atr = 'id' if endpoint == 'api' else cli_const.attribute_keys[component]
+    atr = 'id' if endpoint == 'api' else CLI_ATTRIBUTES_KEY[component]
     for test_case in find_datastore(predata, component, atr):
         preupgrade_entity = find_datastore(
             predata,
@@ -399,7 +391,7 @@ def compare_postupgrade(component, attribute):
     return entity_values
 
 
-def _find_templatestore(templatestorestate, template_type, template_id=None):
+def find_templatestore(templatestorestate, template_type, template_id=None):
     """Returns a particular template data or all ids of template_type templates stored in
     templatestorestate
 
@@ -412,15 +404,15 @@ def _find_templatestore(templatestorestate, template_type, template_id=None):
     :param str template_type: The template type
     :param str template_id: The template id
     """
-    templates_path = '{0}_templates/{1}'.format(templatestorestate, template_type)
+    templates_path = f'{templatestorestate}_templates/{template_type}'
     if not template_id:
         # Returns list of template ids of template type
         return [temp_name.strip('.erb') for temp_name in os.listdir(templates_path)]
     template_id = template_id.strip()
-    template_path = '{0}/{1}.erb'.format(templates_path, template_id)
+    template_path = f'{templates_path}/{template_id}.erb'
     if not os.path.exists(template_path):
         return f'{template_type} template of ID {template_id} is missing'
-    with open('{0}'.format(template_path)) as template:
+    with open(f'{template_path}') as template:
         return template_path, template.read()
 
 
@@ -436,17 +428,15 @@ def compare_templates(template_type):
     if template_type not in supported_templates:
         raise IncorrectTemplateTypeException(
             'The Template Type has to be one of {}'.format(supported_templates))
-    from_ver = os.environ.get('FROM_VERSION')
-    to_ver = os.environ.get('TO_VERSION')
-    entity_values = []
-    for template_id in _find_templatestore('preupgrade', template_type):
-        prefile, pre_template = _find_templatestore('preupgrade', template_type, template_id)
-        postfile, post_template = _find_templatestore('postupgrade', template_type, template_id)
+    entity_values = list()
+    for template_id in find_templatestore('preupgrade', template_type):
+        prefile, pre_template = find_templatestore('preupgrade', template_type, template_id)
+        postfile, post_template = find_templatestore('postupgrade', template_type, template_id)
         if 'missing' in str(pre_template) or 'missing' in str(post_template):  # noqa
             culprit = prefile if 'missing' in pre_template \
                 else postfile
-            culprit_ver = ' missing in Version {}'.format(from_ver) if 'missing' in pre_template \
-                else ' missing in Version {}'.format(to_ver)
+            culprit_ver = f' missing in Version {FROM_VERSION}' if 'missing' in pre_template \
+                else f' missing in Version {TO_VERSION}'
             entity_values.append((culprit, culprit_ver))
         elif filecmp.cmp(prefile, postfile):
             entity_values.append(('true', 'true'))
@@ -461,7 +451,7 @@ def pytest_ids(data):
     :param list/str data: The list of tests to pytest parametrized function
     """
     if isinstance(data, list):
-        ids = ["pre and post" for i in range(len(data))]
+        ids = ["pre and post" for _ in range(len(data))]
     elif isinstance(data, str):
         ids = ["pre and post"]
     else:

@@ -74,14 +74,14 @@ def dockerize(ak_name=None, distro=None, org_label=None):
         The AK using which client will be registered to satellite
     """
     ak_name = ak_name or os.environ.get(
-        'RHEV_CLIENT_AK_{}'.format(distro.upper()))
+        f'RHEV_CLIENT_AK_{distro.upper()}')
     docker_vm = os.environ.get('DOCKER_VM')
     # Check if the VM containing docker images is up, else turn on
     with get_rhevm4_client().build() as rhevm_client:
         instance_name = 'sat6-docker-upgrade'
         template_name = 'sat6-docker-upgrade-template'
         vm = rhevm_client.system_service().vms_service(
-            ).list(search='name={}'.format(instance_name))
+            ).list(search=f'name={instance_name}')
         if not vm:
             logger.info('Docker VM for generating Content Host is not created.'
                         'Creating it, please wait..')
@@ -93,11 +93,10 @@ def dockerize(ak_name=None, distro=None, org_label=None):
             rhevm_client.vms.get(name=instance_name).start()
             wait_till_rhevm4_instance_status(instance_name, 'up', 5)
             execute(manage_daemon, 'restart', 'docker', host=docker_vm)
-    time.sleep(5)
     logger.info('Generating katello client on RHEL7 on Docker. '
                 'Please wait .....')
     # Generate Clients on RHEL 7
-    time.sleep(30)
+    time.sleep(40)
     clients = execute(
         generate_satellite_docker_clients_on_rhevm,
         distro,
@@ -142,8 +141,8 @@ def upload_manifest(manifest_url, org_name):
     hammer.set_hammer_config()
     run('wget {0} -O {1}'.format(manifest_url, '/manifest.zip'))
     print(hammer.hammer(
-        'subscription upload --file {0} --organization {1}'.format(
-            '/manifest.zip', org_name)))
+        f'subscription upload --file "/manifest.zip" --organization {org_name}'
+    ))
 
 
 def delete_manifest(org_name):
@@ -157,6 +156,5 @@ def delete_manifest(org_name):
     # Sets hammer default configuration
     hammer.set_hammer_config()
     print(hammer.hammer(
-        'subscription delete-manifest '
-        '--organization "{0}"'.format(org_name)
+        f'subscription delete-manifest --organization {org_name}'
     ))

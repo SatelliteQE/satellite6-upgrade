@@ -26,82 +26,82 @@ _entity_varients = {
         ['tftp, dns, dhcp, puppet, puppet ca, bmc, pulp node, templates, discovery, openscap, dynflow, ssh']*3 + # noqa
         ['puppet, puppet ca, pulp node, templates, discovery, tftp, dns, dhcp, bmc, openscap, dynflow, ssh, ansible'] +  # noqa
         ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, dhcp, puppet ca, puppet, httpboot'] +  # noqa
-        ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, puppet ca, puppet, dhcp, httpboot'],  # noqa
+        ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, puppet ca, puppet, dhcp, httpboot']*2,  # noqa
         ['tftp, dns, dhcp, puppet, puppet ca, bmc, pulp, discovery, openscap, dynflow, ssh']*2 +  # noqa
         ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible'] +  # noqa
         ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible, templates'] +  # noqa
         ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, dhcp, puppet ca, puppet, httpboot'] +  # noqa
-        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, puppet ca, puppet, dhcp, httpboot']  # noqa
+        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, puppet ca, puppet, dhcp, httpboot']*2  # noqa
     ],
     'compute-resource': [
-        ['rhev']*2+['rhv']*4],
+        ['rhev']*2+['rhv']*5],
     'filter': [
         # Resource Type Variants
-        ['lookupkey']+['variablelookupkey']*5,
-        ['(miscellaneous)']+['foremanopenscap::arfreport']*5,
-        ['organization']+['katello::subscription']*5,
-        ['configtemplate']+['provisioningtemplate']*5,
-        ['authsourceldap']*3+['authsource']*3,
-        ['templateinvocation']*3+['(miscellaneous)']*3,
-        ['docker/imagesearch']*3+['(miscellaneous)']*3,
+        ['lookupkey']+['variablelookupkey']*6,
+        ['(miscellaneous)']+['foremanopenscap::arfreport']*6,
+        ['organization']+['katello::subscription']*6,
+        ['configtemplate']+['provisioningtemplate']*6,
+        ['authsourceldap']*3+['authsource']*4,
+        ['templateinvocation']*3+['(miscellaneous)']*4,
+        ['docker/imagesearch']*3+['(miscellaneous)']*4,
         # Permissions Variants
         ['view_templates, create_templates, edit_templates, '
          'destroy_templates, deploy_templates'] +
         ['view_provisioning_templates, create_provisioning_templates, '
          'edit_provisioning_templates, destroy_provisioning_templates, '
-         'deploy_provisioning_templates']*5,
-        ['viewer']*2+['customized viewer']*4,
-        ['site manager']*2+['customized site manager']*4,
-        ['manager']*2+['customized manager']*4,
-        ['discovery reader']*2+['customized discovery reader']*4,
-        ['discovery manager']*2+['customized discovery manager']*4,
-        ['compliance viewer']*2+['customized compliance viewer']*4,
-        ['compliance manager']*2+['customized compliance manager']*4,
-        ['anonymous']*2+['default role']*4,
+         'deploy_provisioning_templates']*6,
+        ['viewer']*2+['customized viewer']*5,
+        ['site manager']*2+['customized site manager']*5,
+        ['manager']*2+['customized manager']*5,
+        ['discovery reader']*2+['customized discovery reader']*5,
+        ['discovery manager']*2+['customized discovery manager']*5,
+        ['compliance viewer']*2+['customized compliance viewer']*5,
+        ['compliance manager']*2+['customized compliance manager']*5,
+        ['anonymous']*2+['default role']*5,
         ['import_templates, export_templates']*5 +
-        ['import_templates, export_templates, view_template_syncs'],
-        ['commonparameter']*2+['parameter']*4,
-        ['execute_template_invocation']*3+['']*3,
+        ['import_templates, export_templates, view_template_syncs']*2,
+        ['commonparameter']*2+['parameter']*5,
+        ['execute_template_invocation']*3+['']*4,
         ['create_job_invocations, view_job_invocations']*3 +
-        ['create_job_invocations, view_job_invocations, cancel_job_invocations']*3, # noqa
+        ['create_job_invocations, view_job_invocations, cancel_job_invocations']*4, # noqa
         ['execute_template_invocation, filter_autocompletion_for_template_invocation']*3 + # noqa
-        ['filter_autocompletion_for_template_invocation, create_template_invocations']*3, # noqa
+        ['filter_autocompletion_for_template_invocation, create_template_invocations']*4, # noqa
         ['view_hostgroups, create_hostgroups, edit_hostgroups, destroy_hostgroups']*3 + # noqa
-        ['view_hostgroups, create_hostgroups, edit_hostgroups, destroy_hostgroups, play_roles_on_hostgroup']*3, # noqa
+        ['view_hostgroups, create_hostgroups, edit_hostgroups, destroy_hostgroups, play_roles_on_hostgroup']*4, # noqa
         ['view_registries, create_registries, destroy_registries']*3 +
-        ['view_registries, create_registries, destroy_registries, search_repository_image_search']*3, # noqa
-        ['search_repository_image_search']*3 + ['']*3,
+        ['view_registries, create_registries, destroy_registries, search_repository_image_search']*4, # noqa
+        ['search_repository_image_search']*3 + ['']*4,
         ['view_gpg_keys, create_gpg_keys, edit_gpg_keys, destroy_gpg_keys']*3 +
-        ['view_gpg_keys, create_gpg_keys, edit_gpg_keys, destroy_gpg_keys, view_content_credentials, create_content_credentials, edit_content_credentials, destroy_content_credentials']*3, # noqa
+        ['view_gpg_keys, create_gpg_keys, edit_gpg_keys, destroy_gpg_keys, view_content_credentials, create_content_credentials, edit_content_credentials, destroy_content_credentials']*4, # noqa
         ['view_subscriptions, attach_subscriptions, unattach_subscriptions, import_manifest, delete_manifest']*3 + # noqa
-        ['view_subscriptions, attach_subscriptions, unattach_subscriptions, import_manifest, delete_manifest, manage_subscription_allocations']*3, # noqa
+        ['view_subscriptions, attach_subscriptions, unattach_subscriptions, import_manifest, delete_manifest, manage_subscription_allocations']*4, # noqa
         ['execute_template_invocation, filter_autocompletion_for_template_invocation']*3 + # noqa
-        ['filter_autocompletion_for_template_invocation, create_template_invocations, view_template_invocations']*3, # noqa
-        ['view_gpg_keys']*3 + ['view_gpg_keys, view_content_credentials']*3,
+        ['filter_autocompletion_for_template_invocation, create_template_invocations, view_template_invocations']*4, # noqa
+        ['view_gpg_keys']*3 + ['view_gpg_keys, view_content_credentials']*4,
         ['view_hosts, create_hosts, build_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*3 + # noqa
-        ['view_hosts, create_hosts, edit_hosts, build_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*3, # noqa
+        ['view_hosts, create_hosts, edit_hosts, build_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*4, # noqa
         ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*3 +  # noqa
-        ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts, play_roles_on_host']*3,  # noqa
+        ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts, play_roles_on_host']*4,  # noqa
         ['auto_provision_discovered_hosts,build_hosts,console_hosts,create_hosts,destroy_discovered_hosts,destroy_hosts,edit_discovered_hosts,edit_hosts,ipmi_boot_hosts,play_roles_on_host,power_hosts,provision_discovered_hosts,puppetrun_hosts,submit_discovered_hosts,view_discovered_hosts,view_hosts']*4 +  # noqa
-        ['auto_provision_discovered_hosts,build_hosts,cockpit_hosts,console_hosts,create_hosts,destroy_discovered_hosts,destroy_hosts,edit_discovered_hosts,edit_hosts,ipmi_boot_hosts,play_roles_on_host,power_hosts,provision_discovered_hosts,puppetrun_hosts,submit_discovered_hosts,view_discovered_hosts,view_hosts']*2  # noqa
+        ['auto_provision_discovered_hosts,build_hosts,cockpit_hosts,console_hosts,create_hosts,destroy_discovered_hosts,destroy_hosts,edit_discovered_hosts,edit_hosts,ipmi_boot_hosts,play_roles_on_host,power_hosts,provision_discovered_hosts,puppetrun_hosts,submit_discovered_hosts,view_discovered_hosts,view_hosts']*3  # noqa
     ],
     'organization': [
-        ['default_organization']*3+['default organization']*3],  # noqa
+        ['default_organization']*3+['default organization']*4],  # noqa
     'role': [
         # Role Variants
         ['viewer']*2+['customized viewer']*4,
-        ['site manager']*2+['customized site manager']*4,
-        ['manager']*2+['customized manager']*4,
-        ['discovery reader']*2+['customized discovery reader']*4,  # noqa
-        ['discovery manager']*2+['customized discovery manager']*4,  # noqa
-        ['compliance viewer']*2+['customized compliance viewer']*4,  # noqa
-        ['compliance manager']*2+['customized compliance manager']*4,  # noqa
-        ['anonymous']*2+['default role']*4],
+        ['site manager']*2+['customized site manager']*5,
+        ['manager']*2+['customized manager']*5,
+        ['discovery reader']*2+['customized discovery reader']*5,  # noqa
+        ['discovery manager']*2+['customized discovery manager']*5,  # noqa
+        ['compliance viewer']*2+['customized compliance viewer']*5,  # noqa
+        ['compliance manager']*2+['customized compliance manager']*5,  # noqa
+        ['anonymous']*2+['default role']*5],
     'settings': [
         # Value Variants
-        ['immediate']*2+['on_demand']*4,
-        ['']*2+['/etc/pki/katello/certs/katello-apache.crt']*4,
-        ['']*2+['/etc/pki/katello/private/katello-apache.key']*4,
+        ['immediate']*2+['on_demand']*5,
+        ['']*2+['/etc/pki/katello/certs/katello-apache.crt']*5,
+        ['']*2+['/etc/pki/katello/private/katello-apache.key']*5,
         ['false']*2+['true']*4,
         ['["lo", "usb*", "vnet*", "macvtap*"]']*3 +
         ['["lo", "usb*", "vnet*", "macvtap*", "_vdsmdummy_", "veth*", '
@@ -116,54 +116,54 @@ _entity_varients = {
          '"blockdevice*"]'] +
         ['["lo", "en*v*", "usb*", "vnet*", "macvtap*", "_vdsmdummy_", '
          '"veth*", "docker*", "tap*", "qbr*", "qvb*", "qvo*", "qr-*", '
-         '"qg-*", "vlinuxbr*", "vovsbr*"]'],
-        ['']*5 + ['*****'],
-        [f"{os.environ.get('REMOTE_EXECUTION_SSH_PASSWORD')}"]*5 + ['*****'],
-        [f"{os.environ.get('OAUTH_CONSUMER_KEY')}"]*5 + ['*****'],
-        [f"{os.environ.get('OAUTH_CONSUMER_SECRET')}"]*5 + ['*****'],
+         '"qg-*", "vlinuxbr*", "vovsbr*"]']*2,
+        ['']*5 + ['*****']*2,
+        [f"{os.environ.get('REMOTE_EXECUTION_SSH_PASSWORD')}"]*5 + ['*****']*2,
+        [f"{os.environ.get('OAUTH_CONSUMER_KEY')}"]*5 + ['*****']*2,
+        [f"{os.environ.get('OAUTH_CONSUMER_SECRET')}"]*5 + ['*****']*2,
         # Description Variants
         ['fact name to use for primary interface detection and hostname']*2 +
-        ['fact name to use for primary interface detection']*4,
+        ['fact name to use for primary interface detection']*5,
         ['automatically reboot discovered host during provisioning']*2 +
-        ['automatically reboot or kexec discovered host during provisioning']*4,  # noqa
+        ['automatically reboot or kexec discovered host during provisioning']*5,  # noqa
         ['default provisioning template for new atomic operating systems']*2 +
         ['default provisioning template for new atomic operating systems '
-         'created from synced content']*4,
+         'created from synced content']*5,
         ['default finish template for new operating systems']*2 +
         ['default finish template for new operating systems created '
-         'from synced content']*4,
+         'from synced content']*5,
         ['default ipxe template for new operating systems']*2 +
         ['default ipxe template for new operating systems created from '
-         'synced content']*4,
+         'synced content']*5,
         ['default kexec template for new operating systems']*2 +
         ['default kexec template for new operating systems created '
-         'from synced content']*4,
+         'from synced content']*5,
         ['default provisioning template for new operating systems']*2 +
         ['default provisioning template for operating systems created'
-         ' from synced content']*4,
+         ' from synced content']*5,
         ['default partitioning table for new operating systems']*2 +
         ['default partitioning table for new operating systems created'
-         ' from synced content']*4,
+         ' from synced content']*5,
         ['default pxelinux template for new operating systems']*2 +
         ['default pxelinux template for new operating systems created'
-         ' from synced content']*4,
+         ' from synced content']*5,
         ['default user data for new operating systems']*2 +
         ['default user data for new operating systems created from '
-         'synced content']*4,
+         'synced content']*5,
         ['default metadata export mode, refresh re-renders metadata, keep will keep '
          'existing metadata, remove exports template withou metadata']*5 +
         ['default metadata export mode, refresh re-renders metadata, '
-         'keep will keep existing metadata, remove exports template without metadata'],
+         'keep will keep existing metadata, remove exports template without metadata']*2,
         ['negate the prefix (for purging) / filter (for importing/exporting)']*5 +
-        ['negate the filter for import/export'],
+        ['negate the filter for import/export']*2,
         ['the string all imported templates should begin with']*5 +
-        ['the string that will be added as prefix to imported templates'],
+        ['the string that will be added as prefix to imported templates']*2,
         ['target path to import and export. different protocols can be used, '
          'e.g. /tmp/dir, git://example.com, https://example.com, ssh://example.com']*5 +
         ['target path to import/export. different protocols can be used, '
          'for example /tmp/dir, git://example.com, https://example.com, '
          'ssh://example.com. when exporting to /tmp, note that production '
-         'deployments may be configured to use private tmp.'],
+         'deployments may be configured to use private tmp.']*2,
         ['how the logic of solving dependencies in a content view is managed. '
          'conservative will only add packages to solve the dependencies if '
          'the packaged needed doesn\'t exist. greedy will pull in the latest package '
@@ -171,50 +171,50 @@ _entity_varients = {
         ['how the logic of solving dependencies in a content view is managed. '
          'conservative will only add packages to solve the dependencies if the package '
          'needed doesn\'t exist. greedy will pull in the latest package to '
-         'solve a dependency even if it already does exist in the repository.'],
+         'solve a dependency even if it already does exist in the repository.']*2,
         ['search for remote execution proxy outside of the proxies assigned to the host.'
          ' if locations or organizations are enabled, the search will be limited '
          'to the host\'s organization or location.']*5 +
         ['search for remote execution proxy outside of the proxies assigned to the host.'
-         ' the search will be limited to the host\'s organization and location.'],
+         ' the search will be limited to the host\'s organization and location.']*2,
         ['import or export names matching this regex (case-insensitive; snippets '
          'are not filtered)']*5 +
         ['import/export names matching this regex (case-insensitive; '
-         'snippets are not filtered)'],
+         'snippets are not filtered)']*2,
         ['when unregistering host via subscription-manager, also delete '
          'server-side host record']*2 +
         ['when unregistering a host via subscription-manager, also delete'
          ' the host record. managed resources linked to host such as virtual'
-         ' machines and dns records may also be deleted.']*4,
+         ' machines and dns records may also be deleted.']*5,
         ['private key that foreman will use to encrypt websockets']*2 +
-        ['private key file that foreman will use to encrypt websockets']*4,
+        ['private key file that foreman will use to encrypt websockets']*5,
         ['duration in minutes after the puppet interval for servers to be classed as out of sync.']*3 +  # noqa
-        ['duration in minutes after servers are classed as out of sync.']*3,
-        ['satellite kickstart default user data'] * 3 + ['kickstart default user data']*3,  # noqa
-        ['satellite kickstart default'] * 3 + ['kickstart default']*3,
-        ['satellite kickstart default finish'] * 3 + ['kickstart default finish']*3,  # noqa
-        ['satellite atomic kickstart default'] * 3 + ['atomic kickstart default']*3,  # noqa
-        ['default_location'] * 3 + ['default location']*3,
+        ['duration in minutes after servers are classed as out of sync.']*4,
+        ['satellite kickstart default user data'] * 3 + ['kickstart default user data']*4,  # noqa
+        ['satellite kickstart default'] * 3 + ['kickstart default']*4,
+        ['satellite kickstart default finish'] * 3 + ['kickstart default finish']*4,  # noqa
+        ['satellite atomic kickstart default'] * 3 + ['atomic kickstart default']*4,  # noqa
+        ['default_location'] * 3 + ['default location']*4,
         ['what command should be used to switch to the effective user. one of ["sudo", "su"]']*4 +  # noqa
         ['what command should be used to switch to the effective user. one of ["sudo", "dzdo", "su"]']*3,  # noqa
         ["exclude pattern for all types of imported facts (rhsm, puppet e.t.c.). those facts won't be stored "  # noqa
          "in foreman's database. you can use * wildcard to match names with indexes e.g. macvtap*"]*4 +  # noqa
         ["exclude pattern for all types of imported facts (puppet, ansible, rhsm). those facts won't be "  # noqa
          "stored in foreman's database. you can use * wildcard to match names with indexes e.g. ignore* will "  # noqa
-         "filter out ignore, ignore123 as well as a::ignore or even a::ignore123::b"]*2,
+         "filter out ignore, ignore123 as well as a::ignore or even a::ignore123::b"]*3,
         ["url hosts will retrieve templates from during build (normally http as many installers don't support https)"]*4 +  # noqa
         ["url hosts will retrieve templates from during build, when it starts with https unattended/userdata controllers "  # noqa
-         "cannot be accessed via http"]*2],
+         "cannot be accessed via http"]*3],
     'subscription': [
         # Validity Variants
-        ['-1']*2+['unlimited']*4],
+        ['-1']*2+['unlimited']*5],
     'template': [
         # name variants
-        ['idm_register']*3+['deprecated idm_register']*3,
-        ['satellite atomic kickstart default']*3+['deprecated satellite atomic kickstart default']*3, # noqa
-        ['satellite kickstart default']*3+['deprecated satellite kickstart default']*3,  # noqa
-        ['satellite kickstart default finish']*3+['deprecated satellite kickstart default finish']*3, # noqa
-        ['satellite kickstart default user data']*3+['deprecated satellite kickstart default user data']*3 # noqa
+        ['idm_register']*3+['deprecated idm_register']*4,
+        ['satellite atomic kickstart default']*3+['deprecated satellite atomic kickstart default']*4, # noqa
+        ['satellite kickstart default']*3+['deprecated satellite kickstart default']*4,  # noqa
+        ['satellite kickstart default finish']*3+['deprecated satellite kickstart default finish']*4, # noqa
+        ['satellite kickstart default user data']*3+['deprecated satellite kickstart default user data']*4 # noqa
     ]
 }
 
@@ -617,6 +617,11 @@ _depreciated = {
         'settings': ["host_update_lock", "dns_conflict_timeout",
                      "host_group_matchers_inheritance",
                      "ansible_implementation", "puppet_server"]
+    },
+    '6.8': {
+        'settings': ["host_update_lock", "dns_conflict_timeout",
+                     "host_group_matchers_inheritance",
+                     "ansible_implementation", "puppet_server"]
     }
 }
 
@@ -662,21 +667,19 @@ def assert_varients(component, pre, post):
         Else compares the actual preupgrade and postupgrade values and returns
         True/False accordingly
     """
-    from_version = os.environ.get('FROM_VERSION')
-    to_version = os.environ.get('TO_VERSION')
-    if from_version not in SUPPORTED_SAT_VERSIONS:
+    if os.environ.get('FROM_VERSION') not in SUPPORTED_SAT_VERSIONS:
         raise VersionError(
             'Unsupported preupgrade version {} provided for '
-            'entity variants existence tests'.format(from_version))
+            'entity variants existence tests'.format(os.environ.get('FROM_VERSION')))
 
-    if to_version not in SUPPORTED_SAT_VERSIONS:
+    if os.environ.get('TO_VERSION') not in SUPPORTED_SAT_VERSIONS:
         raise VersionError(
             'Unsupported postupgrade version {} provided for '
-            'entity variants existence tests'.format(to_version))
+            'entity variants existence tests'.format(os.environ.get('TO_VERSION')))
 
     if component in _entity_varients:
         for single_list in _entity_varients[component]:
-            if pre == single_list[SUPPORTED_SAT_VERSIONS.index(from_version)]:
-                if post == single_list[SUPPORTED_SAT_VERSIONS.index(to_version)]:
+            if pre == single_list[SUPPORTED_SAT_VERSIONS.index(os.environ.get('FROM_VERSION'))]:
+                if post == single_list[SUPPORTED_SAT_VERSIONS.index(os.environ.get('TO_VERSION'))]:
                     return True
     return pre == post

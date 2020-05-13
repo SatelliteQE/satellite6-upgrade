@@ -29,7 +29,7 @@ aks_lc = compare_postupgrade(component, 'lifecycle environment')
 aks_name = compare_postupgrade(component, 'name')
 aks_hl = compare_postupgrade(
     component, ('consumed', 'host limit', 'host limit', 'host limit', 'host limit',
-                'host limit'))
+                'host limit', 'host_limit'))
 
 
 # Tests

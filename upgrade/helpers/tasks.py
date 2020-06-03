@@ -614,7 +614,7 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     # Increase log level to DEBUG, to get better logs in foreman_debug
     execute(lambda: run('sed -i -e \'/:level: / s/: .*/: '
                         'debug/\' /etc/foreman/settings.yaml'), host=sat_host)
-    execute(lambda: run('katello-service restart'), host=sat_host)
+    execute(foreman_service_restart, host=sat_host)
     # Execute task for template changes required for discovery feature
     execute(
         setup_foreman_discovery,
@@ -663,9 +663,9 @@ def capsule_sync(cap_host):
     job_execution_time("Capsule content sync operation", start_time)
 
 
-def katello_restart():
-    """Restarts the katello services"""
-    services = run('katello-service restart')
+def foreman_service_restart():
+    """Restarts the foreman-maintain services"""
+    services = run('foreman-maintain service restart')
     if services.return_code > 0:
         logger.error('Unable to re-start the Satellite Services')
         sys.exit(1)
@@ -1090,7 +1090,7 @@ def nonfm_upgrade(satellite_upgrade=True,
                   cap_host=None, sat_host=None):
     """
     The purpose of this module to perform the upgrade task without foreman-maintain.
-    In this function we setup the repository, stop the katello services,
+    In this function we setup the repository, stop the foreman-maintain services,
     cleanup, and execute satellite upgrade task"
     :param bool satellite_upgrade: If satellite_upgrade is True then upgrade
     type satellite otherwise capsule
@@ -1104,8 +1104,8 @@ def nonfm_upgrade(satellite_upgrade=True,
     # Check what repos are set
     upgrade_type = "satellite" if satellite_upgrade else "capsule"
     run('yum repolist')
-    # Stop katello services, except mongod
-    run('katello-service stop')
+    # Stop foreman-maintain services
+    run('foreman-maintain service stop')
     run('yum clean all', warn_only=True)
     # Updating the packages again after setting sat6 repo
     logger.info('Updating system and {} packages... '.format(upgrade_type))
@@ -1155,11 +1155,8 @@ def upgrade_validation(upgrade_type=False):
     :param bool upgrade_type: if upgrade_type is True then we check both the services.
     """
     if upgrade_type:
-        # This command will be used only with 6.7 for more reference Please
-        # look into BZ#1771531
-        run('hammer --reload-cache')
         run('hammer ping', warn_only=True)
-    run('katello-service status', warn_only=True)
+    run('foreman-maintain service status', warn_only=True)
 
 
 def update_scap_content():

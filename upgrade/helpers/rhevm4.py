@@ -15,7 +15,7 @@ from upgrade.helpers.tasks import (
     check_necessary_env_variables_for_upgrade,
     capsule_sync,
     check_ntpd,
-    katello_restart,
+    foreman_service_restart,
 )
 
 
@@ -290,10 +290,10 @@ def validate_and_create_rhevm4_templates(product):
         new_cap_template = os.environ.get('RHEV_CAP_IMAGE') + "_new"
         if check_necessary_env_variables_for_upgrade('capsule'):
             execute(check_ntpd, host=sat_host)
-            execute(katello_restart, host=sat_host)
+            execute(foreman_service_restart, host=sat_host)
             execute(capsule_sync, cap_host, host=sat_host)
             execute(check_ntpd, host=cap_host)
-            execute(katello_restart, host=cap_host)
+            execute(foreman_service_restart, host=cap_host)
             _thread.start_new_thread(
                 create_rhevm4_template,
                 (

@@ -22,6 +22,7 @@ from upgrade.helpers.tasks import (
     enable_disable_repo,
     foreman_packages_installation_check,
     foreman_maintain_upgrade,
+    foreman_service_restart,
     repository_setup,
     repository_cleanup,
     setup_foreman_maintain,
@@ -67,7 +68,7 @@ def satellite6_setup(os_version):
         execute(install_prerequisites, host=sat_host)
         # Subscribe the instance to CDN
         execute(subscribe, host=sat_host)
-        execute(lambda: run('katello-service restart'), host=sat_host)
+        execute(foreman_service_restart, host=sat_host)
     # Set satellite hostname in fabric environment
     env['satellite_host'] = sat_host
     logger.info('Satellite {} is ready for Upgrade!'.format(sat_host))

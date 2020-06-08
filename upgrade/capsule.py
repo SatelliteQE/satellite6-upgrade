@@ -134,12 +134,12 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     # setup foreman-maintain
     setup_foreman_maintain_repo()
     # Check what repos are set
-    if not os.environ.get("FOREMAN_MAINTAIN_CAPSULE_UPGRADE"):
+    if os.environ.get("FOREMAN_MAINTAIN_CAPSULE_UPGRADE") == 'true':
+        upgrade_using_foreman_maintain(sat_host=False)
+    else:
         nonfm_upgrade(satellite_upgrade=False,
                       cap_host=cap_host,
                       sat_host=sat_host)
-    else:
-        upgrade_using_foreman_maintain(sat_host=False)
     # Rebooting the capsule for kernel update if any
     reboot(160)
     host_ssh_availability_check(cap_host)
@@ -172,7 +172,10 @@ def satellite6_capsule_zstream_upgrade(cap_host):
         disable_old_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
             major_ver, from_version))
     # Check what repos are set
-    nonfm_upgrade(satellite_upgrade=False)
+    if os.environ.get("FOREMAN_MAINTAIN_CAPSULE_UPGRADE") == 'true':
+        upgrade_using_foreman_maintain(sat_host=False)
+    else:
+        nonfm_upgrade(satellite_upgrade=False)
     # Rebooting the capsule for kernel update if any
     reboot(160)
     host_ssh_availability_check(cap_host)

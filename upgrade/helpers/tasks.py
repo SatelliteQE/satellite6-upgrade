@@ -790,7 +790,7 @@ def upgrade_using_foreman_maintain(sat_host=True):
             if os.environ.get('TO_VERSION') == '6.8':
                 with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
                     run(f'foreman-maintain upgrade run --whitelist="disk-performance, '
-                        f'repositories-validate, repositories-setup" '
+                        f'{os.environ["whitelisted_param"]}" '
                         f'--target-version {os.environ.get("TO_VERSION")} -y')
             else:
                 run(f'foreman-maintain upgrade run --whitelist="disk-performance" '

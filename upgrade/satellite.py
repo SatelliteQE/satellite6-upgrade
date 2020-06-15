@@ -120,6 +120,18 @@ def satellite6_upgrade(zstream=False):
     disable_repo_name = ["*"]
     enable_repos_name = ['rhel-{0}-server-rpms'.format(major_ver),
                          'rhel-server-rhscl-{0}-rpms'.format(major_ver)]
+
+    # This statement will execute only until downstream release not become beta.
+    if os.environ.get('DOWNSTREAM_FM_UPGRADE') == 'true' or \
+            os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == 'false':
+        # Following disables the old satellite repo and extra repos enabled
+        # during subscribe e.g Load balancer Repo
+
+        enable_disable_repo(disable_repo_name, enable_repos_name)
+        os.environ["whitelisted_param"] = "repositories-validate, repositories-setup"
+    else:
+        os.environ["whitelisted_param"] = ''
+
     if os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == 'true' \
             and os.environ.get('OS') == 'rhel7':
         foreman_maintain_upgrade(base_url)
@@ -133,9 +145,7 @@ def satellite6_upgrade(zstream=False):
             foreman_packages_installation_check(state="unlock")
             setup_foreman_maintain()
             update_packages(quiet=True)
-        # Following disables the old satellite repo and extra repos enabled
-        # during subscribe e.g Load balancer Repo
-        enable_disable_repo(disable_repo_name, enable_repos_name)
+
         if base_url is None:
             enable_disable_repo([], ['rhel-{0}-server-satellite-{1}-rpms'.format(
                 major_ver, to_version)])

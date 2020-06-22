@@ -92,7 +92,7 @@ def satellite6_upgrade(zstream=False):
             TO_VERSION
                 Satellite version to upgrade to and enable repos while upgrading.
                 e.g '6.1','6.2', '6.3'
-            PERFORM_FOREMAN_MAINTAIN_UPGRADE
+            FOREMAN_MAINTAIN_SATELLITE_UPGRADE
                 use foreman-maintain for satellite upgrade
 
     else:
@@ -103,7 +103,7 @@ def satellite6_upgrade(zstream=False):
                 Current satellite version which will be upgraded to latest version
             TO_VERSION
                 Next satellite version to which satellite will be upgraded
-            PERFORM_FOREMAN_MAINTAIN_UPGRADE
+            FOREMAN_MAINTAIN_SATELLITE_UPGRADE
                 use foreman-maintain for satellite upgrade
 
     """
@@ -123,7 +123,7 @@ def satellite6_upgrade(zstream=False):
 
     # This statement will execute only until downstream release not become beta.
     if os.environ.get('DOWNSTREAM_FM_UPGRADE') == 'true' or \
-            os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == 'false':
+            os.environ.get('FOREMAN_MAINTAIN_SATELLITE_UPGRADE') == 'false':
         # Following disables the old satellite repo and extra repos enabled
         # during subscribe e.g Load balancer Repo
 
@@ -132,7 +132,7 @@ def satellite6_upgrade(zstream=False):
     else:
         os.environ["whitelisted_param"] = ''
 
-    if os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') == 'true' \
+    if os.environ.get('FOREMAN_MAINTAIN_SATELLITE_UPGRADE') == 'true' \
             and os.environ.get('OS') == 'rhel7':
         foreman_maintain_upgrade(base_url)
     else:

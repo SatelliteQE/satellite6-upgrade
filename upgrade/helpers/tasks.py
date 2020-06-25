@@ -789,9 +789,9 @@ def upgrade_using_foreman_maintain(sat_host=True):
             # use beta until 6.8 is GA
             if os.environ.get('TO_VERSION') == '6.8':
                 with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
-                    run(f'foreman-maintain upgrade run --whitelist="disk-performance, '
-                        f'{os.environ["whitelisted_param"]}" '
-                        f'--target-version {os.environ.get("TO_VERSION")} -y')
+                    run(f'foreman-maintain upgrade run --whitelist="disk-performance'
+                        f'{os.environ["whitelisted_param"]}" --target-version '
+                        f'{os.environ.get("TO_VERSION")} -y')
             else:
                 run(f'foreman-maintain upgrade run --whitelist="disk-performance" '
                     f'--target-version {os.environ.get("TO_VERSION")} -y')
@@ -1063,6 +1063,11 @@ def foreman_maintain_upgrade(base_url):
     # setup foreman-maintain
     setup_foreman_maintain()
     preup_time = datetime.now().replace(microsecond=0)
+    if bz_bug_is_open(1846593):
+        foreman_packages_installation_check(state="unlock", non_upgrade_task=True)
+        run("yum install -y puppet-agent")
+        run("yum reinstall -y puppet-agent-oauth")
+        foreman_packages_installation_check(state="lock", non_upgrade_task=True)
     # perform upgrade using foreman-maintain
     upgrade_using_foreman_maintain()
     postup_time = datetime.now().replace(microsecond=0)
@@ -1242,15 +1247,17 @@ def mongo_db_engine_upgrade(upgrade_type):
         str(postup_time - preup_time)))
 
 
-def foreman_packages_installation_check(state="unlock"):
+def foreman_packages_installation_check(state="unlock", non_upgrade_task=False):
     """
     This function is used to change the state of the foreman-package installation method,
     And it will be applicable only if the FOREMAN_MAINTAIN_SATELLITE_UPGRADE is False.
 
     :param str state: To perform the installation using foreman-maintain the state will be
     "lock" otherwise "unlock"
+    :param bool non_upgrade_task: to unlock the packages for non_upgrade_task
+
     """
-    if os.environ.get('FOREMAN_MAINTAIN_SATELLITE_UPGRADE') != 'true':
+    if os.environ.get('FOREMAN_MAINTAIN_SATELLITE_UPGRADE') != 'true' or non_upgrade_task:
         logger.info("{} the foreman-maintain packages".format(state))
         run("foreman-maintain packages {} -y".format(state))
     else:

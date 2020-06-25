@@ -128,7 +128,7 @@ def satellite6_upgrade(zstream=False):
         # during subscribe e.g Load balancer Repo
 
         enable_disable_repo(disable_repo_name, enable_repos_name)
-        os.environ["whitelisted_param"] = "repositories-validate, repositories-setup"
+        os.environ["whitelisted_param"] = ", repositories-validate, repositories-setup"
     else:
         os.environ["whitelisted_param"] = ''
 

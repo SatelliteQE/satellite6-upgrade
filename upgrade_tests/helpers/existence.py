@@ -419,7 +419,7 @@ def _find_templatestore(templatestorestate, template_type, template_id=None):
     template_id = template_id.strip()
     template_path = '{0}/{1}.erb'.format(templates_path, template_id)
     if not os.path.exists(template_path):
-        return 'ID : {0} {1} is missing.'.format(
+        return 'ID : {0} {1} {2} is missing.'.format(
             template_id, template_type, templatestorestate)
     with open('{0}'.format(template_path)) as template:
         return template_path, template.read()

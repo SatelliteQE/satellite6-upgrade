@@ -122,32 +122,32 @@ _entity_varients = {
         [f"{os.environ.get('OAUTH_CONSUMER_SECRET')}"]*5 + ['*****'],
         # Description Variants
         ['fact name to use for primary interface detection and hostname']*2 +
-         ['fact name to use for primary interface detection']*4,
+        ['fact name to use for primary interface detection']*4,
         ['automatically reboot discovered host during provisioning']*2 +
-         ['automatically reboot or kexec discovered host during provisioning']*4,  # noqa
+        ['automatically reboot or kexec discovered host during provisioning']*4,  # noqa
         ['default provisioning template for new atomic operating systems']*2 +
-         ['default provisioning template for new atomic operating systems '
+        ['default provisioning template for new atomic operating systems '
          'created from synced content']*4,
         ['default finish template for new operating systems']*2 +
-         ['default finish template for new operating systems created '
+        ['default finish template for new operating systems created '
          'from synced content']*4,
         ['default ipxe template for new operating systems']*2 +
-         ['default ipxe template for new operating systems created from '
+        ['default ipxe template for new operating systems created from '
          'synced content']*4,
         ['default kexec template for new operating systems']*2 +
-         ['default kexec template for new operating systems created '
+        ['default kexec template for new operating systems created '
          'from synced content']*4,
         ['default provisioning template for new operating systems']*2 +
-         ['default provisioning template for operating systems created'
+        ['default provisioning template for operating systems created'
          ' from synced content']*4,
         ['default partitioning table for new operating systems']*2 +
-         ['default partitioning table for new operating systems created'
+        ['default partitioning table for new operating systems created'
          ' from synced content']*4,
         ['default pxelinux template for new operating systems']*2 +
-         ['default pxelinux template for new operating systems created'
+        ['default pxelinux template for new operating systems created'
          ' from synced content']*4,
         ['default user data for new operating systems']*2 +
-         ['default user data for new operating systems created from '
+        ['default user data for new operating systems created from '
          'synced content']*4,
         ['default metadata export mode, refresh re-renders metadata, keep will keep '
          'existing metadata, remove exports template withou metadata']*5 +
@@ -164,7 +164,7 @@ _entity_varients = {
          'ssh://example.com. when exporting to /tmp, note that production '
          'deployments may be configured to use private tmp.'],
         ['how the logic of solving dependencies in a content view is managed. '
-          'conservative will only add packages to solve the dependencies if '
+         'conservative will only add packages to solve the dependencies if '
          'the packaged needed doesn\'t exist. greedy will pull in the latest package '
          'to solve a dependency even if it already does exist in the repository.']*5 +
         ['how the logic of solving dependencies in a content view is managed. '
@@ -182,20 +182,20 @@ _entity_varients = {
          'snippets are not filtered)'],
         ['when unregistering host via subscription-manager, also delete '
          'server-side host record']*2 +
-         ['when unregistering a host via subscription-manager, also delete'
+        ['when unregistering a host via subscription-manager, also delete'
          ' the host record. managed resources linked to host such as virtual'
          ' machines and dns records may also be deleted.']*4,
         ['private key that foreman will use to encrypt websockets']*2 +
-         ['private key file that foreman will use to encrypt websockets']*4,
+        ['private key file that foreman will use to encrypt websockets']*4,
         ['duration in minutes after the puppet interval for servers to be classed as out of sync.']*3 +  # noqa
-         ['duration in minutes after servers are classed as out of sync.']*3,
+        ['duration in minutes after servers are classed as out of sync.']*3,
         ['satellite kickstart default user data'] * 3 + ['kickstart default user data']*3,  # noqa
         ['satellite kickstart default'] * 3 + ['kickstart default']*3,
         ['satellite kickstart default finish'] * 3 + ['kickstart default finish']*3,  # noqa
         ['satellite atomic kickstart default'] * 3 + ['atomic kickstart default']*3,  # noqa
         ['default_location'] * 3 + ['default location']*3,
         ['what command should be used to switch to the effective user. one of ["sudo", "su"]']*4 +  # noqa
-         ['what command should be used to switch to the effective user. one of ["sudo", "dzdo", "su"]']*3,  # noqa
+        ['what command should be used to switch to the effective user. one of ["sudo", "dzdo", "su"]']*3,  # noqa
         ["exclude pattern for all types of imported facts (rhsm, puppet e.t.c.). those facts won't be stored "  # noqa
          "in foreman's database. you can use * wildcard to match names with indexes e.g. macvtap*"]*4 +  # noqa
         ["exclude pattern for all types of imported facts (puppet, ansible, rhsm). those facts won't be "  # noqa

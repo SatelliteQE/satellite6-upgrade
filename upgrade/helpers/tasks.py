@@ -1234,17 +1234,17 @@ def mongo_db_engine_upgrade(upgrade_type):
 def foreman_packages_installation_check(state="unlock"):
     """
     This function is used to change the state of the foreman-package installation method,
-    And it will be applicable only if the PERFORM_FOREMAN_MAINTAIN_UPGRADE is False.
+    And it will be applicable only if the FOREMAN_MAINTAIN_SATELLITE_UPGRADE is False.
 
     :param str state: To perform the installation using foreman-maintain the state will be
     "lock" otherwise "unlock"
     """
-    if os.environ.get('PERFORM_FOREMAN_MAINTAIN_UPGRADE') != 'true':
+    if os.environ.get('FOREMAN_MAINTAIN_SATELLITE_UPGRADE') != 'true':
         logger.info("{} the foreman-maintain packages".format(state))
         run("foreman-maintain packages {} -y".format(state))
     else:
         logger.info("Failed to apply the {} state on foreman-maintain packages , "
-                    "because PERFORM_FOREMAN_MAINTAIN_UPGRADE is true")
+                    "because FOREMAN_MAINTAIN_SATELLITE_UPGRADE is true")
 
 
 def job_execution_time(task_name, start_time=None):

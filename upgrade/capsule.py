@@ -3,29 +3,25 @@ import sys
 
 from automation_tools import setup_capsule_firewall
 from automation_tools.utils import distro_info
-from fabric.api import env, execute, run
-from upgrade.helpers.logger import logger
-from upgrade.helpers.rhevm4 import (
-    create_rhevm4_instance,
-    delete_rhevm4_instance
-)
-from upgrade.helpers.tasks import (
-    sync_capsule_repos_to_upgrade,
-    add_baseOS_repo,
-    foreman_service_restart,
-    nonfm_upgrade,
-    upgrade_validation,
-    upgrade_using_foreman_maintain,
-    setup_foreman_maintain_repo,
+from fabric.api import env
+from fabric.api import execute
+from fabric.api import run
 
-)
-from upgrade.helpers.tools import (
-    copy_ssh_key,
-    disable_old_repos,
-    reboot,
-    host_pings,
-    host_ssh_availability_check
-)
+from upgrade.helpers.logger import logger
+from upgrade.helpers.rhevm4 import create_rhevm4_instance
+from upgrade.helpers.rhevm4 import delete_rhevm4_instance
+from upgrade.helpers.tasks import add_baseOS_repo
+from upgrade.helpers.tasks import foreman_service_restart
+from upgrade.helpers.tasks import nonfm_upgrade
+from upgrade.helpers.tasks import setup_foreman_maintain_repo
+from upgrade.helpers.tasks import sync_capsule_repos_to_upgrade
+from upgrade.helpers.tasks import upgrade_using_foreman_maintain
+from upgrade.helpers.tasks import upgrade_validation
+from upgrade.helpers.tools import copy_ssh_key
+from upgrade.helpers.tools import disable_old_repos
+from upgrade.helpers.tools import host_pings
+from upgrade.helpers.tools import host_ssh_availability_check
+from upgrade.helpers.tools import reboot
 
 logger = logger()
 

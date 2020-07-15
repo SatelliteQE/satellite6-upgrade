@@ -254,7 +254,7 @@ def set_datastore(datastore, endpoint):
         orged_comps_data = [
             csv_reader(
                 component, 'list --organization-id 1'
-                ) for component in CLI_COMPONENTS['org_required']
+            ) for component in CLI_COMPONENTS['org_required']
         ]
         all_comps_data = nonorged_comps_data + orged_comps_data
     elif endpoint == 'api':
@@ -380,7 +380,7 @@ def compare_postupgrade(component, attribute):
             search_criteria={atr: str(test_case)},
             attribute=post_attr
         )
-        if 'missing' in str(preupgrade_entity) or 'missing' in str(postupgrade_entity): # noqa
+        if 'missing' in str(preupgrade_entity) or 'missing' in str(postupgrade_entity):
             culprit = preupgrade_entity if 'missing' in preupgrade_entity \
                 else postupgrade_entity
             culprit_ver = ' in preupgrade version' if 'missing' \
@@ -432,7 +432,7 @@ def compare_templates(template_type):
     for template_id in find_templatestore('preupgrade', template_type):
         prefile, pre_template = find_templatestore('preupgrade', template_type, template_id)
         postfile, post_template = find_templatestore('postupgrade', template_type, template_id)
-        if 'missing' in str(pre_template) or 'missing' in str(post_template):  # noqa
+        if 'missing' in str(pre_template) or 'missing' in str(post_template):
             culprit = prefile if 'missing' in pre_template \
                 else postfile
             culprit_ver = f' missing in Version {FROM_VERSION}' if 'missing' in pre_template \
@@ -482,7 +482,7 @@ def assert_templates(template_type, pre, post):
     del diff
     added_elements = [added for added in difference if added.startswith('+')]
     removed_elements = [added for added in difference if added.startswith('-')]
-    for changed_element in added_elements+removed_elements:
+    for changed_element in added_elements + removed_elements:
         for expected_varients in template_varients[template_type]:
             if changed_element in expected_varients:
                 return True

@@ -3,6 +3,7 @@ pytest-cov
 
 # For lint make target
 flake8
+pre-commit
 
 # For test-docstring make target
 testimony

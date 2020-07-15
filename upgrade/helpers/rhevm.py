@@ -1,19 +1,18 @@
 import os
 import sys
 import time
-import thread
 
+import thread
 from fabric.api import execute
 from ovirtsdk.api import API
 from ovirtsdk.infrastructure import errors
 from ovirtsdk.xml import params
+
 from upgrade.helpers.logger import logger
-from upgrade.helpers.tasks import (
-    check_necessary_env_variables_for_upgrade,
-    capsule_sync,
-    check_ntpd,
-    foreman_service_restart,
-)
+from upgrade.helpers.tasks import capsule_sync
+from upgrade.helpers.tasks import check_necessary_env_variables_for_upgrade
+from upgrade.helpers.tasks import check_ntpd
+from upgrade.helpers.tasks import foreman_service_restart
 
 
 logger = logger()
@@ -227,8 +226,7 @@ def create_rhevm_template(host, cluster, new_template, storage):
                                 cluster=get_client.clusters.get(cluster)))
             wait_till_rhevm_instance_status(host, 'down', timeout=80)
             if get_client.templates.get(new_template):
-                logger.info('{0} template is created successfully'.format(
-                                                                new_template))
+                logger.info('{0} template is created successfully'.format(new_template))
                 get_client.disconnect()
         except Exception as ex:
             logger.error('Failed to Create Template from VM:\n%s' % str(ex))

@@ -1,34 +1,30 @@
 import os
 import sys
 
-from upgrade.helpers.tools import (
-    host_pings,
-    host_ssh_availability_check,
-    reboot
-)
-from automation_tools import (
-    setup_satellite_firewall,
-    subscribe,
-    install_prerequisites
-)
-from automation_tools.utils import distro_info, update_packages
-from fabric.api import env, execute, run
+from automation_tools import install_prerequisites
+from automation_tools import setup_satellite_firewall
+from automation_tools import subscribe
+from automation_tools.utils import distro_info
+from automation_tools.utils import update_packages
+from fabric.api import env
+from fabric.api import execute
+from fabric.api import run
+
 from upgrade.helpers.logger import logger
-from upgrade.helpers.rhevm4 import (
-    create_rhevm4_instance,
-    delete_rhevm4_instance
-)
-from upgrade.helpers.tasks import (
-    enable_disable_repo,
-    foreman_packages_installation_check,
-    foreman_maintain_upgrade,
-    foreman_service_restart,
-    repository_setup,
-    repository_cleanup,
-    setup_foreman_maintain,
-    nonfm_upgrade,
-    upgrade_validation
-)
+from upgrade.helpers.rhevm4 import create_rhevm4_instance
+from upgrade.helpers.rhevm4 import delete_rhevm4_instance
+from upgrade.helpers.tasks import enable_disable_repo
+from upgrade.helpers.tasks import foreman_maintain_upgrade
+from upgrade.helpers.tasks import foreman_packages_installation_check
+from upgrade.helpers.tasks import foreman_service_restart
+from upgrade.helpers.tasks import nonfm_upgrade
+from upgrade.helpers.tasks import repository_cleanup
+from upgrade.helpers.tasks import repository_setup
+from upgrade.helpers.tasks import setup_foreman_maintain
+from upgrade.helpers.tasks import upgrade_validation
+from upgrade.helpers.tools import host_pings
+from upgrade.helpers.tools import host_ssh_availability_check
+from upgrade.helpers.tools import reboot
 
 logger = logger()
 
@@ -51,9 +47,9 @@ def satellite6_setup(os_version):
             if var not in os.environ]
         # Check if image name and Hostname in jenkins are set
         if missing_vars:
-            logger.warning('The following environment variable(s) must be set '
-                           'in jenkins environment: {0}.'.format(
-                                ', '.join(missing_vars)))
+            logger.warning(
+                'The following environment variable(s) must be set '
+                'in jenkins environment: {0}.'.format(', '.join(missing_vars)))
             sys.exit(1)
         sat_image = os.environ.get('RHEV_SAT_IMAGE')
         sat_host = os.environ.get('RHEV_SAT_HOST')

@@ -1,20 +1,19 @@
 """All the helper functions, needed for scenarios test case automation to be
 added here"""
-import os
 import json
+import os
 import time
 
 from automation_tools import manage_daemon
 from automation_tools.satellite6 import hammer
-from fabric.api import run
-from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
-from upgrade.helpers.rhevm4 import (
-    create_rhevm4_instance,
-    get_rhevm4_client,
-    wait_till_rhevm4_instance_status
-)
-from upgrade.helpers.logger import logger
 from fabric.api import execute
+from fabric.api import run
+
+from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
+from upgrade.helpers.logger import logger
+from upgrade.helpers.rhevm4 import create_rhevm4_instance
+from upgrade.helpers.rhevm4 import get_rhevm4_client
+from upgrade.helpers.rhevm4 import wait_till_rhevm4_instance_status
 
 rpm1 = 'https://inecas.fedorapeople.org/fakerepos/zoo3/bear-4.1-1.noarch.rpm'
 rpm2 = 'https://inecas.fedorapeople.org/fakerepos/zoo3/camel-0.1-1.noarch.rpm'
@@ -80,8 +79,7 @@ def dockerize(ak_name=None, distro=None, org_label=None):
     with get_rhevm4_client().build() as rhevm_client:
         instance_name = 'sat6-docker-upgrade'
         template_name = 'sat6-docker-upgrade-template'
-        vm = rhevm_client.system_service().vms_service(
-            ).list(search=f'name={instance_name}')
+        vm = rhevm_client.system_service().vms_service().list(search=f'name={instance_name}')
         if not vm:
             logger.info('Docker VM for generating Content Host is not created.'
                         'Creating it, please wait..')

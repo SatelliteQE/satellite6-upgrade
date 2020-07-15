@@ -1,13 +1,14 @@
 """Common helper functions to run upgrade existence and scenario tests
 """
 import os
-import pytest
-
 from functools import partial
 from pprint import pprint
+
+import pytest
 from robozilla.decorators import pytest_skip_if_bug_open
-from upgrade_tests.helpers.variants import assert_varients
+
 from upgrade_tests.helpers.existence import assert_templates
+from upgrade_tests.helpers.variants import assert_varients
 
 
 class VersionException(Exception):
@@ -15,8 +16,7 @@ class VersionException(Exception):
     pass
 
 
-pytest_skip_if_bug_open = partial(
-        pytest_skip_if_bug_open)
+pytest_skip_if_bug_open = partial(pytest_skip_if_bug_open)
 
 
 def existence(pre, post, component=None, template=None):

@@ -4,23 +4,20 @@ import time
 
 from automation_tools import manage_daemon
 from automation_tools.repository import disable_repos
-from upgrade.helpers.docker import (
-    docker_execute_command,
-    generate_satellite_docker_clients_on_rhevm,
-    refresh_subscriptions_on_docker_clients,
-)
+from fabric.api import env
+from fabric.api import execute
+from fabric.api import run
+
+from upgrade.helpers.docker import docker_execute_command
+from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
+from upgrade.helpers.docker import refresh_subscriptions_on_docker_clients
 from upgrade.helpers.logger import logger
-from upgrade.helpers.rhevm4 import (
-    create_rhevm4_instance,
-    get_rhevm4_client,
-    wait_till_rhevm4_instance_status
-)
-from upgrade.helpers.tasks import (
-    puppet_autosign_hosts,
-    sync_tools_repos_to_upgrade
-)
+from upgrade.helpers.rhevm4 import create_rhevm4_instance
+from upgrade.helpers.rhevm4 import get_rhevm4_client
+from upgrade.helpers.rhevm4 import wait_till_rhevm4_instance_status
+from upgrade.helpers.tasks import puppet_autosign_hosts
+from upgrade.helpers.tasks import sync_tools_repos_to_upgrade
 from upgrade.helpers.tools import version_filter
-from fabric.api import env, execute, run
 
 logger = logger()
 
@@ -71,8 +68,8 @@ def satellite6_client_setup():
         with get_rhevm4_client().build() as rhevm_client:
             instance_name = 'sat6-docker-upgrade'
             template_name = 'sat6-docker-upgrade-template'
-            vm = rhevm_client.system_service().vms_service(
-                ).list(search='name={}'.format(instance_name))
+            vm = rhevm_client.system_service().vms_service().list(
+                search='name={}'.format(instance_name))
             if not vm:
                 logger.info(
                     'Docker VM for generating Content Host is not created. '
@@ -92,13 +89,13 @@ def satellite6_client_setup():
         clients6 = execute(
             generate_satellite_docker_clients_on_rhevm,
             'rhel6',
-            int(clients_count)/2,
+            int(clients_count) / 2,
             host=docker_vm
         )[docker_vm]
         clients7 = execute(
             generate_satellite_docker_clients_on_rhevm,
             'rhel7',
-            int(clients_count)/2,
+            int(clients_count) / 2,
             host=docker_vm
         )[docker_vm]
         # Allow all puppet clients to be signed automatically

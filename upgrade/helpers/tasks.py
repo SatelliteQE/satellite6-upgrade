@@ -4,32 +4,39 @@ Many commands are affected by environment variables. Unless stated otherwise,
 all environment variables are required.
 """
 import os
+import socket
 import sys
 import time
-import requests
-import socket
 from datetime import datetime
 
-from automation_tools import (
-    setup_rhv_ca,
-    setup_alternate_capsule_ports,
-    setup_fake_manifest_certificate,
-)
+import requests
+from automation_tools import setup_alternate_capsule_ports
+from automation_tools import setup_avahi_discovery
 from automation_tools import setup_capsule_firewall
-from automation_tools import setup_foreman_discovery, setup_avahi_discovery
-from automation_tools.repository import enable_repos, disable_repos
-from automation_tools.utils import get_discovery_image, update_packages
+from automation_tools import setup_fake_manifest_certificate
+from automation_tools import setup_foreman_discovery
+from automation_tools import setup_rhv_ca
+from automation_tools.repository import disable_repos
+from automation_tools.repository import enable_repos
 from automation_tools.satellite6.capsule import generate_capsule_certs
+from automation_tools.utils import get_discovery_image
+from automation_tools.utils import update_packages
+from fabric.api import env
+from fabric.api import execute
+from fabric.api import put
+from fabric.api import run
+from fabric.api import warn_only
+from fabric.context_managers import shell_env
 from nailgun import entities
 from robozilla.decorators import bz_bug_is_open
-from upgrade.helpers.constants import customcontents, rhelcontents
+
+from upgrade.helpers.constants import customcontents
+from upgrade.helpers.constants import rhelcontents
 from upgrade.helpers.docker import (
     attach_subscription_to_host_from_content_host
 )
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tools import call_entity_method_with_timeout
-from fabric.api import env, execute, put, run, warn_only
-from fabric.context_managers import shell_env
 if sys.version_info[0] == 2:
     from StringIO import StringIO  # (import-error) pylint:disable=F0401
 else:  # pylint:disable=F0401,E0611

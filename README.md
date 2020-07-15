@@ -26,7 +26,7 @@ Clients | 6.1 -> 6.2 and 6.2-> 6.3 | 6.1 -> 6.1 and 6.2 -> 6.2
  Satellite6-Upgrade depends on ```pycurl``` being installed, but installing it,
  specially on a virtual environment is not straight forward. You must run the
  [pycurl install script](https://github.com/SatelliteQE/robottelo-ci/blob/master/scripts/pip-install-pycurl.sh) in order to have ```pycurl``` installed properly.
- 
+
 Finally, python packages listed in ```requirements.txt``` must be installed before
 satellite6-upgrade can be used:
 

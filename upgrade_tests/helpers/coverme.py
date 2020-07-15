@@ -1,7 +1,7 @@
 """Unit tests for upgrade test helpers
 """
-
 import os
+
 from upgrade_tests.helpers.variants import assert_varients
 
 

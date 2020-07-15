@@ -53,47 +53,44 @@ CLI_COMPONENTS = {
             'repository',
             'subscription',
             'sync-plan'
-        ]
-    }
+        ]}
 
 
-CLI_ATTRIBUTES_KEY = dict.fromkeys(
-        [
-            'activation-key',
-            'architecture',
-            'capsule',
-            'content-host',
-            'compute-resource',
-            'discovery',
-            'discovery-rule' if TO_VERSION is not None and float(TO_VERSION) >= 6.3
-            else 'discovery_rule',
-            'domain',
-            'environment',
-            'filter',
-            'gpg',
-            'host',
-            'hostgroup',
-            'lifecycle-environment',
-            'medium',
-            'organization',
-            'os',
-            'puppet-class',
-            'puppet-environment',
-            'puppet-module',
-            'repository',
-            'role',
-            'sc-param',
-            'smart-variable',
-            'subnet',
-            'subscription',
-            'sync-plan',
-            'template',
-            'user',
-            'user-group',
-            'virt-who-config'
-        ],
-        'id'
-     )
+CLI_ATTRIBUTES_KEY = dict.fromkeys([
+    'activation-key',
+    'architecture',
+    'capsule',
+    'content-host',
+    'compute-resource',
+    'discovery',
+    'discovery-rule' if TO_VERSION is not None and float(TO_VERSION) >= 6.3 else 'discovery_rule',
+    'domain',
+    'environment',
+    'filter',
+    'gpg',
+    'host',
+    'hostgroup',
+    'lifecycle-environment',
+    'medium',
+    'organization',
+    'os',
+    'puppet-class',
+    'puppet-environment',
+    'puppet-module',
+    'repository',
+    'role',
+    'sc-param',
+    'smart-variable',
+    'subnet',
+    'subscription',
+    'sync-plan',
+    'template',
+    'user',
+    'user-group',
+    'virt-who-config'],
+    # Unique Key for all the components
+    'id'
+)
 
 
 CLI_ATTRIBUTES_KEY.update(dict.fromkeys(
@@ -111,8 +108,7 @@ CLI_ATTRIBUTES_KEY["content-view"] = 'content view id'
 # The id for an entity to get its data
 
 API_COMPONENTS = (lambda id=None: {
-        'domain': [entities.Domain(), entities.Domain(id=id)],
-        'subnet': [entities.Subnet(), entities.Subnet(id=id)],
-        'contentview': [
-            entities.ContentView(), entities.ContentView(id=id)]
+    'domain': [entities.Domain(), entities.Domain(id=id)],
+    'subnet': [entities.Subnet(), entities.Subnet(id=id)],
+    'contentview': [entities.ContentView(), entities.ContentView(id=id)]
 })

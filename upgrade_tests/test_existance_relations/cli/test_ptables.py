@@ -18,8 +18,10 @@ post upgrade
 :Upstream: No
 """
 import pytest
+
 from upgrade_tests.helpers.common import existence
-from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import pytest_ids
 
 # Required Data
 component = 'partition-table'

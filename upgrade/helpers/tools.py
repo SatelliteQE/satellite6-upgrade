@@ -8,8 +8,10 @@ import re
 import subprocess
 import time
 
+from fabric.api import execute
+from fabric.api import run
 from nailgun import entity_mixins
-from fabric.api import execute, run
+
 from upgrade.helpers.logger import logger
 
 logger = logger()

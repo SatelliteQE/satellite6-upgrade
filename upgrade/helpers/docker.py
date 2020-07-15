@@ -1,10 +1,12 @@
 import os
 import sys
 import time
+
 from automation_tools.bz import bz_bug_is_open
-from fauxfactory import gen_string
-from upgrade.helpers.logger import logger
 from fabric.api import run
+from fauxfactory import gen_string
+
+from upgrade.helpers.logger import logger
 
 logger = logger()
 
@@ -128,7 +130,7 @@ def docker_execute_command(container_id, command, quiet=True, **kwargs):
         'docker exec {0} {1} {2}'.format(
             '-d' if kwargs.get('async') else '', container_id, command),
         quiet=quiet
-        )
+    )
 
 
 def docker_cleanup_containers():

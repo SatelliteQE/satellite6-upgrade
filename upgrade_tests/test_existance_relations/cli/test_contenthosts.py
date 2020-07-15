@@ -18,9 +18,12 @@ post upgrade
 :Upstream: No
 """
 import pytest
-from upgrade_tests.helpers.common import dont_run_to_upgrade, existence
 from robozilla.decorators import pytest_skip_if_bug_open
-from upgrade_tests.helpers.existence import compare_postupgrade, pytest_ids
+
+from upgrade_tests.helpers.common import dont_run_to_upgrade
+from upgrade_tests.helpers.common import existence
+from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import pytest_ids
 
 # Required Data
 component = 'content-host'

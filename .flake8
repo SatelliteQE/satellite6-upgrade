@@ -1,0 +1,6 @@
+[flake8]
+max-line-length = 99
+ignore = W504,E731
+
+per-file-ignores =
+    upgrade_tests/helpers/variants.py:E501,E226

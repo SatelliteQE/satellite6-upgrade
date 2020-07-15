@@ -1,14 +1,17 @@
-
 import os
 import re
-import shade
 import sys
-import yaml
 
-from fabric.api import env, execute, run
+import shade
+import yaml
+from fabric.api import env
+from fabric.api import execute
+from fabric.api import run
+
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import get_osp_hostname
-from upgrade.helpers.tools import host_pings, host_ssh_availability_check
+from upgrade.helpers.tools import host_pings
+from upgrade.helpers.tools import host_ssh_availability_check
 
 logger = logger()
 

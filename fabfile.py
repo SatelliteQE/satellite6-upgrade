@@ -1,64 +1,42 @@
 """Module which publish all satellite6 upgrade tasks"""
-
 # flake8:noqa pylint:disable=F401
+from automation_tools import partition_disk
+from automation_tools import product_install
+from automation_tools import vm_create
+from automation_tools import vm_destroy
 
-from automation_tools import (
-    partition_disk,
-    product_install,
-    vm_create,
-    vm_destroy
-)
-
-from upgrade.runner import (
-    product_upgrade,
-    setup_products_for_upgrade
-)
-from upgrade.satellite import (
-    satellite6_setup,
-    satellite6_upgrade
-)
-from upgrade.helpers.docker import (
-    docker_execute_command,
-    generate_satellite_docker_clients_on_rhevm,
-    refresh_subscriptions_on_docker_clients,
-    docker_cleanup_containers
-)
-from upgrade.helpers.openstack import (
-    create_openstack_instance,
-    delete_openstack_instance,
-)
-from upgrade.helpers.rhevm4 import (
-    create_rhevm4_instance,
-    delete_rhevm4_instance,
-    wait_till_rhevm4_instance_status,
-    validate_and_create_rhevm4_templates
-)
-from upgrade.helpers.tasks import (
-    generate_custom_certs,
-    sync_capsule_repos_to_upgrade,
-    sync_tools_repos_to_upgrade,
-    setup_foreman_maintain,
-    setup_satellite_clone,
-    update_scap_content,
-    upgrade_using_foreman_maintain,
-    upgrade_puppet3_to_puppet4,
-    mongo_db_engine_upgrade,
-    job_execution_time
-)
-from upgrade.helpers.tools import (
-    copy_ssh_key,
-    disable_old_repos,
-    get_hostname_from_ip,
-    get_sat_cap_version,
-    host_pings,
-    host_ssh_availability_check,
-    reboot
-)
-from upgrade_tests.helpers.existence import (
-    set_datastore,
-    set_templatestore,
-)
-from upgrade_tests.helpers.scenarios import (
-    upload_manifest,
-    delete_manifest,
-)
+from upgrade.helpers.docker import docker_cleanup_containers
+from upgrade.helpers.docker import docker_execute_command
+from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
+from upgrade.helpers.docker import refresh_subscriptions_on_docker_clients
+from upgrade.helpers.openstack import create_openstack_instance
+from upgrade.helpers.openstack import delete_openstack_instance
+from upgrade.helpers.rhevm4 import create_rhevm4_instance
+from upgrade.helpers.rhevm4 import delete_rhevm4_instance
+from upgrade.helpers.rhevm4 import validate_and_create_rhevm4_templates
+from upgrade.helpers.rhevm4 import wait_till_rhevm4_instance_status
+from upgrade.helpers.tasks import generate_custom_certs
+from upgrade.helpers.tasks import job_execution_time
+from upgrade.helpers.tasks import mongo_db_engine_upgrade
+from upgrade.helpers.tasks import setup_foreman_maintain
+from upgrade.helpers.tasks import setup_satellite_clone
+from upgrade.helpers.tasks import sync_capsule_repos_to_upgrade
+from upgrade.helpers.tasks import sync_tools_repos_to_upgrade
+from upgrade.helpers.tasks import update_scap_content
+from upgrade.helpers.tasks import upgrade_puppet3_to_puppet4
+from upgrade.helpers.tasks import upgrade_using_foreman_maintain
+from upgrade.helpers.tools import copy_ssh_key
+from upgrade.helpers.tools import disable_old_repos
+from upgrade.helpers.tools import get_hostname_from_ip
+from upgrade.helpers.tools import get_sat_cap_version
+from upgrade.helpers.tools import host_pings
+from upgrade.helpers.tools import host_ssh_availability_check
+from upgrade.helpers.tools import reboot
+from upgrade.runner import product_upgrade
+from upgrade.runner import setup_products_for_upgrade
+from upgrade.satellite import satellite6_setup
+from upgrade.satellite import satellite6_upgrade
+from upgrade_tests.helpers.existence import set_datastore
+from upgrade_tests.helpers.existence import set_templatestore
+from upgrade_tests.helpers.scenarios import delete_manifest
+from upgrade_tests.helpers.scenarios import upload_manifest

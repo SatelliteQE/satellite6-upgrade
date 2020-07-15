@@ -18,8 +18,11 @@ post upgrade
 :Upstream: No
 """
 import pytest
+
 from upgrade_tests.helpers.common import existence
-from upgrade_tests.helpers.existence import compare_postupgrade, compare_templates, pytest_ids
+from upgrade_tests.helpers.existence import compare_postupgrade
+from upgrade_tests.helpers.existence import compare_templates
+from upgrade_tests.helpers.existence import pytest_ids
 
 # Required Data
 component = 'template'

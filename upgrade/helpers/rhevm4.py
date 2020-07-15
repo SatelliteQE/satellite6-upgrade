@@ -2,21 +2,20 @@
 
 Note: Many functions and commands are affected by environment variables.
 """
+import _thread
 import os
 import sys
 import time
-import _thread
 
 from fabric.api import execute
 from ovirtsdk4 import ConnectionBuilder
 from ovirtsdk4 import types
+
 from upgrade.helpers.logger import logger
-from upgrade.helpers.tasks import (
-    check_necessary_env_variables_for_upgrade,
-    capsule_sync,
-    check_ntpd,
-    foreman_service_restart,
-)
+from upgrade.helpers.tasks import capsule_sync
+from upgrade.helpers.tasks import check_necessary_env_variables_for_upgrade
+from upgrade.helpers.tasks import check_ntpd
+from upgrade.helpers.tasks import foreman_service_restart
 
 
 logger = logger()
@@ -214,10 +213,10 @@ def create_rhevm4_template(host, cluster, new_template, storage):
         used to create template.
     """
     with get_rhevm4_client().build() as rhevm_client:
-        storage_domain = rhevm_client.system_service().storage_domains_service(
-            ).list(search='name={}'.format(storage))[0]
-        cluster = rhevm_client.system_service().clusters_service(
-            ).list(search='name={}'.format(cluster))
+        storage_domain = rhevm_client.system_service().storage_domains_service().list(
+            search='name={}'.format(storage))[0]
+        cluster = rhevm_client.system_service().clusters_service().list(
+            search='name={}'.format(cluster))
         vservice = rhevm_client.system_service().vms_service()
         size = storage_domain.available / 1024 / 1024 / 1024
         vm = vservice.list(search='name={}'.format(host))[0]

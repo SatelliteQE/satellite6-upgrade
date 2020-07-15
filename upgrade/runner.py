@@ -4,35 +4,27 @@ Many commands are affected by environment variables. Unless stated otherwise,
 all environment variables are required.
 """
 import os
+from distutils.version import LooseVersion
 
 from automation_tools import foreman_debug
 from automation_tools.satellite6.log import LogAnalyzer
-from upgrade.capsule import (
-    satellite6_capsule_setup,
-    satellite6_capsule_upgrade,
-    satellite6_capsule_zstream_upgrade
-)
-from upgrade.client import (
-    satellite6_client_setup,
-    satellite6_client_upgrade
-)
-from upgrade.satellite import (
-    satellite6_setup,
-    satellite6_upgrade
-)
+from fabric.api import env
+from fabric.api import execute
+
+from upgrade.capsule import satellite6_capsule_setup
+from upgrade.capsule import satellite6_capsule_upgrade
+from upgrade.capsule import satellite6_capsule_zstream_upgrade
+from upgrade.client import satellite6_client_setup
+from upgrade.client import satellite6_client_upgrade
 from upgrade.helpers.logger import logger
-from upgrade.helpers.tasks import (
-    check_necessary_env_variables_for_upgrade,
-    pre_upgrade_system_checks,
-    post_upgrade_test_tasks
-)
-from upgrade.helpers.tools import (
-    create_setup_dict,
-    get_sat_cap_version,
-    get_setup_data
-)
-from distutils.version import LooseVersion
-from fabric.api import env, execute
+from upgrade.helpers.tasks import check_necessary_env_variables_for_upgrade
+from upgrade.helpers.tasks import post_upgrade_test_tasks
+from upgrade.helpers.tasks import pre_upgrade_system_checks
+from upgrade.helpers.tools import create_setup_dict
+from upgrade.helpers.tools import get_sat_cap_version
+from upgrade.helpers.tools import get_setup_data
+from upgrade.satellite import satellite6_setup
+from upgrade.satellite import satellite6_upgrade
 
 
 # =============================================================================
@@ -61,9 +53,7 @@ def setup_products_for_upgrade(product, os_version):
                 sat_host, os_version, False if product == 'n-1' else True)
         if product == 'client' or product == 'longrun':
             logger.info('Setting up Clients ....')
-            (
-                clients6, clients7, puppet_clients7, puppet_clients6
-             ) = satellite6_client_setup()
+            clients6, clients7, puppet_clients7, puppet_clients6 = satellite6_client_setup()
         setups_dict = {
             'sat_host': sat_host,
             'capsule_hosts': cap_hosts,
@@ -201,8 +191,7 @@ def product_upgrade(product):
                         try:
                             with LogAnalyzer(cap_host):
                                 current = execute(
-                                    get_sat_cap_version, 'cap', host=cap_host
-                                    )[cap_host]
+                                    get_sat_cap_version, 'cap', host=cap_host)[cap_host]
                                 if from_version != to_version:
                                     execute(satellite6_capsule_upgrade,
                                             cap_host, sat_host, host=cap_host)
@@ -210,8 +199,7 @@ def product_upgrade(product):
                                     execute(satellite6_capsule_zstream_upgrade,
                                             cap_host, host=cap_host)
                                 upgraded = execute(
-                                    get_sat_cap_version, 'cap', host=cap_host
-                                    )[cap_host]
+                                    get_sat_cap_version, 'cap', host=cap_host)[cap_host]
                                 if current:
                                     if LooseVersion(upgraded) > LooseVersion(
                                             current):

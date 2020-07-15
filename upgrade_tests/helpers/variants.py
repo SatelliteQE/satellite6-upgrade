@@ -1,6 +1,6 @@
 """All the variants those changes during upgrade and the helper functions"""
-
 import os
+
 from upgrade_tests.helpers.constants import SUPPORTED_SAT_VERSIONS
 
 
@@ -31,7 +31,7 @@ _entity_varients = {
         ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible'] +  # noqa
         ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible, templates'] +  # noqa
         ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, dhcp, puppet ca, puppet, httpboot'] +  # noqa
-        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, puppet ca, puppet, dhcp, httpboot']*2  # noqa
+        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, puppet ca, puppet, dhcp, httpboot']*2
     ],
     'compute-resource': [
         ['rhev']*2+['rhv']*5],

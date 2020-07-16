@@ -1152,11 +1152,11 @@ def upgrade_task(upgrade_type, cap_host=None):
     :param str cap_host: hostname for capsule's major version upgrade
     """
     if cap_host:
-        run('satellite-installer --scenario {0} --upgrade '
+        run('satellite-installer --scenario {0} '
             '--certs-tar-file /home/{1}-certs.tar '
             '--certs-update-all'.format(upgrade_type, cap_host))
     else:
-        run('satellite-installer --scenario {} --upgrade'.format(upgrade_type))
+        run('satellite-installer --scenario {}'.format(upgrade_type))
 
 
 def upgrade_validation(upgrade_type=False):

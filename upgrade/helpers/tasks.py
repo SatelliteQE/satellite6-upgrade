@@ -616,11 +616,16 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
                         'debug/\' /etc/foreman/settings.yaml'), host=sat_host)
     execute(foreman_service_restart, host=sat_host)
     # Execute task for template changes required for discovery feature
-    execute(
-        setup_foreman_discovery,
-        sat_version=sat_version,
-        host=sat_host
-    )
+    if bz_bug_is_open(1850934):
+        foreman_packages_installation_check(state="unlock", non_upgrade_task=True)
+        workaround_section(1850934)
+        foreman_packages_installation_check(state="lock", non_upgrade_task=True)
+    else:
+        execute(
+            setup_foreman_discovery,
+            sat_version=sat_version,
+            host=sat_host
+        )
     # Execute task for creating latest discovery iso required for unattended
     #  test
     env.disable_known_hosts = True
@@ -789,9 +794,9 @@ def upgrade_using_foreman_maintain(sat_host=True):
             # use beta until 6.8 is GA
             if os.environ.get('TO_VERSION') == '6.8':
                 with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
-                    run(f'foreman-maintain upgrade run --whitelist="disk-performance, '
-                        f'{os.environ["whitelisted_param"]}" '
-                        f'--target-version {os.environ.get("TO_VERSION")} -y')
+                    run(f'foreman-maintain upgrade run --whitelist="disk-performance'
+                        f'{os.environ["whitelisted_param"]}" --target-version '
+                        f'{os.environ.get("TO_VERSION")} -y')
             else:
                 run(f'foreman-maintain upgrade run --whitelist="disk-performance" '
                     f'--target-version {os.environ.get("TO_VERSION")} -y')
@@ -1242,15 +1247,17 @@ def mongo_db_engine_upgrade(upgrade_type):
         str(postup_time - preup_time)))
 
 
-def foreman_packages_installation_check(state="unlock"):
+def foreman_packages_installation_check(state="unlock", non_upgrade_task=False):
     """
     This function is used to change the state of the foreman-package installation method,
     And it will be applicable only if the FOREMAN_MAINTAIN_SATELLITE_UPGRADE is False.
 
     :param str state: To perform the installation using foreman-maintain the state will be
     "lock" otherwise "unlock"
+    :param bool non_upgrade_task: to unlock the packages for non_upgrade_task
+
     """
-    if os.environ.get('FOREMAN_MAINTAIN_SATELLITE_UPGRADE') != 'true':
+    if os.environ.get('FOREMAN_MAINTAIN_SATELLITE_UPGRADE') != 'true' or non_upgrade_task:
         logger.info("{} the foreman-maintain packages".format(state))
         run("foreman-maintain packages {} -y".format(state))
     else:
@@ -1275,3 +1282,23 @@ def job_execution_time(task_name, start_time=None):
     else:
         start_time = datetime.now().replace(microsecond=0)
         return start_time
+
+
+def workaround_section(bz):
+    """
+    This function used to apply the workaround of provided bugzilla.
+    :param int bz: Pass the bugzilla number
+    """
+    if bz == 1850934:
+        run("yum install -y foreman-discovery-image")
+        run('hammer -u admin -p changeme template update '
+            '--name "PXELinux global default" --locked "false"')
+        template_file = run('mktemp')
+        run(f'hammer -u admin -p changeme template dump --name '
+            f'"PXELinux global default" > {template_file}')
+        run('hammer -u admin -p changeme settings set --name '
+            '"default_pxe_item_global" --value="discovery"')
+        run(rf'sed -i -e "s/^TIMEOUT\s\+[0-9]\+/TIMEOUT 5/" {template_file}')
+        run(f'hammer -u admin -p changeme template update --name '
+            f'"PXELinux global default" --type "PXELinux" --file {template_file}')
+        run(f'rm -rf {template_file}')

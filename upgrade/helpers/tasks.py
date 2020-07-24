@@ -1171,7 +1171,10 @@ def upgrade_validation(upgrade_type=False):
     """
     if upgrade_type:
         run('hammer ping', warn_only=True)
-    run('foreman-maintain service status', warn_only=True)
+    if bz_bug_is_open(1860444) and not upgrade_type:
+        run('foreman-maintain service restart', warn_only=True)
+    else:
+        run('foreman-maintain service status', warn_only=True)
 
 
 def update_scap_content():

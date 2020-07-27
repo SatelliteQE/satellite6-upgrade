@@ -617,9 +617,11 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     execute(foreman_service_restart, host=sat_host)
     # Execute task for template changes required for discovery feature
     if bz_bug_is_open(1850934):
-        foreman_packages_installation_check(state="unlock", non_upgrade_task=True)
-        workaround_section(1850934)
-        foreman_packages_installation_check(state="lock", non_upgrade_task=True)
+        execute(foreman_packages_installation_check, state="unlock",
+                non_upgrade_task=True, host=sat_host)
+        execute(workaround_section, 1850934, host=sat_host)
+        execute(foreman_packages_installation_check, state="lock",
+                non_upgrade_task=True, host=sat_host)
     else:
         execute(
             setup_foreman_discovery,

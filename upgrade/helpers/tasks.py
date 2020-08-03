@@ -623,18 +623,11 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
                         'debug/\' /etc/foreman/settings.yaml'), host=sat_host)
     execute(foreman_service_restart, host=sat_host)
     # Execute task for template changes required for discovery feature
-    if bz_bug_is_open(1850934):
-        execute(foreman_packages_installation_check, state="unlock",
-                non_upgrade_task=True, host=sat_host)
-        execute(workaround_section, 1850934, host=sat_host)
-        execute(foreman_packages_installation_check, state="lock",
-                non_upgrade_task=True, host=sat_host)
-    else:
-        execute(
-            setup_foreman_discovery,
-            sat_version=sat_version,
-            host=sat_host
-        )
+    execute(
+        setup_foreman_discovery,
+        sat_version=sat_version,
+        host=sat_host
+    )
     # Execute task for creating latest discovery iso required for unattended
     #  test
     env.disable_known_hosts = True
@@ -1294,23 +1287,3 @@ def job_execution_time(task_name, start_time=None):
     else:
         start_time = datetime.now().replace(microsecond=0)
         return start_time
-
-
-def workaround_section(bz):
-    """
-    This function used to apply the workaround of provided bugzilla.
-    :param int bz: Pass the bugzilla number
-    """
-    if bz == 1850934:
-        run("yum install -y foreman-discovery-image")
-        run('hammer -u admin -p changeme template update '
-            '--name "PXELinux global default" --locked "false"')
-        template_file = run('mktemp')
-        run(f'hammer -u admin -p changeme template dump --name '
-            f'"PXELinux global default" > {template_file}')
-        run('hammer -u admin -p changeme settings set --name '
-            '"default_pxe_item_global" --value="discovery"')
-        run(rf'sed -i -e "s/^TIMEOUT\s\+[0-9]\+/TIMEOUT 5/" {template_file}')
-        run(f'hammer -u admin -p changeme template update --name '
-            f'"PXELinux global default" --type "PXELinux" --file {template_file}')
-        run(f'rm -rf {template_file}')

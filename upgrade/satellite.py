@@ -9,6 +9,7 @@ from automation_tools.utils import update_packages
 from fabric.api import env
 from fabric.api import execute
 from fabric.api import run
+from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers.logger import logger
 from upgrade.helpers.rhevm4 import create_rhevm4_instance
@@ -116,6 +117,10 @@ def satellite6_upgrade(zstream=False):
     disable_repo_name = ["*"]
     enable_repos_name = ['rhel-{0}-server-rpms'.format(major_ver),
                          'rhel-server-rhscl-{0}-rpms'.format(major_ver)]
+
+    if bz_bug_is_open(1850934):
+        run('echo "apache::mod::proxy::proxy_timeout: 120" >> '
+            '/etc/foreman-installer/custom-hiera.yaml')
 
     # This statement will execute only until downstream release not become beta.
     if os.environ.get('DOWNSTREAM_FM_UPGRADE') == 'true' or \

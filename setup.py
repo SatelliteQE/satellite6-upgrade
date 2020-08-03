@@ -43,7 +43,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'Fabric3',
-        'fauxfactory==3.0.2',
+        'fauxfactory>=3.0.6',
         'ovirt-engine-sdk-python',
         'pycurl',
         'pytest==4.6.3',

@@ -26,12 +26,14 @@ _entity_varients = {
         ['tftp, dns, dhcp, puppet, puppet ca, bmc, pulp node, templates, discovery, openscap, dynflow, ssh']*3 + # noqa
         ['puppet, puppet ca, pulp node, templates, discovery, tftp, dns, dhcp, bmc, openscap, dynflow, ssh, ansible'] +  # noqa
         ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, dhcp, puppet ca, puppet, httpboot'] +  # noqa
-        ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, puppet ca, puppet, dhcp, httpboot']*2,  # noqa
+        ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, puppet ca, puppet, dhcp, httpboot'] +  # noqa
+        ['templates, discovery, bmc, openscap, dynflow, ssh, ansible, pulp node, dns, tftp, puppet, dhcp, httpboot, puppet ca'],
         ['tftp, dns, dhcp, puppet, puppet ca, bmc, pulp, discovery, openscap, dynflow, ssh']*2 +  # noqa
         ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible'] +  # noqa
         ['tftp, dns, dhcp, puppet, puppet ca, pulp, discovery, bmc, openscap, dynflow, ssh, ansible, templates'] +  # noqa
         ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, dhcp, puppet ca, puppet, httpboot'] +  # noqa
-        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, puppet ca, puppet, dhcp, httpboot']*2
+        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, puppet ca, puppet, dhcp, httpboot'] + # noqa
+        ['discovery, bmc, openscap, dynflow, ssh, ansible, templates, pulp, dns, tftp, puppet, dhcp, httpboot, puppet ca']
     ],
     'compute-resource': [
         ['rhev']*2+['rhv']*5],
@@ -50,9 +52,12 @@ _entity_varients = {
         ['view_provisioning_templates, create_provisioning_templates, '
          'edit_provisioning_templates, destroy_provisioning_templates, '
          'deploy_provisioning_templates']*6,
+        ["escalate_roles"]*6 + ["escalate_roles, generate_foreman_rh_cloud, view_foreman_rh_cloud"],
         ['viewer']*2+['customized viewer']*5,
         ['site manager']*2+['customized site manager']*5,
         ['manager']*2+['customized manager']*5,
+        ["variablelookupkey"]*6 + ["(miscellaneous)"],
+        ["view_external_variables"]*6 + [''],
         ['discovery reader']*2+['customized discovery reader']*5,
         ['discovery manager']*2+['customized discovery manager']*5,
         ['compliance viewer']*2+['customized compliance viewer']*5,
@@ -78,10 +83,20 @@ _entity_varients = {
         ['execute_template_invocation, filter_autocompletion_for_template_invocation']*3 + # noqa
         ['filter_autocompletion_for_template_invocation, create_template_invocations, view_template_invocations']*4, # noqa
         ['view_gpg_keys']*3 + ['view_gpg_keys, view_content_credentials']*4,
+        ["view_mail_notifications"]*6 + ["view_mail_notifications, edit_user_mail_notifications"],
+        ["view_external_variables, create_external_variables, edit_external_variables, destroy_external_variables"] * 6 + [''],
+        ["view_compute_resources, create_compute_resources, edit_compute_resources, destroy_compute_resources, view_compute_resources_vms, create_compute_resources_vms, edit_compute_resources_vms, destroy_compute_resources_vms, power_compute_resources_vms, console_compute_resources_vms"] * 6 +
+        ["view_compute_resources, create_compute_resources, edit_compute_resources, destroy_compute_resources, view_compute_resources_vms, create_compute_resources_vms, edit_compute_resources_vms, destroy_compute_resources_vms, power_compute_resources_vms, console_compute_resources_vms, power_vm_compute_resources, destroy_vm_compute_resources"],
+        ["console_compute_resources_vms, power_compute_resources_vms, destroy_compute_resources_vms, edit_compute_resources_vms, create_compute_resources_vms, view_compute_resources_vms, destroy_compute_resources, edit_compute_resources, create_compute_resources, view_compute_resources"] * 6 +
+        ["view_compute_resources, create_compute_resources, edit_compute_resources, destroy_compute_resources, view_compute_resources_vms, create_compute_resources_vms, edit_compute_resources_vms, destroy_compute_resources_vms, power_compute_resources_vms, console_compute_resources_vms"],
+        ["access_dashboard, view_plugins, view_statistics, view_tasks, view_cases, attachments, configuration, app_root, view_log_viewer, logs, download_bootdisk, my_organizations, rh_telemetry_api, rh_telemetry_view, rh_telemetry_configurations, create_arf_reports, view_rh_search, strata_api, generate_ansible_inventory, view_statuses"] * 6 +
+        ["access_dashboard, view_plugins, view_statistics, view_tasks, view_cases, attachments, configuration, app_root, view_log_viewer, logs, download_bootdisk, my_organizations, rh_telemetry_api, rh_telemetry_view, rh_telemetry_configurations, create_arf_reports, view_rh_search, strata_api, generate_ansible_inventory, view_statuses, generate_foreman_rh_cloud, view_foreman_rh_cloud"],
         ['view_hosts, create_hosts, build_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*3 + # noqa
         ['view_hosts, create_hosts, edit_hosts, build_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*4, # noqa
         ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts']*3 +  # noqa
-        ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts, play_roles_on_host']*4,  # noqa
+        ['view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts, play_roles_on_host']*2 +
+        ["view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts, play_roles_on_host, cockpit_hosts"] +
+        ["view_hosts, create_hosts, edit_hosts, destroy_hosts, build_hosts, power_hosts, console_hosts, puppetrun_hosts, ipmi_boot_hosts, view_discovered_hosts, provision_discovered_hosts, edit_discovered_hosts, destroy_discovered_hosts, submit_discovered_hosts, auto_provision_discovered_hosts, play_roles_on_host, cockpit_hosts, forget_status_hosts"],  # noqa
         ['auto_provision_discovered_hosts,build_hosts,console_hosts,create_hosts,destroy_discovered_hosts,destroy_hosts,edit_discovered_hosts,edit_hosts,ipmi_boot_hosts,play_roles_on_host,power_hosts,provision_discovered_hosts,puppetrun_hosts,submit_discovered_hosts,view_discovered_hosts,view_hosts']*4 +  # noqa
         ['auto_provision_discovered_hosts,build_hosts,cockpit_hosts,console_hosts,create_hosts,destroy_discovered_hosts,destroy_hosts,edit_discovered_hosts,edit_hosts,ipmi_boot_hosts,play_roles_on_host,power_hosts,provision_discovered_hosts,puppetrun_hosts,submit_discovered_hosts,view_discovered_hosts,view_hosts']*3  # noqa
     ],
@@ -89,7 +104,7 @@ _entity_varients = {
         ['default_organization']*3+['default organization']*4],  # noqa
     'role': [
         # Role Variants
-        ['viewer']*2+['customized viewer']*4,
+        ['viewer']*2+['customized viewer']*5,
         ['site manager']*2+['customized site manager']*5,
         ['manager']*2+['customized manager']*5,
         ['discovery reader']*2+['customized discovery reader']*5,  # noqa
@@ -102,7 +117,7 @@ _entity_varients = {
         ['immediate']*2+['on_demand']*5,
         ['']*2+['/etc/pki/katello/certs/katello-apache.crt']*5,
         ['']*2+['/etc/pki/katello/private/katello-apache.key']*5,
-        ['false']*2+['true']*4,
+        ['false']*2+['true']*5,
         ['["lo", "usb*", "vnet*", "macvtap*"]']*3 +
         ['["lo", "usb*", "vnet*", "macvtap*", "_vdsmdummy_", "veth*", '
          '"docker*", "tap*", "qbr*", "qvb*", "qvo*", "qr-*", "qg-*", '
@@ -121,6 +136,12 @@ _entity_varients = {
         [f"{os.environ.get('REMOTE_EXECUTION_SSH_PASSWORD')}"]*5 + ['*****']*2,
         [f"{os.environ.get('OAUTH_CONSUMER_KEY')}"]*5 + ['*****']*2,
         [f"{os.environ.get('OAUTH_CONSUMER_SECRET')}"]*5 + ['*****']*2,
+        ['ansible inventory']*6 + ['ansible - ansible inventory'],
+        ['']*6 + ["external"],
+        ['']*6 + ["none"],
+        ['']*6 + ["[]"],
+        ['false']*6 + ["keep"],
+        ['false']*6 + ["none"],
         # Description Variants
         ['fact name to use for primary interface detection and hostname']*2 +
         ['fact name to use for primary interface detection']*5,
@@ -172,6 +193,28 @@ _entity_varients = {
          'conservative will only add packages to solve the dependencies if the package '
          'needed doesn\'t exist. greedy will pull in the latest package to '
          'solve a dependency even if it already does exist in the repository.']*2,
+        ["hosts that will be trusted in addition to smart proxies for access to "
+         "fact/report importers and enc output"]*6 +
+        ["list of hostnames, ipv4, ipv6 addresses or subnets to be trusted in addition "
+         "to smart proxies for access to fact/report importers and enc output"],
+        ["should importing lock templates?"]*6 + ["how to handle lock for imported templates?"],
+        ["sets a proxy for all outgoing http connections."]*6 +
+        ["sets a proxy for all outgoing http connections from foreman. "
+         "system-wide proxies must be configured at operating system level."],
+        ['should the ip addresses on host interfaces be preferred over the fqdn? it is useful, '
+         'when dns not resolving the fqdns properly. you may override this per host by setting '
+         'a parameter called remote_execution_connect_by_ip.']*6 +
+        ["should the ip addresses on host interfaces be preferred over the fqdn? it is"
+         " useful when dns not resolving the fqdns properly. you may override this per host by "
+         "setting a parameter called remote_execution_connect_by_ip. this setting only applies "
+         "to ipv4. when the host has only an ipv6 address on the interface used for remote execution, "
+         "hostname will be used even if this setting is set to true."],
+        ["name of the external auth source where unknown externally authentication users "
+         "(see authorize_login_delegation) should be created (keep unset to prevent "
+         "the autocreation)"]*6 +
+        ["name of the external auth source where unknown externally authentication users "
+         "(see authorize_login_delegation) should be created (if you want to prevent the "
+         "autocreation, keep unset)"],
         ['search for remote execution proxy outside of the proxies assigned to the host.'
          ' if locations or organizations are enabled, the search will be limited '
          'to the host\'s organization or location.']*5 +
@@ -619,10 +662,11 @@ _depreciated = {
                      "ansible_implementation", "puppet_server"]
     },
     '6.8': {
-        'settings': ["host_update_lock", "dns_conflict_timeout",
-                     "host_group_matchers_inheritance",
-                     "ansible_implementation", "puppet_server"]
+        'settings': ["dynflow_allow_dangerous_actions", "parametrized_classes_in_enc",
+                     "enable_smart_variables_in_enc",
+                     "default_variables_lookup_path"]
     }
+
 }
 
 

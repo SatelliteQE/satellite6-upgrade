@@ -28,10 +28,10 @@ component = 'subnet'
 sub_name = compare_postupgrade(component, 'name')
 sub_network = compare_postupgrade(
     component, ('network', 'network', 'network', 'network addr', 'network addr',
-                'network addr', 'network addr'))
+                'network addr', 'network addr', 'network addr'))
 sub_mask = compare_postupgrade(
     component, ('network', 'network', 'mask', 'network mask', 'network mask',
-                'network addr', 'network addr'))
+                'network addr', 'network addr', 'network addr'))
 
 
 # Tests

@@ -30,9 +30,10 @@ component = 'content-host'
 ch_name = compare_postupgrade(component, 'name')
 ch_errata = compare_postupgrade(component, 'installable errata')
 
-
 # Tests
-@dont_run_to_upgrade(['6.3', '6.4', '6.5', '6.6', '6.7'])
+
+
+@dont_run_to_upgrade(['6.3', '6.4', '6.5', '6.6', '6.7', '6.8'])
 @pytest.mark.parametrize("pre,post", ch_name, ids=pytest_ids(ch_name))
 def test_positive_contenthosts_by_name(pre, post):
     """Test all content hosts are existing after upgrade by names
@@ -45,7 +46,7 @@ def test_positive_contenthosts_by_name(pre, post):
     assert existence(pre, post)
 
 
-@dont_run_to_upgrade(['6.3', '6.4', '6.5', '6.6', '6.7'])
+@dont_run_to_upgrade(['6.3', '6.4', '6.5', '6.6', '6.7', '6.8'])
 @pytest_skip_if_bug_open('bugzilla', 1461397)
 @pytest.mark.parametrize("pre,post", ch_errata, ids=pytest_ids(ch_errata))
 def test_positive_installable_erratas_by_name(pre, post):

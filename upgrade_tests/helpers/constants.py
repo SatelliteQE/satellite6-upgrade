@@ -7,7 +7,7 @@ from nailgun import entities
 FAKE_REPO_ZOO3 = 'http://inecas.fedorapeople.org/fakerepos/zoo3/'
 FROM_VERSION = os.environ.get('FROM_VERSION')
 TO_VERSION = os.environ.get('TO_VERSION')
-SUPPORTED_SAT_VERSIONS = ['6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8']
+SUPPORTED_SAT_VERSIONS = ['6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8', '6.9']
 ALLOWED_ENDS = ['cli', 'api']
 
 

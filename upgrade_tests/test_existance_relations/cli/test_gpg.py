@@ -27,10 +27,10 @@ from upgrade_tests.helpers.existence import pytest_ids
 component = 'gpg'
 gpg_name = compare_postupgrade(component, 'name')
 
-
 # Tests
 
-@dont_run_to_upgrade('6.7')
+
+@dont_run_to_upgrade(['6.7', '6.8'])
 @pytest.mark.parametrize("pre,post", gpg_name, ids=pytest_ids(gpg_name))
 def test_positive_gpg_keys_by_name(pre, post):
     """Test all gpg keys are existing after upgrade by names

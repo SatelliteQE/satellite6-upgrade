@@ -27,14 +27,16 @@ from upgrade_tests.helpers.existence import pytest_ids
 # Required Data
 component = 'smart-variable'
 sv_name = compare_postupgrade(
-    component, ('name', 'name', 'variable', 'variable', 'variable', 'variable', 'variable'))
+    component, ('name', 'name', 'variable', 'variable', 'variable', 'variable', 'variable',
+                'variable'))
 sv_dv = compare_postupgrade(component, 'default value')
 sv_type = compare_postupgrade(component, 'type')
 sv_pclass = compare_postupgrade(component, 'puppet class')
 
-
 # Tests
-@dont_run_to_upgrade(['6.1', '6.7'])
+
+
+@dont_run_to_upgrade(['6.1', '6.7', '6.8'])
 @pytest.mark.parametrize("pre,post", sv_name, ids=pytest_ids(sv_name))
 def test_positive_smart_variables_by_name(pre, post):
     """Test all smart variables are existing after upgrade by names
@@ -47,7 +49,7 @@ def test_positive_smart_variables_by_name(pre, post):
     assert existence(pre, post)
 
 
-@dont_run_to_upgrade(['6.1', '6.7'])
+@dont_run_to_upgrade(['6.1', '6.7', '6.8'])
 @pytest.mark.parametrize("pre,post", sv_dv, ids=pytest_ids(sv_dv))
 def test_positive_smart_variables_by_default_value(pre, post):
     """Test all smart variables default values are retained after upgrade
@@ -60,7 +62,7 @@ def test_positive_smart_variables_by_default_value(pre, post):
     assert existence(pre, post)
 
 
-@dont_run_to_upgrade(['6.1', '6.7'])
+@dont_run_to_upgrade(['6.1', '6.7', '6.8'])
 @pytest.mark.parametrize("pre,post", sv_type, ids=pytest_ids(sv_type))
 def test_positive_smart_variables_by_type(pre, post):
     """Test all smart variables override check is retained after upgrade
@@ -73,7 +75,7 @@ def test_positive_smart_variables_by_type(pre, post):
     assert existence(pre, post)
 
 
-@dont_run_to_upgrade(['6.1', '6.7'])
+@dont_run_to_upgrade(['6.1', '6.7', '6.8'])
 @pytest.mark.parametrize("pre,post", sv_pclass, ids=pytest_ids(sv_pclass))
 def test_positive_smart_variables_by_puppet_class(pre, post):
     """Test all smart variables associations with its puppet class is retained

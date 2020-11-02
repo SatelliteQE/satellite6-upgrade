@@ -30,7 +30,7 @@ hg_os = compare_postupgrade(component, 'operating system')
 hg_lc = compare_postupgrade(
     component,
     ('environment', 'environment', 'environment', 'puppet environment',
-     'puppet environment', 'puppet environment', 'puppet environment'))
+     'puppet environment', 'puppet environment', 'puppet environment', 'puppet environment'))
 
 
 # Tests

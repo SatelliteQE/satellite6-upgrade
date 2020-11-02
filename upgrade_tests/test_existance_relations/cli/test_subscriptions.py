@@ -29,7 +29,7 @@ from upgrade_tests.helpers.existence import pytest_ids
 component = 'subscription'
 sub_name = compare_postupgrade(component, 'name')
 sub_uuid = compare_postupgrade(component, ('id', 'uuid', 'uuid', 'uuid', 'uuid',
-                                           'uuid', 'uuid'))
+                                           'uuid', 'uuid', 'uuid'))
 sub_support = compare_postupgrade(component, 'support')
 sub_qntity = compare_postupgrade(component, 'quantity')
 sub_consume = compare_postupgrade(component, 'consumed')

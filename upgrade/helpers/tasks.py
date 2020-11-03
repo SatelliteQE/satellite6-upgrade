@@ -26,7 +26,6 @@ from fabric.api import execute
 from fabric.api import put
 from fabric.api import run
 from fabric.api import warn_only
-from fabric.context_managers import shell_env
 from nailgun import entities
 from robozilla.decorators import bz_bug_is_open
 
@@ -793,15 +792,8 @@ def upgrade_using_foreman_maintain(sat_host=True):
                 f'--whitelist="disk-performance" '
                 f'--target-version {os.environ.get("TO_VERSION")}.z -y')
         else:
-            # use beta until 6.8 is GA
-            if os.environ.get('TO_VERSION') == '6.8':
-                with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
-                    run(f'foreman-maintain upgrade run --whitelist="disk-performance'
-                        f'{os.environ["whitelisted_param"]}" --target-version '
-                        f'{os.environ.get("TO_VERSION")} -y')
-            else:
-                run(f'foreman-maintain upgrade run --whitelist="disk-performance" '
-                    f'--target-version {os.environ.get("TO_VERSION")} -y')
+            run(f'foreman-maintain upgrade run --whitelist="disk-performance" '
+                f'--target-version {os.environ.get("TO_VERSION")} -y')
 
     def capsule_upgrade():
         """ This inner function is used to perform Y & Z stream Capsule upgrade"""

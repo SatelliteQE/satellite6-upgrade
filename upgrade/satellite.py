@@ -9,7 +9,6 @@ from automation_tools.utils import update_packages
 from fabric.api import env
 from fabric.api import execute
 from fabric.api import run
-from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers.logger import logger
 from upgrade.helpers.rhevm4 import create_rhevm4_instance
@@ -48,13 +47,12 @@ def satellite6_setup(os_version):
             if var not in os.environ]
         # Check if image name and Hostname in jenkins are set
         if missing_vars:
-            logger.warning(
-                'The following environment variable(s) must be set '
-                'in jenkins environment: {0}.'.format(', '.join(missing_vars)))
+            logger.warning(f"The following environment variable(s) must be set in "
+                           f"jenkins environment: {', '.join(missing_vars)}.")
             sys.exit(1)
         sat_image = os.environ.get('RHEV_SAT_IMAGE')
         sat_host = os.environ.get('RHEV_SAT_HOST')
-        sat_instance = 'upgrade_satellite_auto_{0}'.format(os_version)
+        sat_instance = f'upgrade_satellite_auto_{os_version}'
         execute(delete_rhevm4_instance, sat_instance)
         execute(create_rhevm4_instance, sat_instance, sat_image)
         if not host_pings(sat_host):
@@ -68,7 +66,7 @@ def satellite6_setup(os_version):
         execute(foreman_service_restart, host=sat_host)
     # Set satellite hostname in fabric environment
     env['satellite_host'] = sat_host
-    logger.info('Satellite {} is ready for Upgrade!'.format(sat_host))
+    logger.info(f'Satellite {sat_host} is ready for Upgrade!')
     return sat_host
 
 
@@ -115,12 +113,7 @@ def satellite6_upgrade(zstream=False):
     base_url = None if not os.environ.get('BASE_URL') else os.environ.get('BASE_URL')
     major_ver = distro_info()[1]
     disable_repo_name = ["*"]
-    enable_repos_name = ['rhel-{0}-server-rpms'.format(major_ver),
-                         'rhel-server-rhscl-{0}-rpms'.format(major_ver)]
-
-    if bz_bug_is_open(1850934):
-        run('echo "apache::mod::proxy::proxy_timeout: 120" >> '
-            '/etc/foreman-installer/custom-hiera.yaml')
+    enable_repos_name = [f'rhel-{major_ver}-server-rpms', f'rhel-server-rhscl-{major_ver}-rpms']
 
     # This statement will execute only until downstream release not become beta.
     if os.environ.get('DOWNSTREAM_FM_UPGRADE') == 'true' or \
@@ -148,14 +141,11 @@ def satellite6_upgrade(zstream=False):
             update_packages(quiet=True)
 
         if base_url is None:
-            enable_disable_repo([], ['rhel-{0}-server-satellite-{1}-rpms'.format(
-                major_ver, to_version)])
+            enable_disable_repo([], [f'rhel-{major_ver}-server-satellite-{to_version}-rpms'])
             # Remove old custom sat repo
             repository_cleanup('sat')
         else:
-            repository_setup("sat6",
-                             "satellite 6",
-                             base_url, 1, 0)
+            repository_setup("sat6", "satellite 6", base_url, 1, 0)
         nonfm_upgrade()
         foreman_packages_installation_check(state="lock")
     # Rebooting the satellite for kernel update if any

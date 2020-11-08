@@ -46,7 +46,7 @@ setup(
         'fauxfactory==3.0.2',
         'ovirt-engine-sdk-python',
         'pycurl',
-        'pytest==4.6.3',
+        'pytest==5.4.3',
         'python-bugzilla==1.2.2',
         'requests',
         'robozilla',

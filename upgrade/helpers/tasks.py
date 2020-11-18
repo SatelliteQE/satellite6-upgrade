@@ -148,9 +148,7 @@ def sync_capsule_repos_to_upgrade(capsules):
         # Fix of 1770940, 1773601
         logger.info("Resuming the cancelled content view {} publish task"
                     .format(cv.name))
-        output = run(
-            "sleep 100; hammer task resume|grep ') Task identifier:'|"
-            "awk -F':' '{print $2}'; sleep 100")
+        output = run("sleep 100; hammer task list|awk '/Task canceled/{print $1}'; sleep 100")
         for task_id in output.split():
             run('hammer task progress --id {}'.format(task_id))
         job_execution_time("Content view {} publish operation(In past time-out value was "
@@ -161,7 +159,7 @@ def sync_capsule_repos_to_upgrade(capsules):
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
     logger.info("Content view {} promotion has started successfully".
                 format(cv.name))
-    published_ver.promote(data={'environment_id': lenv.id, 'force': False})
+    published_ver.promote(data={'environment_ids': [lenv.id], 'force': False})
     logger.info("Content view {} promotion has completed successfully".
                 format(cv.name))
     # Add capsule and tools custom prod subscription to capsules
@@ -523,8 +521,7 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
         # Fix of 1770940, 1773601
         logger.info("Resuming the cancelled content view {} publish task"
                     .format(cv.name))
-        output = run("sleep 100; hammer task resume|grep ') Task identifier:'|"
-                     "awk -F':' '{print $2}'; sleep 100")
+        output = run("sleep 100; hammer task list|awk '/Task canceled/{print $1}';sleep 100")
         logger.info("The CV publish task {} has resumed successfully, "
                     "waiting for their completion".format(output))
         for task_id in output.split():
@@ -540,7 +537,7 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
     start_time = job_execution_time("CV_Promotion")
     logger.info("Published CV {} version promotion is started successfully"
                 .format(cv.name))
-    published_ver.promote(data={'environment_id': lenv.id, 'force': False})
+    published_ver.promote(data={'environment_ids': [lenv.id], 'force': False})
     job_execution_time("Content view {} promotion ".format(cv.name), start_time)
     logger.info("Published CV {} version has promoted successfully".format(cv.name))
     tools_sub = entities.Subscription().search(

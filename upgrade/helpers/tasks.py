@@ -160,7 +160,7 @@ def sync_capsule_repos_to_upgrade(capsules):
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
     logger.info("Content view {} promotion has started successfully".
                 format(cv.name))
-    published_ver.promote(data={'environment_id': lenv.id, 'force': False})
+    published_ver.promote(data={'environment_ids': [lenv.id], 'force': False})
     logger.info("Content view {} promotion has completed successfully".
                 format(cv.name))
     # Add capsule and tools custom prod subscription to capsules
@@ -539,7 +539,7 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
     start_time = job_execution_time("CV_Promotion")
     logger.info("Published CV {} version promotion is started successfully"
                 .format(cv.name))
-    published_ver.promote(data={'environment_id': lenv.id, 'force': False})
+    published_ver.promote(data={'environment_ids': [lenv.id], 'force': False})
     job_execution_time("Content view {} promotion ".format(cv.name), start_time)
     logger.info("Published CV {} version has promoted successfully".format(cv.name))
     tools_sub = entities.Subscription().search(

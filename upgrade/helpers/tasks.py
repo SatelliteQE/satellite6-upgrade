@@ -148,14 +148,7 @@ def sync_capsule_repos_to_upgrade(capsules):
         # Fix of 1770940, 1773601
         logger.info("Resuming the cancelled content view {} publish task"
                     .format(cv.name))
-        output = run(
-            "sleep 100; hammer task resume|grep ') Task identifier:'|"
-            "awk -F':' '{print $2}'; sleep 100")
-        for task_id in output.split():
-            run('hammer task progress --id {}'.format(task_id))
-        job_execution_time("Content view {} publish operation(In past time-out value was "
-                           "2500 but in current execution we set it 5000) "
-                           .format(cv.name), start_time)
+        resume_failed_task()
     logger.info("Content view publish operation has completed successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
@@ -523,15 +516,7 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
         # Fix of 1770940, 1773601
         logger.info("Resuming the cancelled content view {} publish task"
                     .format(cv.name))
-        output = run("sleep 100; hammer task resume|grep ') Task identifier:'|"
-                     "awk -F':' '{print $2}'; sleep 100")
-        logger.info("The CV publish task {} has resumed successfully, "
-                    "waiting for their completion".format(output))
-        for task_id in output.split():
-            run('hammer task progress --id {}'.format(task_id))
-        job_execution_time("Content view {} publish operation(In past time-out value was "
-                           "3500 but in current execution we set it 5000) "
-                           .format(cv.name), start_time)
+        resume_failed_task()
 
     logger.info("Content view has published successfully")
     published_ver = entities.ContentViewVersion(
@@ -1287,3 +1272,17 @@ def job_execution_time(task_name, start_time=None):
     else:
         start_time = datetime.now().replace(microsecond=0)
         return start_time
+
+
+def resume_failed_task():
+    """
+    This function is used to resume the canceled paused tasks.
+    """
+    output = run("hammer task list|awk '/Task canceled/ && /paused/ {print $1}'")
+    run(f"hammer task resume --task-ids {','.join(output.split())}")
+    for task_id in output.split():
+        run(f'hammer task progress --id {task_id}')
+    output = run("hammer task list|awk '/Task canceled/ && /paused/ {print $1}'")
+    if output:
+        logger.warn(f"These task ids {','.join(output.split())} are still in paused state, "
+                    f"manual investigation is required")

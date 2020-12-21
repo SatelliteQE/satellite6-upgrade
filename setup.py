@@ -41,12 +41,16 @@ setup(
         'Programming Language :: Python :: 3.8',
     ),
     packages=find_packages(),
+    # some requirements are also in requirements*.txt files
+    # Its assumed this is installed as a dependency of robottelo, frozen packages are defined there
     install_requires=[
         'Fabric3',
-        'fauxfactory==3.0.6',
+        'fauxfactory',
         'ovirt-engine-sdk-python',
         'pycurl',
-        'pytest==5.4.3',
+        'pytest',
+        # python-bugzilla is on 3.x, and this package is about 5 years old
+        # I'm afraid to touch it while un-freezing pytest and fauxfactory
         'python-bugzilla==1.2.2',
         'requests',
         'robozilla',

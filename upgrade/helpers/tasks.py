@@ -107,6 +107,8 @@ def sync_capsule_repos_to_upgrade(capsules):
         The AK name used in capsule subscription
     """
     to_version = os.environ.get('TO_VERSION')
+    logger.info("Refreshing the attached manifest")
+    run('hammer subscription refresh-manifest --organization-id 1')
     logger.info('Syncing latest capsule repos in Satellite ...')
     os_ver = os.environ.get('OS')[-1]
     capsule_repo = os.environ.get('CAPSULE_URL')
@@ -227,7 +229,10 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
                 format(cap_repo.name))
     # Add repos to CV
     cv.repository += [cap_repo]
-    cv.update(['repository'])
+    try:
+        cv.update(['repository'])
+    except requests.exceptions.HTTPError as exp:
+        logger.warn(exp)
     ak = ak.read()
     if capsule_repo:
         cap_sub = entities.Subscription().search(
@@ -410,7 +415,10 @@ def _add_additional_subscription_for_capsule(ak, capsuletools_url):
     logger.info("Sync Operation of Tools repository repositories  to Satellite for "
                 "Capsule has completed successfully")
     cv.repository += [scl_repo, server_repo, captools_repo]
-    cv.update(['repository'])
+    try:
+        cv.update(['repository'])
+    except requests.exceptions.HTTPError as exp:
+        logger.warn(exp)
     ak = ak.read()
     ak.content_override(
         data={'content_override': {'content_label': scl_repo.repo_id, 'value': '1'}}
@@ -500,7 +508,10 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
     logger.info("Entities repository sync operation has completed successfully for tool "
                 "repos name {}".format(tools_repo.name))
     cv.repository += [tools_repo]
-    cv.update(['repository'])
+    try:
+        cv.update(['repository'])
+    except requests.exceptions.HTTPError as exp:
+        logger.warn(exp)
     logger.info("Content view publish operation is started successfully")
     try:
         start_time = job_execution_time("CV_Publish")

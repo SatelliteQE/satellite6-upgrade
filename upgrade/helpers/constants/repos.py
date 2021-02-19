@@ -1,4 +1,4 @@
-"""Upgrade needed Constants"""
+"""Constants Repo"""
 
 rhelcontents = {
     'rhscl': {

@@ -11,8 +11,10 @@ from upgrade.helpers.logger import logger
 from upgrade.helpers.rhevm4 import create_rhevm4_instance
 from upgrade.helpers.rhevm4 import delete_rhevm4_instance
 from upgrade.helpers.tasks import add_baseOS_repo
+from upgrade.helpers.tasks import capsule_details_update
 from upgrade.helpers.tasks import foreman_service_restart
 from upgrade.helpers.tasks import nonfm_upgrade
+from upgrade.helpers.tasks import save_server_config
 from upgrade.helpers.tasks import setup_foreman_maintain_repo
 from upgrade.helpers.tasks import sync_capsule_repos_to_upgrade
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
@@ -24,6 +26,48 @@ from upgrade.helpers.tools import host_ssh_availability_check
 from upgrade.helpers.tools import reboot
 
 logger = logger()
+
+
+def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
+                            upgradable_capsule=True):
+    """
+    Setup all pre-requisites for user provided capsule
+
+    :param satellite_host: Satellite hostname to which the capsule registered
+    :param capsule_hosts: List of capsule which mapped with satellite host
+    :param os_version: The OS version onto which the capsule installed e.g: rhel6, rhel7
+    :param upgradable_capsule:Whether to setup capsule to be able to upgrade in future
+    :return: capsule_hosts
+    """
+    if os_version == 'rhel6':
+        baseurl = os.environ.get('RHEL6_CUSTOM_REPO')
+    elif os_version == 'rhel7':
+        baseurl = os.environ.get('RHEL7_CUSTOM_REPO')
+    else:
+        logger.warning('No OS Specified. Terminating..')
+        sys.exit(1)
+    non_responsive_host = list()
+    for cap_host in capsule_hosts:
+        if not host_pings(cap_host):
+            non_responsive_host.append(cap_host)
+        else:
+            execute(host_ssh_availability_check, cap_host)
+        execute(foreman_service_restart, host=cap_host)
+
+        if non_responsive_host:
+            logger.warning(str(non_responsive_host) + ' these are '
+                                                      'non-responsive hosts')
+            sys.exit(1)
+        copy_ssh_key(satellite_host, capsule_hosts)
+
+    if upgradable_capsule:
+        save_server_config(satellite_host)
+        execute(capsule_details_update, capsule_hosts, host=satellite_host)
+        execute(sync_capsule_repos_to_upgrade, capsule_hosts, host=satellite_host)
+        for cap_host in capsule_hosts:
+            execute(add_baseOS_repo, baseurl, host=cap_host)
+            logger.info(f'Capsule {cap_host} is ready for Upgrade')
+        return capsule_hosts
 
 
 def satellite6_capsule_setup(sat_host, os_version, upgradable_capsule=True):
@@ -86,6 +130,7 @@ def satellite6_capsule_setup(sat_host, os_version, upgradable_capsule=True):
                                                       'non-responsive hosts')
             sys.exit(1)
     copy_ssh_key(sat_host, cap_hosts)
+    save_server_config(sat_host)
     # Dont run capsule upgrade requirements for n-1 capsule
     if upgradable_capsule:
         execute(sync_capsule_repos_to_upgrade, cap_hosts, host=sat_host)
@@ -123,6 +168,7 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     major_ver = distro_info()[1]
     ak_name = os.environ.get('CAPSULE_AK') if os.environ.get(
         'CAPSULE_AK') else os.environ.get('RHEV_CAPSULE_AK')
+    run('subscription-manager clean')
     run('subscription-manager register --org="Default_Organization" '
         '--activationkey={0} --force'.format(ak_name))
     disable_old_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(

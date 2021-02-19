@@ -29,6 +29,21 @@ from upgrade.helpers.tools import reboot
 logger = logger()
 
 
+def satellite_setup(satellite_host):
+    """
+    The purpose of this method to make the satellite ready for upgrade.
+    :param satellite_host:
+    :return: satellite_host
+    """
+    execute(host_ssh_availability_check, satellite_host)
+    execute(install_prerequisites, host=satellite_host)
+    execute(subscribe, host=satellite_host)
+    execute(foreman_service_restart, host=satellite_host)
+    env['satellite_host'] = satellite_host
+    logger.info(f'Satellite {satellite_host} is ready for Upgrade!')
+    return satellite_host
+
+
 def satellite6_setup(os_version):
     """Sets up required things on upgrade running machine and on Satellite to
     perform satellite upgrade later

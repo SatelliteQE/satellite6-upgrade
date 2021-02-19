@@ -32,6 +32,7 @@ from upgrade.helpers.tools import get_sat_cap_version
 from upgrade.helpers.tools import host_pings
 from upgrade.helpers.tools import host_ssh_availability_check
 from upgrade.helpers.tools import reboot
+from upgrade.runner import product_setup_for_upgrade_on_brokers_machine
 from upgrade.runner import product_upgrade
 from upgrade.runner import setup_products_for_upgrade
 from upgrade.satellite import satellite6_setup

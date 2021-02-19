@@ -8,6 +8,10 @@ from fabric.api import env
 from fabric.api import execute
 from fabric.api import run
 
+from upgrade.helpers.constants import RHEV_CLIENT_AK_RHEL6
+from upgrade.helpers.constants import RHEV_CLIENT_AK_RHEL7
+from upgrade.helpers.constants import TOOLS_URL_RHEL6
+from upgrade.helpers.constants import TOOLS_URL_RHEL7
 from upgrade.helpers.docker import docker_execute_command
 from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
 from upgrade.helpers.docker import refresh_subscriptions_on_docker_clients
@@ -48,14 +52,16 @@ def satellite6_client_setup():
         if os.environ.get('TOOLS_URL_RHEL6'):
             logger.info('Syncing Tools repos of rhel6 in Satellite:')
             execute(
-                sync_tools_repos_to_upgrade, 'rhel6', clients6, host=sat_host)
+                sync_tools_repos_to_upgrade, 'rhel6', clients6,
+                TOOLS_URL_RHEL6, RHEV_CLIENT_AK_RHEL6, host=sat_host)
     if clients7:
         clients7 = [client.strip() for client in str(clients7).split(',')]
         # Sync latest sat tools repo to clients if downstream
         if os.environ.get('TOOLS_URL_RHEL7'):
             logger.info('Syncing Tools repos of rhel7 in Satellite:')
             execute(
-                sync_tools_repos_to_upgrade, 'rhel7', clients7, host=sat_host)
+                sync_tools_repos_to_upgrade, 'rhel7', clients7, TOOLS_URL_RHEL7,
+                RHEV_CLIENT_AK_RHEL7, host=sat_host)
     # Run upgrade on Docker Containers
     if not all([clients6, clients7]):
         if not clients_count:
@@ -131,6 +137,8 @@ def satellite6_client_setup():
                 # Containers_ids are not required from sat version > 6.1 to
                 # attach the subscription to client
                 all_clients7,
+                TOOLS_URL_RHEL7,
+                RHEV_CLIENT_AK_RHEL7,
                 host=sat_host
             )
             time.sleep(10)
@@ -141,6 +149,8 @@ def satellite6_client_setup():
                 # Containers_ids are not requied from sat version > 6.1 to
                 # attach the subscriprion to client
                 all_clients6,
+                TOOLS_URL_RHEL6,
+                RHEV_CLIENT_AK_RHEL6,
                 host=sat_host
             )
         # Refresh subscriptions on clients

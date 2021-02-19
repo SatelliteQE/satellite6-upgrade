@@ -119,6 +119,8 @@ def sync_capsule_repos_to_upgrade(capsules):
             'The AK name is not provided for Capsule upgrade! Aborting...')
         sys.exit(1)
     org = entities.Organization(id=1).read()
+    logger.info("Refreshing the attached manifest")
+    run(f'hammer subscription refresh-manifest --organization-id {org.id}')
     ak = entities.ActivationKey(organization=org).search(
         query={'search': 'name={}'.format(ak_name)})[0]
     logger.info("Activation key {} used for capsule subscription has found".
@@ -228,7 +230,10 @@ def _sync_capsule_subscription_to_capsule_ak(ak):
                 format(cap_repo.name))
     # Add repos to CV
     cv.repository += [cap_repo]
-    cv.update(['repository'])
+    try:
+        cv.update(['repository'])
+    except requests.exceptions.HTTPError as exp:
+        logger.warn(exp)
     ak = ak.read()
     if capsule_repo:
         cap_sub = entities.Subscription().search(
@@ -411,7 +416,10 @@ def _add_additional_subscription_for_capsule(ak, capsuletools_url):
     logger.info("Sync Operation of Tools repository repositories  to Satellite for "
                 "Capsule has completed successfully")
     cv.repository += [scl_repo, server_repo, captools_repo]
-    cv.update(['repository'])
+    try:
+        cv.update(['repository'])
+    except requests.exceptions.HTTPError as exp:
+        logger.warn(exp)
     ak = ak.read()
     ak.content_override(
         data={'content_override': {'content_label': scl_repo.repo_id, 'value': '1'}}
@@ -501,7 +509,10 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
     logger.info("Entities repository sync operation has completed successfully for tool "
                 "repos name {}".format(tools_repo.name))
     cv.repository += [tools_repo]
-    cv.update(['repository'])
+    try:
+        cv.update(['repository'])
+    except requests.exceptions.HTTPError as exp:
+        logger.warn(exp)
     logger.info("Content view publish operation is started successfully")
     try:
         start_time = job_execution_time("CV_Publish")

@@ -13,14 +13,11 @@ from automation_tools.satellite6.hammer import set_hammer_config
 from fabric.api import execute
 from nailgun.config import ServerConfig
 
+from upgrade.helpers import settings
 from upgrade.helpers.tools import get_setup_data
-from upgrade_tests.helpers.constants import ALLOWED_ENDS
 from upgrade_tests.helpers.constants import API_COMPONENTS
 from upgrade_tests.helpers.constants import CLI_ATTRIBUTES_KEY
 from upgrade_tests.helpers.constants import CLI_COMPONENTS
-from upgrade_tests.helpers.constants import FROM_VERSION
-from upgrade_tests.helpers.constants import SUPPORTED_SAT_VERSIONS
-from upgrade_tests.helpers.constants import TO_VERSION
 from upgrade_tests.helpers.variants import depreciated_attrs_less_component_data
 from upgrade_tests.helpers.variants import template_varients
 
@@ -264,7 +261,8 @@ def set_datastore(datastore, endpoint):
             api_reader(component) for component in api_comps
         ]
     else:
-        raise IncorrectEndpointException(f'Endpoints has to be one of {ALLOWED_ENDS}')
+        raise IncorrectEndpointException(
+            f'Endpoints has to be one of {settings.upgrade.existence_test.allowed_ends}')
 
     with open(f'{datastore}_{endpoint}', 'w') as ds:
         json.dump(all_comps_data, ds)
@@ -290,9 +288,9 @@ def get_datastore(datastore, endpoint):
     :param str endpoint: An endpoint of satellite to select the correct
         datastore file. It has to be either cli or api.
     """
-    if endpoint not in ALLOWED_ENDS:
-        raise IncorrectEndpointException(
-            'Endpoints has to be one of {}'.format(ALLOWED_ENDS))
+    if endpoint not in settings.upgrade.existence_test.allowed_ends:
+        raise IncorrectEndpointException('Endpoints has to be one of {}'.format(
+            settings.upgrade.existence_test.allowed_ends))
     with open(f'{datastore}_{endpoint}') as ds:
         return json.load(ds)
 
@@ -354,10 +352,11 @@ def compare_postupgrade(component, attribute):
     :returns tuple: The tuple containing two items, first attribute value
         before upgrade and second attribute value of post upgrade
     """
-    endpoint = os.environ.get('ENDPOINT')
+    endpoint = settings.upgrade.existence_test.endpoint
+    supported_sat_version = settings.upgrade.supported_sat_versions
     if isinstance(attribute, tuple):
-        pre_attr = attribute[SUPPORTED_SAT_VERSIONS.index(FROM_VERSION)]
-        post_attr = attribute[SUPPORTED_SAT_VERSIONS.index(TO_VERSION)]
+        pre_attr = attribute[supported_sat_version.index(settings.upgrade.from_version)]
+        post_attr = attribute[supported_sat_version.index(settings.upgrade.to_version)]
     elif isinstance(attribute, str):
         pre_attr = post_attr = attribute
     else:
@@ -435,8 +434,9 @@ def compare_templates(template_type):
         if 'missing' in str(pre_template) or 'missing' in str(post_template):
             culprit = prefile if 'missing' in pre_template \
                 else postfile
-            culprit_ver = f' missing in Version {FROM_VERSION}' if 'missing' in pre_template \
-                else f' missing in Version {TO_VERSION}'
+            culprit_ver = f' missing in Version {settings.upgrade.from_version}' \
+                if 'missing' in pre_template \
+                else f' missing in Version {settings.upgrade.to_version}'
             entity_values.append((culprit, culprit_ver))
         elif filecmp.cmp(prefile, postfile):
             entity_values.append(('true', 'true'))

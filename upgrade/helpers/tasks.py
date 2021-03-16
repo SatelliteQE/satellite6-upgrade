@@ -25,18 +25,25 @@ from fabric.api import env
 from fabric.api import execute
 from fabric.api import put
 from fabric.api import run
+from fabric.api import settings as fabric_settings
 from fabric.api import warn_only
 from fabric.context_managers import shell_env
+from fauxfactory import gen_string
 from nailgun import entities
 from robozilla.decorators import bz_bug_is_open
 
-from upgrade.helpers.constants import customcontents
-from upgrade.helpers.constants import rhelcontents
+from upgrade.helpers import settings
+from upgrade.helpers.constants.constants import CUSTOM_CONTENTS
+from upgrade.helpers.constants.constants import DEFAULT_LOCATION
+from upgrade.helpers.constants.constants import DEFAULT_ORGANIZATION
+from upgrade.helpers.constants.constants import DEFAULT_ORGANIZATION_LABEL
+from upgrade.helpers.constants.constants import RHEL_CONTENTS
 from upgrade.helpers.docker import (
     attach_subscription_to_host_from_content_host
 )
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tools import call_entity_method_with_timeout
+from upgrade.helpers.tools import host_pings
 if sys.version_info[0] == 2:
     from StringIO import StringIO  # (import-error) pylint:disable=F0401
 else:  # pylint:disable=F0401,E0611
@@ -49,6 +56,73 @@ class ProductNotFound(Exception):
     """Raise if the product you are searching is not found"""
 
 
+def update_capsules_to_satellite(capsules):
+    """
+    This function used to update the required details of the capsule.
+    :param capsules:
+    """
+    for capsule in capsules:
+        smart_proxy = (
+            entities.SmartProxy()
+            .search(query={'search': f'name={capsule}'})[0]
+            .read()
+        )
+        loc = entities.Location().search(
+            query={'search': f'name="{DEFAULT_LOCATION}"'}
+        )[0]
+        org = entities.Organization().search(
+            query={'search': f'name="{DEFAULT_ORGANIZATION}"'}
+        )[0]
+        try:
+            smart_proxy.location.append(entities.Location(id=loc.id))
+            smart_proxy.update(['location'])
+            smart_proxy.organization.append(entities.Organization(id=org.id))
+            smart_proxy.update(['organization'])
+            logger.info("for Capsule default location and organization updated successfully")
+        except requests.exceptions.HTTPError as err:
+            logger.warn(err)
+        with fabric_settings(warn_only=True):
+            result = run(f"hammer capsule content add-lifecycle-environment --organization-id "
+                         f"{org.id} --lifecycle-environment 'Dev'  --name {capsule}")
+            if result.return_code == 0:
+                logger.info("for Capsule 'Dev' lifecycle environment added successfully")
+            else:
+                logger.warn(result)
+
+
+def http_proxy_config(capsule_hosts):
+    """
+    Set the http-proxy on the satellite server.
+    :param capsule_hosts: list of capsule host
+    """
+    loc = entities.Location().search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
+    org = entities.Organization().search(query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
+    name = gen_string('alpha', 15)
+    proxy_url = settings.http_proxy.un_auth_proxy_url
+    entities.HTTPProxy(name=f"{name}",
+                       url=f"{proxy_url}",
+                       organization=f"{org.id}",
+                       location=f"{loc.id}"
+                       ).create()
+    prop_name = {
+        'http_proxy': f"{proxy_url}",
+        'content_default_http_proxy': f"{name}"
+    }
+    for key, value in prop_name.items():
+        setting_object = entities.Setting().search(query={'search': f'name={key}'})[0]
+        setting_object.value = f"{value}"
+        setting_object.update({'value'})
+
+    for capsule in capsule_hosts:
+        with fabric_settings(warn_only=True):
+            result = run(f"hammer setting set --name "
+                         f"http_proxy_except_list --value '[\"{capsule}\"]'")
+            if result.return_code == 0:
+                logger.info(f"{capsule} capsule added in http-proxy-except-host-list for")
+            else:
+                logger.warn(result)
+
+
 def check_necessary_env_variables_for_upgrade(product):
     """Checks if necessary Environment Variables are provided
 
@@ -56,12 +130,11 @@ def check_necessary_env_variables_for_upgrade(product):
     """
     failure = []
     # The upgrade product
-    products = ['satellite', 'capsule', 'client', 'longrun', 'n-1']
-    if product not in products:
+    if product not in settings.upgrade.products:
         failure.append('Product name should be one of {0}.'.format(
-            ', '.join(products)))
+            ', '.join(settings.upgrade.products)))
     # Check If OS is set for creating an instance name in rhevm
-    if not os.environ.get('OS'):
+    if not settings.upgrade.os:
         failure.append('Please provide OS version as rhel7 or rhel6, '
                        'And retry !')
     if failure:
@@ -72,7 +145,7 @@ def check_necessary_env_variables_for_upgrade(product):
     return True
 
 
-def sync_capsule_repos_to_upgrade(capsules):
+def sync_capsule_repos_to_satellite(capsules):
     """This syncs capsule repo in Satellite server and also attaches
     the capsule repo subscription to each capsule
 
@@ -81,11 +154,11 @@ def sync_capsule_repos_to_upgrade(capsules):
 
     Following environment variable affects this function:
 
-    CAPSULE_URL
-        The url for capsule repo from latest satellite compose.
+    CAPSULE_RPO
+        capsule repo from latest satellite compose.
         If not provided, capsule repo from Red Hat repositories will be enabled
-    TOOLS_URL_RHEL{}.format(os_ver)
-        The url for capsuletools repo from latest satellite compose.
+    CAPSULE_TOOLS_REPO
+        capsule_tools_repo repo from latest satellite compose.
         If not provided, capsule repo from Red Hat repositories will be enabled
     FROM_VERSION
         Current Satellite version - to differentiate default organization.
@@ -107,189 +180,173 @@ def sync_capsule_repos_to_upgrade(capsules):
     RHEV_CAPSULE_AK
         The AK name used in capsule subscription
     """
-    to_version = os.environ.get('TO_VERSION')
     logger.info('Syncing latest capsule repos in Satellite ...')
-    os_ver = os.environ.get('OS')[-1]
-    capsule_repo = os.environ.get('CAPSULE_URL')
-    capsuletools_url = os.environ.get('TOOLS_URL_RHEL{}'.format(os_ver))
-    ak_name = os.environ.get(
-        'CAPSULE_AK', os.environ.get('RHEV_CAPSULE_AK'))
-    if ak_name is None:
+    os_ver = settings.upgrade.os[-1]
+    capsule_repo = settings.repos.capsule_repo
+    sat_tools_repo = settings.repos.sattools_repo[settings.upgrade.os]
+    capsule_ak = settings.upgrade.capsule_ak[settings.upgrade.os]
+    if capsule_ak is None:
         logger.warning(
             'The AK name is not provided for Capsule upgrade! Aborting...')
         sys.exit(1)
     org = entities.Organization(id=1).read()
     logger.info("Refreshing the attached manifest")
-    run(f'hammer subscription refresh-manifest --organization-id {org.id}')
+    with fabric_settings(warn_only=True):
+        result = run(f'hammer subscription refresh-manifest --organization-id {org.id}')
+        if result.return_code == 0:
+            logger.info("manifest refreshed successfully")
+        else:
+            logger.warn(result)
     ak = entities.ActivationKey(organization=org).search(
-        query={'search': 'name={}'.format(ak_name)})[0]
-    logger.info("Activation key {} used for capsule subscription has found".
-                format(ak_name))
+        query={'search': f'name={capsule_ak}'})[0]
+    logger.info(f"activation key {capsule_ak} used for capsule subscription and "
+                f"it found on the satellite")
     cv = ak.content_view.read()
     lenv = ak.environment.read()
     # Fix dead pulp tasks
     if os_ver == '6':
         run('for i in pulp_resource_manager pulp_workers pulp_celerybeat; '
             'do service $i restart; done')
-    _sync_capsule_subscription_to_capsule_ak(ak)
-    logger.info("Capsule subscription to AK {} has added successfully".format(ak.name))
-    if float(to_version) >= 6.3:
-        _add_additional_subscription_for_capsule(ak, capsuletools_url)
+    logger.info(f"capsule subscription to AK {ak.name} has added successfully")
+    add_subscription_for_capsule(ak, org)
     # Publishing and promoting the CV with all newly added capsule, capsuletools,
     # rhscl and server repos combine
-    logger.info("Content view publish operation has started successfully")
+    logger.info("content view publish operation started successfully")
     try:
         start_time = job_execution_time("CV_Publish")
         call_entity_method_with_timeout(cv.read().publish, timeout=5000)
-        job_execution_time("Content view {} publish operation(In past time-out value was "
-                           "2500 but in current execution we set it 5000)"
-                           .format(cv.name), start_time)
+        job_execution_time(f"content view {cv.name} publish operation(In past time-out value "
+                           f"was 2500 but in current execution we set it 5000)", start_time)
     except Exception as exp:
-        logger.critical("Content view {} publish failed with exception {}"
-                        .format(cv.name, exp))
+        logger.critical(f"content view {cv.name} publish failed with exception {exp}")
         # Fix of 1770940, 1773601
-        logger.info("Resuming the cancelled content view {} publish task"
-                    .format(cv.name))
+        logger.info(f"resuming the cancelled content view {cv.name} publish task")
         resume_failed_task()
-    logger.info("Content view publish operation has completed successfully")
+    logger.info(f"content view {cv.name} published successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
-    logger.info("Content view {} promotion has started successfully".
-                format(cv.name))
+    logger.info(f"content view {cv.name} promotion started successfully")
     published_ver.promote(data={'environment_ids': [lenv.id], 'force': False})
-    logger.info("Content view {} promotion has completed successfully".
-                format(cv.name))
+    logger.info(f"content view {cv.name} promotion completed successfully")
     # Add capsule and tools custom prod subscription to capsules
     if capsule_repo:
         add_custom_product_subscription_to_hosts(
-            customcontents['capsule']['prod'], capsules)
-    if float(to_version) >= 6.3:
-        if capsuletools_url:
-            add_custom_product_subscription_to_hosts(
-                customcontents['capsule_tools']['prod'], capsules)
+            CUSTOM_CONTENTS['capsule']['prod'], capsules)
+    if sat_tools_repo:
+        add_custom_product_subscription_to_hosts(
+            CUSTOM_CONTENTS['capsule_tools']['prod'], capsules)
 
 
-def _sync_capsule_subscription_to_capsule_ak(ak):
-    """Syncs to_version capsule contents, adds to the CV and attaches contents to the AK through
-    which Capsule is registered
-
-    :param ak: ```nailgun.entities.ActivationKey``` used for capsule subscription
+def sync_capsule_subscription_to_capsule_ak(org):
     """
-    cv = ak.content_view.read()
-    org = ak.organization
-    capsule_repo = os.environ.get('CAPSULE_URL')
-    to_version = os.environ.get('TO_VERSION')
-    os_ver = os.environ.get('OS')[-1]
+    Task to sync latest capsule repo which will later be used for capsule upgrade.
+    :param org: `nailgun.entities.ActivationKey` used for capsule subscription
+    """
+    from_version = settings.upgrade.from_version
+    to_version = settings.upgrade.to_version
+    arch = 'x86_64'
     # If custom capsule repo is not given then
     # enable capsule repo from Redhat Repositories
-    if capsule_repo:
+    if settings.repos.capsule_repo:
         cap_product = entities.Product(
-            name=customcontents['capsule']['prod'], organization=org).create()
+            name=CUSTOM_CONTENTS['capsule']['prod'], organization=org).create()
         cap_repo = entities.Repository(
-            name=customcontents['capsule']['repo'], product=cap_product, url=capsule_repo,
-            organization=org, content_type='yum').create()
-        logger.info("Capsule repository {} created successfully for product {}".
-                    format(customcontents['capsule']['repo'],
-                           customcontents['capsule']['prod']))
+            name=CUSTOM_CONTENTS['capsule']['repo'],
+            product=cap_product,
+            url=settings.repos.capsule_repo,
+            organization=org,
+            content_type='yum',
+        ).create()
+        logger.info("capsule repository {} created successfully for product {}".
+                    format(CUSTOM_CONTENTS['capsule']['repo'],
+                           CUSTOM_CONTENTS['capsule']['prod']))
     else:
+        # y-stream cdn upgrade support
+        if from_version != to_version:
+            capsule_prod = RHEL_CONTENTS['capsule']['prod']
+            capsule_name = RHEL_CONTENTS['capsule']['repofull']
+            with fabric_settings(warn_only=True):
+                result = run(f'hammer repository-set enable --product '
+                             f'"{capsule_prod}" --basearch {arch} --releasever {to_version}'
+                             f' --name "{capsule_name}" '
+                             f'--organization-id {org.id}')
+                if result.return_code == 0:
+                    logger.info("capsule repo enabled successfully")
+                elif result.return_code == 70:
+                    logger.info("capsule repo already enabled so the error code 70 is expected")
+                else:
+                    logger.warn(result)
+
         cap_product = entities.Product(
-            name=rhelcontents['capsule']['prod'],
+            name=RHEL_CONTENTS['capsule']['prod'],
             organization=org
         ).search(query={'per_page': 100})[0]
-        logger.info("RHEL Capsule Product {} is found enabled.".format(
-            rhelcontents['capsule']['prod']))
+        logger.info(f"rhel capsule product {RHEL_CONTENTS['capsule']['prod']} is "
+                    f"found enabled.")
         cap_reposet = entities.RepositorySet(
-            name=rhelcontents['capsule']['repo'].format(cap_ver=to_version, os_ver=os_ver),
-            product=cap_product
-        ).search()[0]
-        logger.info("Entities of Repository {} search completed successfully".
-                    format(rhelcontents['capsule']['repo']
-                           .format(cap_ver=to_version, os_ver=os_ver)))
+            name=RHEL_CONTENTS['capsule']['repofull'], product=cap_product).search()[0]
+        logger.info("entities of repository {} search completed successfully".
+                    format(RHEL_CONTENTS['capsule']['repofull']))
         try:
             cap_reposet.enable(
-                data={'basearch': 'x86_64', 'releasever': '7Server', 'organization_id': org.id})
+                data={
+                    'basearch': 'x86_64', 'releasever': '7Server', 'organization_id': org.id
+                })
         except requests.exceptions.HTTPError as exp:
             logger.warn(exp)
         cap_repo = entities.Repository(
-            name=rhelcontents['capsule']['repofull'].format(
-                cap_ver=to_version, os_ver=os_ver, arch='x86_64')
-        ).search(query={'organization_id': org.id, 'per_page': 100})[0]
-        logger.info("Capsule Repository's repofull {} search completed successfully".
-                    format(rhelcontents['capsule']['repofull']
-                           .format(cap_ver=to_version, os_ver=os_ver, arch='x86_64')))
+            name=RHEL_CONTENTS['capsule']['repo']).search(
+            query={'organization_id': org.id, 'per_page': 100}
+        )[0]
+        logger.info(f"capsule repository's repofull {RHEL_CONTENTS['capsule']['repofull']} "
+                    f"search completed successfully")
 
-    logger.info("Entities repository sync operation started successfully for name {}".
-                format(cap_repo.name))
-    start_time = job_execution_time("Entity repository sync")
+    logger.info(f"entities repository sync operation started successfully "
+                f"for name {cap_repo.name}")
+    start_time = job_execution_time("entity repository sync")
     # Expected value 2500
     call_entity_method_with_timeout(entities.Repository(id=cap_repo.id).sync, timeout=4000)
-    job_execution_time("Entity repository {} sync (In past time-out value was 2500 "
-                       "but in current execution we set it 4000)"
-                       .format(cap_repo.name), start_time)
-    logger.info("Entities repository sync operation completed successfully for name {}".
-                format(cap_repo.name))
-    # Add repos to CV
-    cv.repository += [cap_repo]
-    try:
-        cv.update(['repository'])
-    except requests.exceptions.HTTPError as exp:
-        logger.warn(exp)
-    ak = ak.read()
-    if capsule_repo:
-        cap_sub = entities.Subscription().search(
-            query={'search': 'name={0}'.format(customcontents['capsule']['prod'])})[0]
-        ak.add_subscriptions(data={
-            'quantity': 1,
-            'subscription_id': cap_sub.id,
-        })
-        logger.info("subscription {} in Activation key used for Capsule subscription "
-                    "added successfully for subscription {}".
-                    format(cap_sub.id, cap_sub.name))
+    job_execution_time(f"entity repository {cap_repo.name} sync (In past time-out value was "
+                       f"2500 but in current execution we set it 4000)", start_time)
+    logger.info(f"entities repository sync operation completed successfully "
+                f"for name {cap_repo.name}")
+    if settings.repos.capsule_repo:
+        cap_repo.repo_id = CUSTOM_CONTENTS['capsule']['repo']
     else:
-        ak.content_override(
-            data={
-                'content_override': {
-                    'content_label': rhelcontents['capsule']['label'].format(
-                        cap_ver=to_version, os_ver=os_ver),
-                    'value': '1'}
-            }
-        )
-        logger.info("Activation key content override successfully for content label:{}".
-                    format(rhelcontents['capsule']['label'].format(cap_ver=to_version,
-                                                                   os_ver=os_ver)))
+        cap_repo.repo_id = RHEL_CONTENTS['capsule']['label']
+    return cap_repo
 
 
-def _sync_rh_repos_to_satellite(org):
-    """Task to sync Redhat Repositories to latest required during upgrade
-
-    :param org: ```nailgun.entities.Organization``` entity of capsule
-    :returns tuple: RHSCL and Redhat 7 Server repo name, label name and
-        product name
+def sync_rh_repos_to_satellite(org):
     """
-    rhelver = '7'
+    Task to sync redhat repositories which will later be used for capsule upgrade.
+    :param org: ``nailgun.entities.Organization` entity of capsule
+    :returns tuple: scl and server nailgun object
+    """
     arch = 'x86_64'
     # Enable rhscl repository
     scl_product = entities.Product(
-        name=rhelcontents['rhscl_sat64']['prod'], organization=org
+        name=RHEL_CONTENTS['rhscl_sat64']['prod'], organization=org
     ).search(query={'per_page': 100})[0]
-    logger.info("Red Hat Software Collection for product {} is enabled and found".
-                format(rhelcontents['rhscl_sat64']['prod']))
+    logger.info(f"red hat software collection for product "
+                f"{RHEL_CONTENTS['rhscl_sat64']['prod']} is enabled")
     scl_reposet = entities.RepositorySet(
-        name=rhelcontents['rhscl']['repo'].format(os_ver=rhelver), product=scl_product
+        name=RHEL_CONTENTS['rhscl']['repo'], product=scl_product
     ).search()[0]
-    logger.info("Red Hat Software Collection for repos {} is already enabled and found".
-                format(rhelcontents['rhscl']['repo'].format(os_ver=rhelver)))
+    logger.info(f"red hat software collection repo "
+                f"{RHEL_CONTENTS['rhscl']['repo']} is enabled")
     try:
         scl_reposet.enable(
             data={'basearch': arch, 'releasever': '7Server', 'organization_id': org.id})
-        logger.info("Red Hat Software collection repository enabled successfully")
+        logger.info("red hat software collection repository enabled successfully")
     except requests.exceptions.HTTPError as exp:
         logger.warn(exp)
     time.sleep(20)
     # Sync enabled Repo from cdn
     scl_repo = entities.Repository(
-        name=rhelcontents['rhscl']['repofull'].format(os_ver=rhelver, arch=arch)
-    ).search(query={'organization_id': org.id, 'per_page': 100})[0]
+        name=RHEL_CONTENTS['rhscl']['repofull']).search(
+        query={'organization_id': org.id, 'per_page': 100}
+    )[0]
     attempt = 0
     # Fixed upgrade issue: #368
     while attempt <= 3:
@@ -298,156 +355,285 @@ def _sync_rh_repos_to_satellite(org):
                 entities.Repository(id=scl_repo.id).sync, timeout=3500)
             break
         except requests.exceptions.HTTPError as exp:
-            logger.warn("Retry{} after exception: {}".format(attempt, exp))
+            logger.warn(f"retry {attempt} after exception: {exp}")
             # Wait 10 seconds to reattempt the same retry option
             time.sleep(10)
             attempt += 1
     # Enable RHEL 7 Server repository
     server_product = entities.Product(
-        name=rhelcontents['server']['prod'], organization=org).search(query={'per_page': 100})[0]
-    logger.info("Product {} is already enabled and found".
-                format(rhelcontents['server']['prod']))
+        name=RHEL_CONTENTS['server']['prod'], organization=org).\
+        search(query={'per_page': 100})[0]
+    logger.info(f"product {RHEL_CONTENTS['server']['prod']} is enable")
     server_reposet = entities.RepositorySet(
-        name=rhelcontents['server']['repo'].format(os_ver=rhelver), product=server_product
-    ).search()[0]
-    logger.info("Repository {} is already enabled and found".
-                format(rhelcontents['server']['repo']))
+        name=RHEL_CONTENTS['server']['repo'], product=server_product).search()[0]
+    logger.info(f"repository {RHEL_CONTENTS['server']['repo']} is enabled")
     try:
         server_reposet.enable(
             data={'basearch': arch, 'releasever': '7Server', 'organization_id': org.id})
-        logger.info("Repository enabled successfully for base arch {}, 7Server".format(arch))
+        logger.info(f"repository enabled successfully for base arch {server_reposet.name}")
     except requests.exceptions.HTTPError as exp:
         logger.warn(exp)
     time.sleep(20)
     # Sync enabled Repo from cdn
     server_repo = entities.Repository(
-        name=rhelcontents['server']['repofull'].format(os_ver=rhelver, arch=arch)
+        name=RHEL_CONTENTS['server']['repofull']
     ).search(query={'organization_id': org.id, 'per_page': 100})[0]
-    logger.info("Entities repository sync operation has started successfully"
-                " for name {}".format(server_repo.name))
+    logger.info(f"entities repository sync operation started successfully"
+                f" for name {server_repo.name}")
     start_time = job_execution_time("Repository sync")
-    call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync,
-                                    timeout=6000)
-    job_execution_time("Repository {} sync (In past time-out value was 3600 but in "
-                       "current execution we set it 6000) ".format(server_repo.name),
-                       start_time)
-    logger.info("Entities repository sync operation has completed successfully"
-                " for name {}".format(server_repo.name))
-    scl_repo.repo_id = rhelcontents['rhscl']['label'].format(os_ver=rhelver)
-    server_repo.repo_id = rhelcontents['server']['label'].format(os_ver=rhelver)
+    call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync, timeout=6000)
+    job_execution_time("repository {server_repo.name} sync (In past time-out value was 3600 "
+                       "but in current execution we set it 6000) takes", start_time)
+    logger.info(f"entities repository sync operation completed successfully"
+                f" for name {server_repo.name}")
+    scl_repo.repo_id = RHEL_CONTENTS['rhscl']['label']
+    server_repo.repo_id = RHEL_CONTENTS['server']['label']
     return scl_repo, server_repo
 
 
-def _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org):
-    """Creates custom / Enables RH Tools repo on satellite and syncs for capsule upgrade
-
-    :param str capsuletools_url: The capsule tools repo url
-    :param org: ```nailgun.entities.Organization``` entity of capsule
-
-    :returns: ```nailgun.entities.repository``` entity for capsule
+def sync_sattools_repos_to_satellite_for_capsule(org):
     """
-    to_ver = os.environ.get('TO_VERSION')
-    rhelver = '7'
+    Creates custom / Enables RH Tools repo on satellite and syncs for capsule upgrade
+
+    :param org: `nailgun.entities.Organization` entity of capsule
+    :return: `nailgun.entities.repository` entity for capsule
+    """
     arch = 'x86_64'
-    if capsuletools_url:
-        captools_product = entities.Product(
-            name=customcontents['capsule_tools']['prod'], organization=org).create()
-        captools_repo = entities.Repository(
-            name=customcontents['capsule_tools']['repo'],
-            product=captools_product, url=capsuletools_url, organization=org, content_type='yum'
+    from_version = settings.upgrade.from_version
+    to_version = settings.upgrade.to_version
+    sat_tools_repo = settings.repos.sattools_repo[settings.upgrade.os]
+    if sat_tools_repo:
+        sattools_product = entities.Product(
+            name=CUSTOM_CONTENTS['capsule_tools']['prod'],
+            organization=org
         ).create()
-        logger.info("The custom tools product {} and repository {} is created from "
-                    "capsule tools url".format(customcontents['capsule_tools']['prod'],
-                                               customcontents['capsule_tools']['repo']))
+        sattools_repo = entities.Repository(
+            name=CUSTOM_CONTENTS['capsule_tools']['repo'],
+            product=sattools_product,
+            url=sat_tools_repo,
+            organization=org,
+            content_type='yum',
+        ).create()
+        logger.info(f"custom tools product {CUSTOM_CONTENTS['capsule_tools']['prod']} "
+                    f"and repository {CUSTOM_CONTENTS['capsule_tools']['repo']} created"
+                    f" from satellite tools url")
+
     else:
-        captools_product = entities.Product(
-            name=rhelcontents['tools']['prod'], organization=org
+        if from_version != to_version:
+            tools_name = RHEL_CONTENTS['tools']['repofull']
+            tools_prod = RHEL_CONTENTS['tools']['prod']
+            with fabric_settings(warn_only=True):
+                result = run(f'hammer repository-set enable --product "{tools_prod}" '
+                             f'--basearch {arch} --releasever {to_version} --name '
+                             f'"{tools_name}" --organization-id {org.id}')
+                if result.return_code == 0:
+                    logger.info("sattools repo enabled successfully")
+                elif result.return_code == 70:
+                    logger.info("sattools repo already enabled so the error code 70 is "
+                                "expected")
+                else:
+                    logger.warn(result)
+
+        sattools_product = entities.Product(
+            name=RHEL_CONTENTS['tools']['prod'], organization=org
         ).search(query={'per_page': 100})[0]
-        cap_reposet = entities.RepositorySet(
-            name=rhelcontents['tools']['repo'].format(sat_ver=to_ver, os_ver=rhelver),
-            product=captools_product).search()[0]
-        logger.info("The custom tools product {} and repository {} is created from "
-                    "capsule tools url".format(rhelcontents['tools']['prod'],
-                                               rhelcontents['tools']['repo']))
+        sat_reposet = entities.RepositorySet(
+            name=RHEL_CONTENTS['tools']['repofull'], product=sattools_product).search()[0]
+        logger.info(f"check the capsule tool's product"
+                    f" {RHEL_CONTENTS['tools']['prod']} and"
+                    f" repository {RHEL_CONTENTS['tools']['repo']} "
+                    f"availability on the setup")
         try:
-            cap_reposet.enable(data={'basearch': arch, 'organization_id': org.id})
-            logger.info("Capsule repository enabled successfully for arch {} and org {}".
-                        format(arch, org.id))
+            sat_reposet.enable(data={'basearch': arch, 'organization_id': org.id})
+            logger.info(f"satellite tools repository enabled successfully for "
+                        f"{sat_reposet.name}")
         except requests.exceptions.HTTPError as exp:
             logger.warn(exp)
         time.sleep(5)
-        captools_repo = entities.Repository(
-            name=rhelcontents['tools']['repofull'].format(
-                sat_ver=to_ver, os_ver=rhelver, arch=arch)
+        sattools_repo = entities.Repository(
+            name=RHEL_CONTENTS['tools']['repo']
         ).search(query={'organization_id': org.id, 'per_page': 100})[0]
-        logger.info("Entities repository search completed successfully for tools "
-                    "repo {}".format(rhelcontents['tools']['repofull'].
-                                     format(sat_ver=to_ver, os_ver=rhelver, arch=arch)))
-    logger.info("Entities repository sync started successfully for capsule repo name {}".
-                format(captools_repo.name))
+        logger.info(f"entities repository search completed successfully for sattools "
+                    f"repo {RHEL_CONTENTS['tools']['repofull']}")
+    logger.info("entities repository sync started successfully for capsule repo name {}".
+                format(sattools_repo.name))
     start_time = job_execution_time("Entities repository sync")
-    call_entity_method_with_timeout(entities.Repository(id=captools_repo.id).sync,
+    call_entity_method_with_timeout(entities.Repository(id=sattools_repo.id).sync,
                                     timeout=5000)
-    job_execution_time("Entities repository {} sync(In past time-out value was 2500 "
-                       "but in current execution we set it 5000)"
-                       .format(captools_repo.name), start_time)
-    logger.info("Entities repository sync completed successfully for capsule repo name {}"
-                .format(captools_repo.name))
-    captools_repo.repo_id = rhelcontents['tools']['label'].format(
-        os_ver=rhelver, sat_ver=to_ver)
-    return captools_repo
+    job_execution_time(f"entities repository {sattools_repo.name} "
+                       f"sync(In past time-out value was 2500 "
+                       f"but in current execution we set it 5000)", start_time)
+    logger.info(f"entities repository sync completed successfully for capsule repo "
+                f"name {sattools_repo.name}")
+    if sat_tools_repo:
+        sattools_repo.repo_id = CUSTOM_CONTENTS['capsule_tools']['repo']
+    else:
+        sattools_repo.repo_id = RHEL_CONTENTS['tools']['label']
+    return sattools_repo
 
 
-def _add_additional_subscription_for_capsule(ak, capsuletools_url):
-    """Adds rhscl, rhel server and tools subscription to capsule ak
-
-    Required only for satellite version 6.3 and higher
-
-    :param ak: ```nailgun.entities.ActivationKey``` of capsule
-    :param capsuletools_repo: If None then enables redhat tools repo else,
-        creates custom repo with this url
+def sync_maintenance_repos_to_satellite_for_capsule(org):
     """
-    cv = ak.content_view.read()
-    org = ak.organization
-    scl_repo, server_repo = _sync_rh_repos_to_satellite(org)
-    logger.info("Sync operation of SCL and Server repositories  on satellite has "
-                "completed successfully")
-    captools_repo = _sync_sattools_repos_to_satellite_for_capsule(capsuletools_url, org)
-    logger.info("Sync Operation of Tools repository repositories  to Satellite for "
-                "Capsule has completed successfully")
-    cv.repository += [scl_repo, server_repo, captools_repo]
-    try:
-        cv.update(['repository'])
-    except requests.exceptions.HTTPError as exp:
-        logger.warn(exp)
+    Uses to enable the maintenance repo for capsule upgrade
+    :param org: `nailgun.entities.Organization` entity of capsule
+    :return: `nailgun.entities.repository` entity for capsule
+    """
+    to_version = settings.upgrade.to_version
+    arch = 'x86_64'
+    if settings.repos.satmaintenance_repo:
+        maintenance_product = entities.Product(
+            name=CUSTOM_CONTENTS['maintenance']['prod'],
+            organization=org).create()
+        maintenance_repo = entities.Repository(
+            name=CUSTOM_CONTENTS['maintenance']['repo'],
+            product=maintenance_product, url=settings.repos.satmaintenance_repo,
+            organization=org,
+            content_type='yum'
+        ).create()
+        logger.info(f"the custom maintenance product "
+                    f"{CUSTOM_CONTENTS['maintenance']['prod']} "
+                    f"and repository {CUSTOM_CONTENTS['maintenance']['repo']} is created from "
+                    "satmaintenance downstream repo")
+    else:
+        maintenance_name = RHEL_CONTENTS['maintenance']['repofull']
+        maintenance_prod = RHEL_CONTENTS['maintenance']['prod']
+        with fabric_settings(warn_only=True):
+            result = run(f'hammer repository-set enable --product "{maintenance_prod}"'
+                         f' --basearch {arch} --releasever {to_version} --name '
+                         f'"{maintenance_name}" --organization-id {org.id}')
+            if result.return_code == 0:
+                logger.info("maintenance repo enabled successfully")
+            elif result.return_code == 70:
+                logger.info("maintenance repo already enabled so the error code "
+                            "70 is expected")
+            else:
+                logger.warn(result)
+        maintenance_product = entities.Product(
+            name=RHEL_CONTENTS['maintenance']['prod'], organization=org
+        ).search(query={'per_page': 100})[0]
+        maintenance_reposet = entities.RepositorySet(
+            name=RHEL_CONTENTS['maintenance']['repofull'],
+            product=maintenance_product
+        ).search()[0]
+        logger.info(f"maintenance product {RHEL_CONTENTS['maintenance']['prod']} and "
+                    f"repository {RHEL_CONTENTS['maintenance']['repo']} searched complete "
+                    f"successfully"
+                    )
+        try:
+            maintenance_reposet.enable(data={'basearch': arch, 'organization_id': org.id})
+            logger.info(f"maintenance repository enabled successfully for "
+                        f"{maintenance_reposet.name}")
+        except requests.exceptions.HTTPError as exp:
+            logger.warn(exp)
+        time.sleep(5)
+        maintenance_repo = entities.Repository(
+            name=RHEL_CONTENTS['maintenance']['repo']).search(
+            query={'organization_id': org.id, 'per_page': 100}
+        )[0]
+        logger.info(f"entities repository search completed successfully for maintenance "
+                    f"repo {RHEL_CONTENTS['maintenance']['repofull']}")
+    logger.info(f"entities repository sync started successfully for "
+                f"maintenance repo {maintenance_repo.name}")
+    start_time = job_execution_time("Entities repository sync")
+    call_entity_method_with_timeout(entities.Repository(id=maintenance_repo.id).sync,
+                                    timeout=5000)
+    job_execution_time(f"entities repository {maintenance_repo.name} sync(In past time-out "
+                       f"value was 2500 but in current execution we set it 5000)", start_time)
+    logger.info(f"entities repository sync completed successfully for "
+                f"maintenance repo {maintenance_repo.name}")
+    if settings.repos.satmaintenance_repo:
+        maintenance_repo.repo_id = CUSTOM_CONTENTS['maintenance']['repo']
+    else:
+        maintenance_repo.repo_id = RHEL_CONTENTS['maintenance']['label']
+    return maintenance_repo
+
+
+def add_subscription_for_capsule(ak, org):
+    """
+    Adds capsule, rhscl, rhel server, tools, maintenance subscription in capsule ak
+    :param ak: `nailgun.entities.ActivationKey` of capsule
+    :param org: `nailgun.entities.org` of capsule
+    """
+    cap_repo = sync_capsule_subscription_to_capsule_ak(org)
+    scl_repo, server_repo = sync_rh_repos_to_satellite(org)
+    maintenance_repo = sync_maintenance_repos_to_satellite_for_capsule(org)
+    sattools_repo = sync_sattools_repos_to_satellite_for_capsule(org)
+    # to update each repos fresh content view read is required,
+    # otherwise it does not consider the pending repos from the point of failure.
+    for repo_name in [cap_repo, maintenance_repo, scl_repo, server_repo, sattools_repo]:
+        cv = ak.content_view.read()
+        cv.repository += [repo_name]
+        try:
+            cv.update(['repository'])
+            logger.info(f"repository {repo_name.name} enabled in content view {cv.name}")
+        except requests.exceptions.HTTPError as exp:
+            logger.warn(exp)
     ak = ak.read()
     ak.content_override(
         data={'content_override': {'content_label': scl_repo.repo_id, 'value': '1'}}
     )
-    logger.info("Activation key successfully override for content_label {}".
-                format(scl_repo.name))
+    logger.info(f"activation key successfully override for content_label {scl_repo.name}")
     ak.content_override(
         data={'content_override': {'content_label': server_repo.repo_id, 'value': '1'}}
     )
-    if not capsuletools_url:
+
+    if settings.repos.capsule_repo is None:
         ak.content_override(
             data={
-                'content_override': {'content_label': captools_repo.repo_id, 'value': '1'}
+                'content_override': {'content_label': cap_repo.repo_id, 'value': '1'}
+            }
+        )
+        logger.info(f"activation key content override successfully for "
+                    f"content label:{cap_repo.name}")
+    else:
+        cap_sub = entities.Subscription().search(
+            query={'search': 'name={0}'.format(CUSTOM_CONTENTS['capsule']['prod'])})[0]
+        ak.add_subscriptions(data={
+            'quantity': 1,
+            'subscription_id': cap_sub.id,
+        })
+        logger.info(f"capsule subscription {cap_sub.name} added successfully to capsule ak")
+
+    if settings.repos.satmaintenance_repo is None:
+        ak.content_override(
+            data={
+                'content_override': {'content_label': maintenance_repo.repo_id, 'value': '1'}
+            }
+        )
+        logger.info(f"cdn activation key successfully override for maintenance content_label"
+                    f" {maintenance_repo.name}")
+    else:
+        maintenance_sub = entities.Subscription().search(
+            query={'search': 'name={0}'.format(
+                CUSTOM_CONTENTS['maintenance']['prod'])
+            }
+        )[0]
+        ak.add_subscriptions(data={
+            'quantity': 1,
+            'subscription_id': maintenance_sub.id,
+        })
+        logger.info(f" maintenance subscription {maintenance_sub.id} added successfully to "
+                    f"capsule ak")
+
+    if settings.repos.sattools_repo[settings.upgrade.os] is None:
+        ak.content_override(
+            data={
+                'content_override': {'content_label': sattools_repo.repo_id, 'value': '1'}
             })
-        logger.info("Activation key successfully override for capsule content_label {}".
-                    format(captools_repo.name))
+        logger.info(f"cdn activation key successfully override) for "
+                    f"capsule content_label {sattools_repo.name}")
     else:
         captools_sub = entities.Subscription().search(
-            query={'search': 'name={0}'.format(customcontents['capsule_tools']['prod'])})[0]
+            query={'search': f'name={CUSTOM_CONTENTS["capsule_tools"]["prod"]}'})[0]
         ak.add_subscriptions(data={
             'quantity': 1,
             'subscription_id': captools_sub.id,
         })
-        logger.info("Capsule Tools subscription {} added successfully to capsule AK".
-                    format(captools_sub.id))
+        logger.info(f"custom capsule Tools subscription {captools_sub.id} added successfully"
+                    f" to capsule ak")
 
 
-def sync_tools_repos_to_upgrade(client_os, hosts):
+def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     """This syncs tools repo in Satellite server and also attaches
     the new tools repo subscription onto each client
 
@@ -475,39 +661,36 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
         The AK name used in client subscription
     """
     client_os = client_os.upper()
-    tools_repo_url = os.environ.get('TOOLS_URL_{}'.format(client_os))
+    tools_repo_url = settings.repos.sattools_repo[client_os]
     if tools_repo_url is None:
         logger.warning('The Tools Repo URL for {} is not provided '
                        'to perform Client Upgrade !'.format(client_os))
         sys.exit(1)
-    ak_name = os.environ.get(
-        'CLIENT_AK_{}'.format(client_os),
-        os.environ.get('RHEV_CLIENT_AK_{}'.format(client_os))
-    )
     if ak_name is None:
         logger.warning('The AK details are not provided for {0} Client '
                        'upgrade!'.format(client_os))
         sys.exit(1)
+
     org = entities.Organization().search(
-        query={'search': 'name="{}"'.format("Default Organization")})[0]
+        query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
     ak = entities.ActivationKey(organization=org).search(
         query={'search': 'name={}'.format(ak_name)})[0]
     cv = ak.content_view.read()
     lenv = ak.environment.read()
-    toolsproduct_name = customcontents['tools']['prod'].format(client_os=client_os)
-    toolsrepo_name = customcontents['tools']['repo'].format(client_os=client_os)
+    toolsproduct_name = CUSTOM_CONTENTS['tools']['prod']
+    toolsrepo_name = CUSTOM_CONTENTS['tools']['repo']
     # adding sleeps in between to avoid race conditions
     tools_product = entities.Product(name=toolsproduct_name, organization=org).create()
     tools_repo = entities.Repository(
         name=toolsrepo_name, product=tools_product, url=tools_repo_url,
         organization=org, content_type='yum').create()
-    logger.info("Entities product {} and repository {} is created successfully".
-                format(tools_product, toolsrepo_name))
+    logger.info(f"entities product {tools_product} and repository {toolsrepo_name} "
+                f"created successfully")
     start_time = job_execution_time("tools repo sync operation")
     entities.Repository(id=tools_repo.id).sync()
-    job_execution_time("tools repo {} sync operation".format(toolsrepo_name), start_time)
-    logger.info("Entities repository sync operation has completed successfully for tool "
-                "repos name {}".format(tools_repo.name))
+    job_execution_time(f"tools repo {toolsrepo_name} sync operation", start_time)
+    logger.info(f"entities repository sync operation completed successfully "
+                f"for tool repos name {tools_repo.name}")
     cv.repository += [tools_repo]
     try:
         cv.update(['repository'])
@@ -518,51 +701,46 @@ def sync_tools_repos_to_upgrade(client_os, hosts):
         start_time = job_execution_time("CV_Publish")
         call_entity_method_with_timeout(cv.read().publish, timeout=5000)
         # expected time out value is 3500
-        job_execution_time("Content view {} publish operation(In past time-out value was "
-                           "3500 but in current execution we set it 5000) "
-                           .format(cv.name), start_time)
+        job_execution_time(f"Content view {cv.name} publish operation(In past time-out value was "
+                           f"3500 but in current execution we set it 5000) ", start_time)
     except Exception as exp:
-        logger.critical("Content view {} publish failed with exception {}"
-                        .format(cv.name, exp))
+        logger.critical(f"content view {cv.name} publish failed with exception {exp}")
         # Fix of 1770940, 1773601
-        logger.info("Resuming the cancelled content view {} publish task"
-                    .format(cv.name))
+        logger.info(f"resuming the cancelled content views {cv.name} published task")
         resume_failed_task()
-    logger.info("Content view has published successfully")
+    logger.info("content view published successfully")
     published_ver = entities.ContentViewVersion(
         id=max([cv_ver.id for cv_ver in cv.read().version])).read()
-    logger.info(f"Details of the published_ver is {published_ver}")
+    logger.info(f"details of the published_ver is {published_ver}")
     start_time = job_execution_time("CV_Promotion")
-    logger.info("Published CV {} version promotion is started successfully"
-                .format(cv.name))
+    logger.info(f"published content view {cv.name} version promotion is started successfully")
     published_ver.promote(data={'environment_ids': [lenv.id], 'force': False})
-    job_execution_time("Content view {} promotion ".format(cv.name), start_time)
-    logger.info("Published CV {} version has promoted successfully".format(cv.name))
+    job_execution_time(f"content view {cv.name} promotion ", start_time)
+    logger.info(f"published cv {cv.name} version has promoted successfully")
     tools_sub = entities.Subscription().search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
     ak.add_subscriptions(data={
         'quantity': 1,
         'subscription_id': tools_sub.id,
     })
-    logger.info("Subscription added successfully in capsule activation key for name {}".
-                format(tools_sub.name))
+    logger.info(f"subscription added successfully in capsule "
+                f"activation key for name {tools_sub.name}")
     # Add this latest tools repo to hosts to upgrade
     sub = entities.Subscription().search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
     for host in hosts:
-        if float(os.environ.get('FROM_VERSION')) <= 6.1:
+        if float(settings.upgrade.from_version) <= 6.1:
             # If not User Hosts then, attach sub to dockered clients
             if not all([
-                os.environ.get('CLIENT6_HOSTS'),
-                os.environ.get('CLIENT7_HOSTS')
+                settings.upgrade.user_defined_client_hosts.rhel6,
+                settings.upgrade.user_defined_client_hosts.rhel7
             ]):
-                docker_vm = os.environ.get('DOCKER_VM')
                 execute(
                     attach_subscription_to_host_from_content_host,
                     sub.cp_id,
                     True,
                     host,
-                    host=docker_vm)
+                    host=settings.upgrade.docker_vm)
             # Else, Attach subs to user hosts
             else:
                 execute(
@@ -583,27 +761,29 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     :param list cap_host: Capsule hosts to run sync on
     """
     # Execute tasks as post upgrade tests are dependent
-    certificate_url = os.environ.get('FAKE_MANIFEST_CERT_URL')
+    certificate_url = settings.fake_manifest.cert_url
     if certificate_url is not None:
         execute(
             setup_fake_manifest_certificate,
             certificate_url,
             host=sat_host
         )
-    sat_version = os.environ.get('TO_VERSION')
+    sat_version = settings.upgrade.to_version
     execute(setup_alternate_capsule_ports, host=sat_host)
     if float(sat_version) > 6.1:
         # Update the Default Organization name, which was updated in 6.2
-        logger.info("Update the Default Organization name, which was updated "
+        logger.info("update the default organization name, which was updated "
                     "in 6.2")
-        org = entities.Organization().search(query={'search': 'label=Default_Organization'})[0]
-        org.name = "Default Organization"
+        org = entities.Organization().search(
+            query={'search': f'label="{DEFAULT_ORGANIZATION_LABEL}"'}
+        )[0]
+        org.name = f"{DEFAULT_ORGANIZATION}"
         org.update(['name'])
         # Update the Default Location name, which was updated in 6.2
-        logger.info("Update the Default Location name, which was updated in "
+        logger.info("update the Default Location name, which was updated in "
                     "6.2")
-        loc = entities.Location().search(query={'search': 'name="Default Location"'})[0]
-        loc.name = "Default Location"
+        loc = entities.Location().search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
+        loc.name = f"{DEFAULT_LOCATION}"
         loc.update(['name'])
         if bz_bug_is_open(1502505):
             logger.info(
@@ -612,7 +792,7 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
             puppet_location = entities.Setting().search(
                 query={'search': 'name=default_location_puppet_content'}
             )[0]
-            puppet_location.value = 'Default Location'
+            puppet_location.value = f'{DEFAULT_LOCATION}'
             puppet_location.update(['value'])
     # Increase log level to DEBUG, to get better logs in foreman_debug
     execute(lambda: run('sed -i -e \'/:level: / s/: .*/: '
@@ -624,24 +804,30 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
         sat_version=sat_version,
         host=sat_host
     )
-    # Execute task for creating latest discovery iso required for unattended
-    #  test
+    # Execute task for creating latest discovery iso required for unattended test
     env.disable_known_hosts = True
-    execute(
-        get_discovery_image,
-        host=os.environ.get('LIBVIRT_HOSTNAME')
-    )
+    if host_pings(settings.compute_resources.libvirt_hostname):
+        execute(
+            get_discovery_image,
+            host=settings.compute_resources.libvirt_hostname
+        )
+    else:
+        logger.warn(f"libvirt host {settings.compute_resources.libvirt_hostname} "
+                    f"is not working, please check and fix it in the code")
     # Commenting out until GH issue:#135
     # Removing the original manifest from Default Organization (Org-id 1),
     # to allow test-cases to utilize the same manifest.
     # logger.info("Removing the Original Manifest from Default Organization")
     # execute(hammer, 'subscription delete-manifest --organization-id 1',
     #         host=sat_host)
-
+    os.environ['HTTP_SERVER_HOSTNAME'] = settings.repos.rhel_repo_host
     # Run Avahi Task on upgrade boxes for REX tests to run
+    execute(foreman_packages_installation_check, state="unlock", non_upgrade_task=True,
+            host=sat_host)
     execute(lambda: run('yum remove -y epel*'), host=sat_host)
     execute(setup_avahi_discovery, host=sat_host)
-
+    execute(foreman_packages_installation_check, state="lock", non_upgrade_task=True,
+            host=sat_host)
     # setup RHEV certificate so it can be added as a CR
     execute(setup_rhv_ca, host=sat_host)
 
@@ -653,7 +839,7 @@ def capsule_sync(cap_host):
     """
     capsule = entities.SmartProxy().search(
         query={'search': 'name={}'.format(cap_host)})[0]
-    if float(os.environ.get('TO_VERSION')) >= 6.2:
+    if float(settings.upgrade.to_version) >= 6.2:
         logger.info('Refreshing features for capsule host {0}'.
                     format(cap_host))
         capsule.refresh()
@@ -682,43 +868,38 @@ def check_ntpd():
         run("chkconfig ntpd on")
 
 
-def setup_foreman_maintain():
+def setup_satellite_repo():
     """Task which install foreman-maintain tool.
 
     Environment Variables necessary to proceed Setup:
     -----------------------------------------------------
 
     DISTRIBUTION
-        The satellite upgrade using internal or CDN distribution.
-        e.g 'CDN','DOWNSTREAM'
+        The satellite upgrade using internal or cdn distribution.
+        e.g 'cdn','downstream'
 
     MAINTAIN_REPO
-        URL of repo if distribution is DOWNSTREAM
+        URL of repo if distribution is downstream
 
     BASE_URL
-        URL for the compose repository if distribution is DOWNSTREAM
+        URL for the compose repository if distribution is downstream
 
     TOOLS_RHEL7
-        URL for the satellite tools repo if distribution is DOWNSTREAM
+        URL for the satellite tools repo if distribution is downstream
     """
     env.disable_known_hosts = True
     # setting up foreman-maintain repo
     setup_foreman_maintain_repo()
-    if os.environ.get('DISTRIBUTION') != 'CDN':
+    if settings.upgrade.distribution != 'cdn':
         # Add Sat6 repo from latest compose
         repository_setup("sat6",
                          "satellite 6",
-                         "{}".format(os.environ.get('BASE_URL')),
+                         "{}".format(settings.repos.satellite6_repo),
                          1, 0)
         repository_setup("sat6tools7",
                          "satellite6-tools7",
-                         "{}".format(os.environ.get('TOOLS_RHEL7')),
+                         "{}".format(settings.repos.sattools_repo[settings.upgrade.os]),
                          1, 0)
-
-    # repolist
-    run('yum repolist')
-    # install foreman-maintain
-    run('yum install rubygem-foreman_maintain -y')
 
 
 def setup_foreman_maintain_repo():
@@ -728,19 +909,19 @@ def setup_foreman_maintain_repo():
     -----------------------------------------------------
 
     DISTRIBUTION
-        The satellite upgrade using internal or CDN distribution.
-        e.g 'CDN','DOWNSTREAM'
+        The satellite upgrade using internal or cdn distribution.
+        e.g 'cdn','downstream'
 
     MAINTAIN_REPO
-        URL of repo if distribution is DOWNSTREAM
+        URL of repo if distribution is downstream
     """
     # setting up foreman-maintain repo
-    if os.environ.get('DISTRIBUTION') == 'CDN':
+    if settings.upgrade.distribution == 'cdn':
         enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
     else:
         repository_setup("foreman-maintain",
                          "foreman-maintain",
-                         "{}".format(os.environ.get('MAINTAIN_REPO')),
+                         "{}".format(settings.repos.satmaintenance_repo),
                          1, 0)
 
 
@@ -771,46 +952,71 @@ def upgrade_using_foreman_maintain(sat_host=True):
             remote_path='/root/.hammer/cli.modules.d/foreman.yml')
         hammer_file.close()
 
-    with warn_only():
-        if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
-            # z stream upgrade
-            run(f'foreman-maintain upgrade check --target-version '
-                f'{os.environ.get("TO_VERSION")}.z -y')
-        else:
-            run(f'foreman-maintain upgrade check --target-version'
-                f' {os.environ.get("TO_VERSION")} -y')
+    def pre_satellite_upgrade_check():
+        with warn_only():
+            if settings.upgrade.from_version == settings.upgrade.to_version:
+                # z stream upgrade
+                run(f'foreman-maintain upgrade check --target-version '
+                    f'{settings.upgrade.to_version}.z -y')
+            else:
+                run(f'foreman-maintain upgrade check --target-version'
+                    f' {settings.upgrade.to_version} -y')
+
+    def pre_capsule_upgrade_check():
+        with warn_only():
+            if settings.upgrade.from_version == settings.upgrade.to_version:
+                run(f'foreman-maintain upgrade check --whitelist="repositories-validate, '
+                    f'repositories-setup" --target-version {settings.upgrade.to_version}.z -y')
+            else:
+                run(f'foreman-maintain upgrade check --whitelist="repositories-validate, '
+                    f'repositories-setup" --target-version {settings.upgrade.to_version} -y')
 
     def satellite_upgrade():
         """ This inner function is used to perform Y & Z satellite stream upgrade"""
         # whitelist disk-performance check
-        if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
+        if settings.upgrade.from_version == settings.upgrade.to_version:
             # z stream satellite upgrade
             run(f'foreman-maintain upgrade run '
                 f'--whitelist="disk-performance" '
-                f'--target-version {os.environ.get("TO_VERSION")}.z -y')
+                f'--target-version {settings.upgrade.to_version}.z -y')
         else:
-            # use beta until 6.9 is GA
-            if os.environ.get('TO_VERSION') == '6.9':
+            # use beta until 6.10 becomes GA
+            if settings.upgrade.to_version == '6.10':
                 with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
                     run(f'foreman-maintain upgrade run --whitelist="disk-performance'
-                        f'{os.environ["whitelisted_param"]}" --target-version '
-                        f'{os.environ.get("TO_VERSION")} -y')
+                        f'{settings.upgrade.whitelist_param}" --target-version '
+                        f'{settings.upgrade.to_version} -y')
             else:
                 run(f'foreman-maintain upgrade run --whitelist="disk-performance" '
-                    f'--target-version {os.environ.get("TO_VERSION")} -y')
+                    f'--target-version {settings.upgrade.to_version} -y')
 
     def capsule_upgrade():
         """ This inner function is used to perform Y & Z stream Capsule upgrade"""
-        if os.environ.get('FROM_VERSION') == os.environ.get('TO_VERSION'):
-            # z capsule stream upgrade
-            run(f'foreman-maintain upgrade run --target-version '
-                f'{os.environ.get("TO_VERSION")}.z -y')
+        if settings.upgrade.from_version == settings.upgrade.to_version:
+            # z capsule stream upgrade, If we do not whitelist the repos setup then cdn
+            # repos of target version gets enabled.
+            if settings.upgrade.distribution == 'cdn':
+                run(f'foreman-maintain upgrade run --target-version '
+                    f'{settings.upgrade.to_version}.z -y')
+            else:
+                run(f'foreman-maintain upgrade run -whitelist="repositories-validate,'
+                    f'repositories-setup" --target-version '
+                    f'{settings.upgrade.to_version}.z -y')
         else:
-            run(f'foreman-maintain upgrade run --whitelist="repositories-validate, '
-                f'repositories-setup" --target-version'
-                f' {os.environ.get("TO_VERSION")} -y')
+            if settings.upgrade.distribution == 'cdn':
+                run(f'foreman-maintain upgrade run --target-version'
+                    f' {settings.upgrade.to_version} -y')
+            else:
+                run(f'foreman-maintain upgrade run --whitelist="repositories-validate, '
+                    f'repositories-setup" --target-version'
+                    f' {settings.upgrade.to_version} -y')
 
-    satellite_upgrade() if sat_host else capsule_upgrade()
+    if sat_host:
+        pre_satellite_upgrade_check()
+        satellite_upgrade()
+    else:
+        pre_capsule_upgrade_check()
+        capsule_upgrade()
 
 
 def upgrade_puppet3_to_puppet4():
@@ -820,20 +1026,20 @@ def upgrade_puppet3_to_puppet4():
     -----------------------------------------------------
 
     DISTRIBUTION
-        The satellite upgrade using internal or CDN distribution.
-        e.g 'CDN','DOWNSTREAM'
+        The satellite upgrade using internal or cdn distribution.
+        e.g 'cdn','downstream'
 
     PUPPET4_REPO
-        URL of puppet4 repo if distribution is DOWNSTREAM
+        URL of puppet4 repo if distribution is downstream
     """
     env.disable_known_hosts = True
     # setting up puppet4 repo
-    if os.environ.get('DISTRIBUTION') == 'CDN':
+    if settings.upgrade.distribution == 'cdn':
         enable_repos('rhel-7-server-satellite-6.3-puppet4-rpms')
     else:
         repository_setup("Puppet4",
                          "puppet4",
-                         "{}".format(os.environ.get('PUPPET4_REPO')),
+                         "{}".format(settings.repos.puppet4_repo),
                          1, 0)
 
     # repolist
@@ -879,12 +1085,12 @@ def setup_satellite_clone():
     """
     env.disable_known_hosts = True
     # setting up foreman-maintain repo
-    if os.environ.get('DISTRIBUTION') == 'CDN':
+    if settings.upgrade.distribution == 'cdn':
         enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
     else:
         repository_setup("maintainrepo",
                          "maintain",
-                         "{}".format(os.environ.get('MAINTAIN_REPO')),
+                         "{}".format(settings.repos.satmaintenance_repo),
                          1, 0)
 
     # repolist
@@ -909,34 +1115,16 @@ def puppet_autosign_hosts(version, hosts, append=True):
         run('echo "{0}" {1} {2}'.format(host, append, puppetfile[puppetver]))
 
 
-def get_satellite_host():
-    """Get the satellite hostname depending on which jenkins variables are set
-
-    :return string : Returns the satellite hostname
-
-    Environment Variable:
-
-    RHEV_SAT_HOST
-        This is set, if we are using internal RHEV Templates and VM for
-        upgrade.
-    SATELLITE_HOSTNAME
-        This is set, in case user provides his personal satellite for
-        upgrade.
-        """
-    return os.environ.get(
-        'RHEV_SAT_HOST',
-        os.environ.get('SATELLITE_HOSTNAME')
-    )
-
-
 def wait_untill_capsule_sync(capsule):
     """The polling function that waits for capsule sync task to finish
 
     :param capsule: A capsule hostname
     """
     cap = entities.Capsule().search(
-        query={'search': 'name={}'.format(capsule)})[0]
+        query={'search': f'name={capsule}'})[0]
+    logger.info(f"Waiting for capsule {capsule} sync to finish ...")
     active_tasks = cap.content_get_sync()['active_sync_tasks']
+    logger.info(f"Active tasks {active_tasks}")
     if len(active_tasks) >= 1:
         logger.info(
             'Wait for background capsule sync to finish on '
@@ -980,7 +1168,7 @@ def generate_custom_certs():
         'yes "" | ./generate-ca.sh\n'
         'yes | ./generate-crt.sh $name\n'
         'cp cacert.crt $name/\n'
-        .format(hostname=os.environ.get('SERVER_HOSTNAME'))
+        .format(hostname=settings.upgrade.satellite_hostname)
     )
     put(local_path=certs_script,
         remote_path='/root/certs_script.sh')
@@ -994,15 +1182,14 @@ def add_custom_product_subscription_to_hosts(product, hosts):
     :param str product: The custom product name
     :param list hosts: List of content host names
     """
-    from_version = os.environ.get('FROM_VERSION')
     for host in hosts:
         sub = entities.Subscription().search(
-            query={'search': 'name={0}'.format(product)})[0]
-        if float(from_version) <= 6.1:
+            query={'search': f'name={product}'})[0]
+        if float(settings.upgrade.from_version) <= 6.1:
             execute(
                 attach_subscription_to_host_from_content_host, sub.cp_id, host=host)
         else:
-            host = entities.Host().search(query={'search': 'name={}'.format(host)})[0]
+            host = entities.Host().search(query={'search': f'name={host}'})[0]
             entities.HostSubscription(host=host).add_subscriptions(
                 data={'subscriptions': [{'id': sub.id, 'quantity': 1}]})
 
@@ -1015,20 +1202,19 @@ def check_status_of_running_task(command, attempt):
     """
     retry = 0
     while retry <= attempt:
-        status = run("{} >/dev/null 2>&1; echo $?".format(command))
+        status = run(f"{command} >/dev/null 2>&1; echo $?")
         if status:
-            logger.info("Attempt{}: Command: {}\n"
-                        "Task is still in running state".
-                        format(retry, command))
+            logger.info(f"Attempt{retry}: Command: {command}\n"
+                        "Task is still in running state")
             retry += 1
         else:
-            logger.info("Command: {}\n "
-                        "Check for running tasks:: [OK]".format(command))
+            logger.info(f"Command: {command}\n "
+                        f"Check for running tasks:: [OK]")
             return 0
     else:
-        logger.info("Command: {}\n"
-                    "Exceeded the maximum attempt to check the "
-                    "tasks running status".format(command))
+        logger.info(f"Command: {command}\n"
+                    f"Exceeded the maximum attempt to check the "
+                    f"tasks running status")
 
 
 def repository_setup(repository, repository_name, base_url, enable, gpgcheck):
@@ -1042,61 +1228,29 @@ def repository_setup(repository, repository_name, base_url, enable, gpgcheck):
     :return:
     """
     satellite_repo = StringIO()
-    satellite_repo.write('[{}]\n'.format(repository))
-    satellite_repo.write('name=s{}\n'.format(repository_name))
-    satellite_repo.write('baseurl={0}\n'.format(base_url))
-    satellite_repo.write('enabled={}\n'.format(enable))
-    satellite_repo.write('gpgcheck={}\n'.format(gpgcheck))
+    satellite_repo.write(f'[{repository}]\n')
+    satellite_repo.write(f'name=s{repository_name}\n')
+    satellite_repo.write(f'baseurl={base_url}\n')
+    satellite_repo.write(f'enabled={enable}\n')
+    satellite_repo.write(f'gpgcheck={gpgcheck}\n')
     put(local_path=satellite_repo,
-        remote_path='/etc/yum.repos.d/{}.repo'.format(repository))
+        remote_path=f'/etc/yum.repos.d/{repository}.repo')
     satellite_repo.close()
 
 
-def foreman_maintain_upgrade(base_url):
-    """
-    The purpose of this function is to setup the foreman-maintain and perform the
-    foreman-mantain upgrade"
-    :param str base_url: It is used to check the repository selection whether
-    it from CDN or from Downstream
-    """
-    if base_url is None:
-        os.environ['DISTRIBUTION'] = "CDN"
-    else:
-        os.environ['DISTRIBUTION'] = "DOWNSTREAM"
-    # setup foreman-maintain
-    setup_foreman_maintain()
-    preup_time = datetime.now().replace(microsecond=0)
-    # perform upgrade using foreman-maintain
-    upgrade_using_foreman_maintain()
-    postup_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for Satellite Upgrade - {}'.format(
-        str(postup_time - preup_time)))
-
-
-def enable_disable_repo(enable_repo_name, disable_repo_name):
+def enable_disable_repo(disable_repos_name=None, enable_repos_name=None):
     """
     The purpose of this function is to enable and disable the
     repository as per requirements.
-    :param list enable_repo_name: This will take the list of
-    repository which you are going to enable
-    :param list disable_repo_name: This will take the
+    :param list disable_repos_name: This will take the
     list of repository which you are going to disable
+    :param list enable_repos_name: This will take the list of
+    repository which you are going to enable
     """
-    if disable_repo_name:
-        [disable_repos('{}'.format(repo), silent=True) for repo in disable_repo_name]
-    if enable_repo_name:
-        [enable_repos('{}'.format(repo)) for repo in disable_repo_name]
-
-
-def repository_cleanup(repo_name):
-    """
-    The purpose of this function to perform the repository cleanup on the basis of
-    their name.
-    :param str repo_name: repository name
-    """
-    for fname in os.listdir('/etc/yum.repos.d/'):
-        if repo_name in fname.lower():
-            os.remove('/etc/yum.repos.d/{}'.format(fname))
+    if disable_repos_name:
+        [disable_repos(f'{repo}', silent=True) for repo in disable_repos_name]
+    if enable_repos_name:
+        [enable_repos(f'{repo}') for repo in enable_repos_name]
 
 
 def nonfm_upgrade(satellite_upgrade=True,
@@ -1121,12 +1275,12 @@ def nonfm_upgrade(satellite_upgrade=True,
     run('foreman-maintain service stop')
     run('yum clean all', warn_only=True)
     # Updating the packages again after setting sat6 repo
-    logger.info('Updating system and {} packages... '.format(upgrade_type))
+    logger.info(f'Updating system and {upgrade_type} packages... ')
     preyum_time = datetime.now().replace(microsecond=0)
     update_packages(quiet=False)
     postyum_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for system and {} packages update'
-                     ' - {}'.format(upgrade_type, str(postyum_time - preyum_time)))
+    logger.highlight(f'Time taken for system and {upgrade_type} packages update'
+                     f' - {str(postyum_time - preyum_time)}')
     # non zStream capsule upgrade
     if sat_host and cap_host:
         execute(
@@ -1135,8 +1289,8 @@ def nonfm_upgrade(satellite_upgrade=True,
             True,
             host=sat_host
         )
-        execute(lambda: run("scp -o 'StrictHostKeyChecking no' {0}-certs.tar "
-                            "root@{0}:/home/".format(cap_host)), host=sat_host)
+        execute(lambda: run(f"scp -o 'StrictHostKeyChecking no' {cap_host}-certs.tar "
+                            f"root@{cap_host}:/home/"), host=sat_host)
         setup_capsule_firewall()
         preup_time = datetime.now().replace(microsecond=0)
         upgrade_task(upgrade_type, cap_host)
@@ -1155,11 +1309,11 @@ def upgrade_task(upgrade_type, cap_host=None):
     :param str cap_host: hostname for capsule's major version upgrade
     """
     if cap_host:
-        run('satellite-installer --scenario {0} '
-            '--certs-tar-file /home/{1}-certs.tar '
-            '--certs-update-all'.format(upgrade_type, cap_host))
+        run(f'satellite-installer --scenario {upgrade_type} '
+            f'--certs-tar-file /home/{cap_host}-certs.tar '
+            f'--certs-update-all')
     else:
-        run('satellite-installer --scenario {}'.format(upgrade_type))
+        run(f'satellite-installer --scenario {upgrade_type}')
 
 
 def upgrade_validation(upgrade_type=False):
@@ -1168,11 +1322,17 @@ def upgrade_validation(upgrade_type=False):
     :param bool upgrade_type: if upgrade_type is True then we check both the services.
     """
     if upgrade_type:
-        run('hammer ping', warn_only=True)
+        with fabric_settings(warn_only=True):
+            result = run('hammer ping', warn_only=True)
+            if result.return_code != 0:
+                logger.warn(result)
+
+    with fabric_settings(warn_only=True):
+        result = run('foreman-maintain service status', warn_only=True)
+        if result.return_code != 0:
+            logger.warn(result)
     if bz_bug_is_open(1860444) and not upgrade_type:
         run('foreman-maintain service restart', warn_only=True)
-    else:
-        run('foreman-maintain service status', warn_only=True)
 
 
 def update_scap_content():
@@ -1187,8 +1347,8 @@ def update_scap_content():
         :param str policy_name: Name of policy to be created.
         """
         org = entities.Organization().search(
-            query={'search': 'name="{}"'.format("Default Organization")})[0]
-        loc = entities.Location().search(query={'search': 'name="Default Location"'})[0]
+            query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
+        loc = entities.Location().search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
         scap_content_profile_id = entities.ScapContents(
             id=scap_content.id).read().scap_content_profiles[0]['id']
         entities.CompliancePolicies(
@@ -1258,7 +1418,7 @@ def foreman_packages_installation_check(state="unlock", non_upgrade_task=False):
     :param bool non_upgrade_task: to unlock the packages for non_upgrade_task
 
     """
-    if os.environ.get('FOREMAN_MAINTAIN_SATELLITE_UPGRADE') != 'true' or non_upgrade_task:
+    if not settings.upgrade.foreman_maintain_satellite_upgrade or non_upgrade_task:
         logger.info("{} the foreman-maintain packages".format(state))
         run("foreman-maintain packages {} -y".format(state))
     else:
@@ -1297,3 +1457,37 @@ def resume_failed_task():
     if output:
         logger.warn(f"These task ids {','.join(output.split())} are still in paused state, "
                     f"manual investigation is required")
+
+
+def foreman_maintain_package_update():
+    """
+    Install the latest fm rubygem-foreman_maintain to get the latest y-stream upgrade path.
+    """
+    # Remove the old repos detail
+    run("yum clean all")
+    # repolist
+    run('yum repolist')
+    # install foreman-maintain
+    run('yum install rubygem-foreman_maintain -y')
+
+
+def yum_repos_cleanup():
+    """
+    Use to remove non-required repos from the /etc/yum.repos.d
+    """
+    with fabric_settings(warn_only=True):
+        result = run("rm -f /etc/yum.repos.d/*")
+        if result.return_code != 0:
+            logger.warn(result)
+
+
+def workaround_1829115():
+    """
+    Replacing the /usr/share/katello/hostname-change.rb with their original file before
+    starting the upgrade.
+    """
+    file_name = "/usr/share/katello/hostname-change.rb"
+    file_backup = '/usr/share/katello/hostname-change.rb.backup'
+    output = run(f"if [ -f {file_backup} ]; then mv {file_backup} {file_name}; fi")
+    if output.return_code > 0:
+        logger.warn("Failed to update the file")

@@ -17,10 +17,9 @@ its relations post upgrade
 
 :Upstream: No
 """
-import os
-
 import pytest
 
+from upgrade.helpers import settings
 from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade
 from upgrade_tests.helpers.existence import pytest_ids
@@ -34,8 +33,8 @@ dis_mem = compare_postupgrade(component, 'memory')
 dis_disks = compare_postupgrade(component, 'disk count')
 dis_size = compare_postupgrade(component, 'disks size')
 dis_subnet = compare_postupgrade(component, 'subnet')
-to_version = os.environ.get('TO_VERSION')
-from_version = os.environ.get('FROM_VERSION')
+to_version = settings.upgrade.to_version
+from_version = settings.upgrade.from_version
 
 
 # Tests

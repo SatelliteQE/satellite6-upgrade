@@ -1,0 +1,19 @@
+OSP:
+  # Openstack Auth URL
+  AUTH_URL:
+  # Operstack username
+  USERNAME:
+  # Openstack password
+  PASSWORD:
+  # Openstack project name
+  PROJECT_NAME:
+  # Openstack network name
+  NETWORK_NAME:
+  # Openstack domain name
+  DOMAIN_NAME:
+  # Openstack rhel7 image
+  RHEL7_IMAGE:
+  # Openstack template's configuration flavour name
+  FLAVOR_NAME:
+  # Openstack users ssh key
+  SSHKEY:

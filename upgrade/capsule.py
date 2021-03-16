@@ -1,24 +1,27 @@
-import os
 import sys
 
 from automation_tools import setup_capsule_firewall
-from automation_tools.utils import distro_info
-from fabric.api import env
 from fabric.api import execute
 from fabric.api import run
+from fabric.api import settings as fabric_settings
+from robozilla.decorators import bz_bug_is_open
 
+from upgrade.helpers import settings
+from upgrade.helpers.constants.constants import RHEL_CONTENTS
 from upgrade.helpers.logger import logger
-from upgrade.helpers.rhevm4 import create_rhevm4_instance
-from upgrade.helpers.rhevm4 import delete_rhevm4_instance
 from upgrade.helpers.tasks import add_baseOS_repo
+from upgrade.helpers.tasks import enable_disable_repo
+from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import foreman_service_restart
+from upgrade.helpers.tasks import http_proxy_config
 from upgrade.helpers.tasks import nonfm_upgrade
-from upgrade.helpers.tasks import setup_foreman_maintain_repo
-from upgrade.helpers.tasks import sync_capsule_repos_to_upgrade
+from upgrade.helpers.tasks import sync_capsule_repos_to_satellite
+from upgrade.helpers.tasks import update_capsules_to_satellite
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
+from upgrade.helpers.tasks import workaround_1829115
+from upgrade.helpers.tasks import yum_repos_cleanup
 from upgrade.helpers.tools import copy_ssh_key
-from upgrade.helpers.tools import disable_old_repos
 from upgrade.helpers.tools import host_pings
 from upgrade.helpers.tools import host_ssh_availability_check
 from upgrade.helpers.tools import reboot
@@ -26,77 +29,58 @@ from upgrade.helpers.tools import reboot
 logger = logger()
 
 
-def satellite6_capsule_setup(sat_host, os_version, upgradable_capsule=True):
-    """Setup all per-requisites for user provided capsule or auto created
-    capsule on rhevm for capsule upgrade.
+def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
+                            upgradable_capsule=True):
+    """
+    Setup all pre-requisites for user provided capsule
 
-    :param string sat_host: Satellite hostname to which the capsule registered
-    :param string os_version: The OS version onto which the capsule installed
-        e.g: rhel6, rhel7
-    :param bool upgradable_capsule: Whether to setup capsule to be able to
-        upgrade in future
+    :param satellite_host: Satellite hostname to which the capsule registered
+    :param capsule_hosts: List of capsule which mapped with satellite host
+    :param os_version: The OS version onto which the capsule installed e.g: rhel6, rhel7
+    :param upgradable_capsule:Whether to setup capsule to be able to upgrade in future
+    :return: capsule_hosts
     """
     if os_version == 'rhel6':
-        baseurl = os.environ.get('RHEL6_CUSTOM_REPO')
+        baseurl = settings.repos.rhel6_os
     elif os_version == 'rhel7':
-        baseurl = os.environ.get('RHEL7_CUSTOM_REPO')
+        baseurl = settings.repos.rhel7_os
     else:
         logger.warning('No OS Specified. Terminating..')
         sys.exit(1)
-    # For User Defined Capsule
-    if os.environ.get('CAPSULE_HOSTNAMES'):
-        cap_hosts = os.environ.get('CAPSULE_HOSTNAMES')
-        if not os.environ.get('CAPSULE_AK'):
-            logger.warning('CAPSULE_AK environment variable is not defined !')
-            sys.exit(1)
-    # Else run upgrade on rhevm capsule
-    else:
-        # Get image name and Hostname from Jenkins environment
-        missing_vars = [
-            var for var in (
-                'RHEV_CAP_IMAGE',
-                'RHEV_CAP_HOST',
-                'RHEV_CAPSULE_AK')
-            if var not in os.environ]
-        # Check if image name and Hostname in jenkins are set
-        if missing_vars:
-            logger.warning('The following environment variable(s) must be '
-                           'set: {0}.'.format(', '.join(missing_vars)))
-            sys.exit(1)
-        cap_image = os.environ.get('RHEV_CAP_IMAGE')
-        cap_hosts = os.environ.get('RHEV_CAP_HOST')
-        cap_instance = 'upgrade_capsule_auto_{0}'.format(os_version)
-        execute(delete_rhevm4_instance, cap_instance)
-        logger.info('Turning on Capsule Instance ....')
-        execute(create_rhevm4_instance, cap_instance, cap_image)
-        non_responsive_host = []
-        env['capsule_hosts'] = cap_hosts
-        if ',' in cap_hosts:
-            cap_hosts = [cap.strip() for cap in cap_hosts.split(',')]
+    non_responsive_host = []
+    for cap_host in capsule_hosts:
+        if not host_pings(cap_host):
+            non_responsive_host.append(cap_host)
         else:
-            cap_hosts = [cap_hosts]
-        for cap_host in cap_hosts:
-            if not host_pings(cap_host):
-                non_responsive_host.append(cap_host)
-            else:
-                execute(host_ssh_availability_check, cap_host)
-                execute(foreman_service_restart, host=cap_host)
+            execute(host_ssh_availability_check, cap_host)
+        # Update the template once 1829115 gets fixed.
+        execute(workaround_1829115, host=cap_host)
+        if not bz_bug_is_open(1829115):
+            logger.warn("Please update the capsule template for fixed capsule version")
+        execute(foreman_service_restart, host=cap_host)
         if non_responsive_host:
             logger.warning(str(non_responsive_host) + ' these are '
                                                       'non-responsive hosts')
             sys.exit(1)
-    copy_ssh_key(sat_host, cap_hosts)
-    # Dont run capsule upgrade requirements for n-1 capsule
+        copy_ssh_key(satellite_host, capsule_hosts)
     if upgradable_capsule:
-        execute(sync_capsule_repos_to_upgrade, cap_hosts, host=sat_host)
-        for cap_host in cap_hosts:
+        if settings.upgrade.distribution == "cdn":
+            settings.repos.capsule_repo = None
+            settings.repos.sattools_repo[settings.upgrade.os] = None
+            settings.repos.satmaintenance_repo = None
+        execute(update_capsules_to_satellite, capsule_hosts, host=satellite_host)
+        if settings.upgrade.upgrade_with_http_proxy:
+            http_proxy_config(capsule_hosts)
+        execute(sync_capsule_repos_to_satellite, capsule_hosts, host=satellite_host)
+        for cap_host in capsule_hosts:
+            settings.upgrade.capsule_hostname = cap_host
             execute(add_baseOS_repo, baseurl, host=cap_host)
-        for cap_host in cap_hosts:
-            logger.info('Capsule {} is ready for Upgrade'.format(cap_host))
-    return cap_hosts
+            execute(yum_repos_cleanup, host=cap_host)
+            logger.info(f'Capsule {cap_host} is ready for Upgrade')
+        return capsule_hosts
 
 
-def satellite6_capsule_upgrade(cap_host, sat_host):
+def satellite_capsule_upgrade(cap_host, sat_host):
     """Upgrades capsule from existing version to latest version.
 
     :param string cap_host: Capsule hostname onto which the capsule upgrade
@@ -118,19 +102,35 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
 
     """
     logger.highlight('\n========== CAPSULE UPGRADE =================\n')
-    from_version = os.environ.get('FROM_VERSION')
+    from_version = settings.upgrade.from_version
+    to_version = settings.upgrade.to_version
     setup_capsule_firewall()
-    major_ver = distro_info()[1]
-    ak_name = os.environ.get('CAPSULE_AK') if os.environ.get(
-        'CAPSULE_AK') else os.environ.get('RHEV_CAPSULE_AK')
-    run('subscription-manager register --org="Default_Organization" '
-        '--activationkey={0} --force'.format(ak_name))
-    disable_old_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
-        major_ver, from_version))
-    # setup foreman-maintain
-    setup_foreman_maintain_repo()
-    # Check what repos are set
-    if os.environ.get("FOREMAN_MAINTAIN_CAPSULE_UPGRADE") == 'true':
+    major_ver = settings.upgrade.os[-1]
+    ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
+    run(f'subscription-manager register --org="Default_Organization" '
+        f'--activationkey={ak_name} --force')
+    logger.info(f"Activation key {ak_name} registered capsule's all available repository")
+    run("subscription-manager repos --list")
+    maintenance_repo = [RHEL_CONTENTS["maintenance"]["label"]]
+    capsule_repos = [
+        RHEL_CONTENTS["tools"]["label"],
+        RHEL_CONTENTS["capsule"]["label"],
+    ]
+    with fabric_settings(warn_only=True):
+        if settings.upgrade.distribution == "cdn":
+            enable_disable_repo(enable_repos_name=capsule_repos + maintenance_repo)
+        else:
+            enable_disable_repo(disable_repos_name=maintenance_repo)
+
+    if from_version != to_version:
+        with fabric_settings(warn_only=True):
+            enable_disable_repo(disable_repos_name=capsule_repos)
+    with fabric_settings(warn_only=True):
+        enable_disable_repo(enable_repos_name=[
+            f"rhel-{major_ver}-server-ansible-{settings.upgrade.ansible_repo_version}-rpms"])
+
+    if settings.upgrade.foreman_maintain_capsule_upgrade:
+        foreman_maintain_package_update()
         upgrade_using_foreman_maintain(sat_host=False)
     else:
         nonfm_upgrade(satellite_upgrade=False,
@@ -143,7 +143,7 @@ def satellite6_capsule_upgrade(cap_host, sat_host):
     upgrade_validation()
 
 
-def satellite6_capsule_zstream_upgrade(cap_host):
+def satellite_capsule_zstream_upgrade(cap_host):
     """Upgrades Capsule to its latest zStream version
 
     :param string cap_host: Capsule hostname onto which the capsule upgrade
@@ -157,23 +157,40 @@ def satellite6_capsule_zstream_upgrade(cap_host):
         Next satellite version to which satellite will be upgraded
     """
     logger.highlight('\n========== CAPSULE UPGRADE =================\n')
-    from_version = os.environ.get('FROM_VERSION')
-    to_version = os.environ.get('TO_VERSION')
+    from_version = settings.upgrade.from_version
+    to_version = settings.upgrade.to_version
     if not from_version == to_version:
         logger.warning('zStream Upgrade on Capsule cannot be performed as '
                        'FROM and TO versions are not same!')
         sys.exit(1)
-    major_ver = distro_info()[1]
-    if os.environ.get('CAPSULE_URL'):
-        disable_old_repos('rhel-{0}-server-satellite-capsule-{1}-rpms'.format(
-            major_ver, from_version))
+    major_ver = settings.upgrade.os[-1]
+    ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
+    run(f'subscription-manager register --org="Default_Organization" '
+        f'--activationkey={ak_name} --force')
+    logger.info(f"Activation key {ak_name} registered capsule's all available repository")
+    run("subscription-manager repos --list")
+    capsule_repos = [
+        RHEL_CONTENTS["tools"]["label"],
+        RHEL_CONTENTS["capsule"]["label"],
+        RHEL_CONTENTS["maintenance"]["label"]
+    ]
+    with fabric_settings(warn_only=True):
+        if settings.upgrade.distribution == "cdn":
+            enable_disable_repo(enable_repos_name=capsule_repos)
+        else:
+            enable_disable_repo(disable_repos_name=capsule_repos)
+        ansible_repos = [f"rhel-{major_ver}-server-ansible-"
+                         f"{settings.upgrade.ansible_repo_version}-rpms"]
+        enable_disable_repo(enable_repos_name=ansible_repos)
     # Check what repos are set
-    if os.environ.get("FOREMAN_MAINTAIN_CAPSULE_UPGRADE") == 'true':
+    # setup_foreman_maintain_repo()
+    if settings.upgrade.foreman_maintain_capsule_upgrade:
         upgrade_using_foreman_maintain(sat_host=False)
     else:
         nonfm_upgrade(satellite_upgrade=False)
     # Rebooting the capsule for kernel update if any
-    reboot(160)
+    if settings.upgrade.satellite_capsule_setup_reboot:
+        reboot(160)
     host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
     upgrade_validation()

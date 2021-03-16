@@ -27,7 +27,9 @@ from fabric.api import put
 from fabric.api import run
 from fabric.api import warn_only
 from fabric.context_managers import shell_env
+from fauxfactory import gen_string
 from nailgun import entities
+from nailgun.config import ServerConfig
 from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers.constants import customcontents
@@ -47,6 +49,40 @@ logger = logger()
 
 class ProductNotFound(Exception):
     """Raise if the product you are searching is not found"""
+
+
+def save_server_config(satellite_host):
+    """
+    Save the satellite host details in the nailgun server config, that helps to execute
+    all the nailgun API's
+    :param satellite_host: The satelite hostname
+    :return:
+    """
+    sat_url = f'https://{satellite_host}'
+    ServerConfig(url=sat_url, auth=['admin', 'changeme'], verify=False).save()
+
+
+def http_proxy_config():
+    """
+    Set the http-proxy on the satellite server.
+    """
+    loc = entities.Location().search(query={'search': 'name="Default Location"'})[0]
+    org = entities.Organization().search(query={'search': 'name="Default Organization"'})[0]
+    name = gen_string('alpha', 15)
+    proxy_url = os.environ.get("HTTP_PROXY_URL")
+    entities.HTTPProxy(name=f"{name}",
+                       url=f"{proxy_url}",
+                       organization=f"{org.id}",
+                       location=f"{loc.id}"
+                       ).create()
+    prop_name = {
+        'http_proxy': f"{proxy_url}",
+        'content_default_http_proxy': f"{name}"
+    }
+    for key, value in prop_name.items():
+        setting_object = entities.Setting().search(query={'search': f'name={key}'})[0]
+        setting_object.value = f"{value}"
+        setting_object.update({'value'})
 
 
 def check_necessary_env_variables_for_upgrade(product):
@@ -907,26 +943,6 @@ def puppet_autosign_hosts(version, hosts, append=True):
         'ver2': '/etc/puppetlabs/puppet/autosign.conf'}
     for host in hosts:
         run('echo "{0}" {1} {2}'.format(host, append, puppetfile[puppetver]))
-
-
-def get_satellite_host():
-    """Get the satellite hostname depending on which jenkins variables are set
-
-    :return string : Returns the satellite hostname
-
-    Environment Variable:
-
-    RHEV_SAT_HOST
-        This is set, if we are using internal RHEV Templates and VM for
-        upgrade.
-    SATELLITE_HOSTNAME
-        This is set, in case user provides his personal satellite for
-        upgrade.
-        """
-    return os.environ.get(
-        'RHEV_SAT_HOST',
-        os.environ.get('SATELLITE_HOSTNAME')
-    )
 
 
 def wait_untill_capsule_sync(capsule):

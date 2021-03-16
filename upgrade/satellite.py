@@ -18,9 +18,11 @@ from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_upgrade
 from upgrade.helpers.tasks import foreman_packages_installation_check
 from upgrade.helpers.tasks import foreman_service_restart
+from upgrade.helpers.tasks import http_proxy_config
 from upgrade.helpers.tasks import nonfm_upgrade
 from upgrade.helpers.tasks import repository_cleanup
 from upgrade.helpers.tasks import repository_setup
+from upgrade.helpers.tasks import save_server_config
 from upgrade.helpers.tasks import setup_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
 from upgrade.helpers.tools import host_pings
@@ -64,6 +66,9 @@ def satellite6_setup(os_version):
         # Check that hostname and localhost resolve correctly
         execute(install_prerequisites, host=sat_host)
         # Subscribe the instance to CDN
+        save_server_config(sat_host)
+        if os.environ.get("UPGRADE_WITH_HTTP_PROXY"):
+            http_proxy_config()
         execute(subscribe, host=sat_host)
         execute(foreman_service_restart, host=sat_host)
     # Set satellite hostname in fabric environment

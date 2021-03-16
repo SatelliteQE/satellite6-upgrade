@@ -17,16 +17,17 @@ its associations post upgrade
 
 :Upstream: No
 """
-import os
-
 import pytest
 
+from upgrade.helpers import settings
 from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade
 from upgrade_tests.helpers.existence import pytest_ids
 
+
+to_version = settings.upgrade.to_version
 # Required Data
-if float(os.environ.get('TO_VERSION')) >= 6.3:
+if float(to_version) >= 6.3:
     component = 'discovery-rule'
 else:
     component = 'discovery_rule'
@@ -61,7 +62,7 @@ def test_positive_discovery_rules_by_priority(pre, post):
         upgrade
     """
     # The priority changes from 0 to some priority number during 6.3 to 6.4 upgrade only
-    if os.environ.get('TO_VERSION') == '6.4' and pre == '0':
+    if to_version == '6.4' and pre == '0':
         assert not existence(pre, post)
     else:
         assert existence(pre, post)

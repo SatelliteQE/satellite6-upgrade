@@ -1,12 +1,12 @@
 """Common helper functions to run upgrade existence and scenario tests
 """
-import os
 from functools import partial
 from pprint import pprint
 
 import pytest
 from robozilla.decorators import pytest_skip_if_bug_open
 
+from upgrade.helpers import settings
 from upgrade_tests.helpers.existence import assert_templates
 from upgrade_tests.helpers.variants import assert_varients
 
@@ -105,5 +105,5 @@ def dont_run_to_upgrade(versions):
     """
     versions = [versions] if type(versions) is str else versions
     return pytest.mark.skipif(
-        f'{os.environ.get("FROM_VERSION")}' in versions,
-        reason=f'Not for version {os.environ.get("FROM_VERSION")}')
+        f'{settings.upgrade.from_version}' in versions,
+        reason=f'Not for version {settings.upgrade.from_version}')

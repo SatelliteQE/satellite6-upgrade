@@ -6,6 +6,7 @@ from automation_tools.bz import bz_bug_is_open
 from fabric.api import run
 from fauxfactory import gen_string
 
+from upgrade.helpers import settings
 from upgrade.helpers.logger import logger
 
 logger = logger()
@@ -41,9 +42,8 @@ def generate_satellite_docker_clients_on_rhevm(
         logger.warning(
             'Clients count to generate on Docker should be atleast 1 !')
         sys.exit(1)
-    satellite_hostname = os.environ.get('RHEV_SAT_HOST')
-    ak = custom_ak or os.environ.get(
-        'RHEV_CLIENT_AK_{}'.format(client_os.upper()))
+    satellite_hostname = os.environ.get("satellite_hostname")
+    ak = settings.upgrade.client_ak[client_os]
     result = {}
     puppet = bool(puppet)
     if not puppet:

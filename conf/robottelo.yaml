@@ -1,0 +1,5 @@
+ROBOTTELO:
+  # Satellite's target version
+  SATELLITE_VERSION: "6.9"
+  # Next repos tag for the maintenance repos
+  NEXT_MAINTENANCE_REPOS_TAG: "_Next"

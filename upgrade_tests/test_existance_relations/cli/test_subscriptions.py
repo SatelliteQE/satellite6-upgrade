@@ -17,14 +17,12 @@ upgrade
 
 :Upstream: No
 """
-import os
-
 import pytest
 
+from upgrade.helpers import settings
 from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade
 from upgrade_tests.helpers.existence import pytest_ids
-
 # Required Data
 component = 'subscription'
 sub_name = compare_postupgrade(component, 'name')
@@ -106,7 +104,7 @@ def test_positive_subscriptions_by_end_date(pre, post):
     :expectedresults: All subscriptions end date status should be retained post
         upgrade
     """
-    from_ver = os.environ.get('FROM_VERSION')
+    from_ver = settings.upgrade.from_version
     if from_ver == '6.1':
         post = post.split('t')[0]
     if from_ver == '6.2':

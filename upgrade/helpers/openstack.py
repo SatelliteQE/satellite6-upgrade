@@ -1,4 +1,3 @@
-import os
 import re
 import sys
 
@@ -8,6 +7,7 @@ from fabric.api import env
 from fabric.api import execute
 from fabric.api import run
 
+from upgrade.helpers import settings
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import get_osp_hostname
 from upgrade.helpers.tools import host_pings
@@ -35,20 +35,20 @@ def get_openstack_client():
         Project NAME of an openstack project.
 
     """
-    username = os.environ.get('USERNAME')
+    username = settings.osp.username
     if username is None:
         logger.warning('The USERNAME environment variable should be defined')
-    password = os.environ.get('OSP_PASSWORD')
+    password = settings.osp.password
     if password is None:
         logger.warning('The OSP_PASSWORD environment variable should be defined')
-    auth_url = os.environ.get('AUTH_URL')
+    auth_url = settings.osp.auth_url
     if auth_url is None:
         logger.warning('The AUTH_URL environment variable should be defined')
-    project_name = os.environ.get('PROJECT_NAME')
+    project_name = settings.osp.project_name
     if project_name is None:
         logger.warning('The PROJECT_NAME environment variable should '
                        'be defined')
-    domain_name = os.environ.get('DOMAIN_NAME')
+    domain_name = settings.osp.domain_name
     if domain_name is None:
         logger.warning('The DOMAIN_NAME environment variable should '
                        'be defined')
@@ -105,17 +105,18 @@ def create_openstack_instance(instance_name, image_name, volume_size,
     SSH_KEY
         ssh key to be added into the instance from openstack
     """
-    if float(re.search(r'\d{1,2}.\d{1,2}', os.environ["RHEL7_IMAGE"]).group()) >= 7.7:
+    if float(re.search(r'\d{1,2}.\d{1,2}',
+                       settings.osp.rhel7_image).group()) >= 7.7:
         env.user = "cloud-user"
     else:
         env.user = 'root'
     env.disable_known_hosts = True
     if flavor_name is None:
-        flavor_name = flavor_name or os.environ.get('FLAVOR_NAME')
+        flavor_name = flavor_name or settings.osp.flavor_name
     if network_name is None:
-        network_name = network_name or os.environ.get('NETWORK_NAME')
+        network_name = network_name or settings.osp.network_name
     if ssh_key is None:
-        ssh_key = ssh_key or os.environ.get('OSP_SSHKEY')
+        ssh_key = ssh_key or settings.osp.sshkey
     openstack_client = shade.openstack_cloud(cloud='satellite-jenkins')
     # Validate image is added into openstack project
     image = openstack_client.get_image(image_name)

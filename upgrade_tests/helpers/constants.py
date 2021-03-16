@@ -1,15 +1,10 @@
 """API and CLI upgrade Tests Constants"""
-import os
-
 from nailgun import entities
 
-# FAKE REPOS
-FAKE_REPO_ZOO3 = 'http://inecas.fedorapeople.org/fakerepos/zoo3/'
-FROM_VERSION = os.environ.get('FROM_VERSION')
-TO_VERSION = os.environ.get('TO_VERSION')
-SUPPORTED_SAT_VERSIONS = ['6.2', '6.3', '6.4', '6.5', '6.6', '6.7', '6.8', '6.9']
-ALLOWED_ENDS = ['cli', 'api']
+from upgrade.helpers import settings
 
+
+to_version = settings.upgrade.to_version
 
 CLI_COMPONENTS = {
     'org_not_required':
@@ -18,10 +13,10 @@ CLI_COMPONENTS = {
             'capsule',
             'compute-resource',
             'discovery',
-            'discovery-rule' if TO_VERSION is not None and float(TO_VERSION) >= 6.3
+            'discovery-rule' if to_version is not None and float(to_version) >= 6.3
             else 'discovery_rule',
             'domain',
-            'puppet-environment' if TO_VERSION is not None and float(TO_VERSION) >= 6.7
+            'puppet-environment' if to_version is not None and float(to_version) >= 6.7
             else 'environment',
             'filter',
             'host',
@@ -66,7 +61,7 @@ CLI_ATTRIBUTES_KEY = dict.fromkeys(
         'content-host',
         'compute-resource',
         'discovery',
-        'discovery-rule' if TO_VERSION is not None and float(TO_VERSION) >= 6.3
+        'discovery-rule' if to_version is not None and float(to_version) >= 6.3
         else 'discovery_rule',
         'domain',
         'environment',

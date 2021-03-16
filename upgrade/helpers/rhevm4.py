@@ -3,7 +3,6 @@
 Note: Many functions and commands are affected by environment variables.
 """
 import _thread
-import os
 import sys
 import time
 
@@ -11,6 +10,7 @@ from fabric.api import execute
 from ovirtsdk4 import ConnectionBuilder
 from ovirtsdk4 import types
 
+from upgrade.helpers import settings
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import capsule_sync
 from upgrade.helpers.tasks import check_necessary_env_variables_for_upgrade
@@ -33,14 +33,14 @@ def get_rhevm4_client():
     RHEV_URL
         An url to API of rhevm project.
     """
-    username = os.environ.get('RHEV_USER')
+    username = settings.upgrade_old_infra.rhevm.rhev_user
     if username is None:
         logger.warning('The RHEV_USER environment variable should be defined.')
-    password = os.environ.get('RHEV_PASSWD')
+    password = settings.upgrade_old_infra.rhevm.rhev_passwd
     if password is None:
         logger.warning(
             'The RHEV_PASSWD environment variable should be defined.')
-    api_url = os.environ.get('RHEV_URL')
+    api_url = settings.upgrade_old_infra.rhev_url
     if api_url is None:
         logger.warning('An RHEV_URL environment variable should be defined.')
     builder = ConnectionBuilder(
@@ -83,7 +83,7 @@ def create_rhevm4_instance(
     instance.
     """
     if not cluster:
-        cluster = os.environ.get('RHEV_CLUSTER')
+        cluster = settings.upgrade_old_infra.rhevm.rhev_cluster
     # Setup VM configuration
     vmconf = types.Vm(
         name=instance_name,
@@ -276,17 +276,17 @@ def validate_and_create_rhevm4_templates(product):
     """
     # Get the instances name, specified in the jenkins job
     if product not in ['satellite', 'n-1']:
-        os_version = os.environ.get('OS_VERSION')
+        os_version = settings.upgrade.os[-1]
         sat_instance = 'upgrade_satellite_auto_rhel{0}'.format(os_version)
         logger.info('Satellite Instance name {0}'.format(sat_instance))
         cap_instance = 'upgrade_capsule_auto_rhel{0}'.format(os_version)
         logger.info('Capsule Instance name {0}'.format(cap_instance))
-        cluster = os.environ.get('RHEV_CLUSTER')
-        storage = os.environ.get('RHEV_STORAGE')
-        sat_host = os.environ.get('RHEV_SAT_HOST')
-        new_sat_template = os.environ.get('RHEV_SAT_IMAGE') + "_new"
-        cap_host = os.environ.get('RHEV_CAP_HOST')
-        new_cap_template = os.environ.get('RHEV_CAP_IMAGE') + "_new"
+        cluster = settings.upgrade_old_infra.rhevm.rhev_cluster
+        storage = settings.upgrade_old_infra.rhevm.rhev_storage
+        sat_host = settings.upgrade_old_infra.rhevm.rhev_sat_host
+        new_sat_template = settings.upgrade_old_infra.rhevm.rhev_sat_image + "_new"
+        cap_host = settings.upgrade_old_infra.rhevm.rhev_cap_host
+        new_cap_template = settings.upgrade_old_infra.rhevm.rhev_cap_image + "_new"
         if check_necessary_env_variables_for_upgrade('capsule'):
             execute(check_ntpd, host=sat_host)
             execute(foreman_service_restart, host=sat_host)

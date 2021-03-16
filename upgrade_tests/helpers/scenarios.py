@@ -9,6 +9,7 @@ from automation_tools.satellite6 import hammer
 from fabric.api import execute
 from fabric.api import run
 
+from upgrade.helpers import settings
 from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
 from upgrade.helpers.logger import logger
 from upgrade.helpers.rhevm4 import create_rhevm4_instance
@@ -72,9 +73,8 @@ def dockerize(ak_name=None, distro=None, org_label=None):
     RHEV_CLIENT_AK
         The AK using which client will be registered to satellite
     """
-    ak_name = ak_name or os.environ.get(
-        f'RHEV_CLIENT_AK_{distro.upper()}')
-    docker_vm = os.environ.get('DOCKER_VM')
+    ak_name = settings.upgrade.client_ak[settings.upgrade.os]
+    docker_vm = settings.upgrade.docker_vm
     # Check if the VM containing docker images is up, else turn on
     with get_rhevm4_client().build() as rhevm_client:
         instance_name = 'sat6-docker-upgrade'
@@ -104,26 +104,6 @@ def dockerize(ak_name=None, distro=None, org_label=None):
         host=docker_vm,
     )[docker_vm]
     return clients
-
-
-def get_satellite_host():
-    """Get the satellite hostname depending on which jenkins variables are set
-
-    :return string : Returns the satellite hostname
-
-    Environment Variable:
-
-    RHEV_SAT_HOST
-        This is set, if we are using internal RHEV Templates and VM for
-        upgrade.
-    SATELLITE_HOSTNAME
-        This is set, in case user provides his personal satellite for
-        upgrade.
-        """
-    return os.environ.get(
-        'RHEV_SAT_HOST',
-        os.environ.get('SATELLITE_HOSTNAME')
-    )
 
 
 def upload_manifest(manifest_url, org_name):

@@ -1,6 +1,24 @@
+import os
+
+from dynaconf import Dynaconf
 from nailgun.config import ServerConfig
 
-from upgrade.helpers.tasks import get_satellite_host
 
-sat_url = 'https://{}'.format(get_satellite_host())
+"""
+Save the satellite host details in the nailgun server config, that helps to execute
+all the nailgun API's
+"""
+
+sat_url = f"https://{os.environ.get('satellite_hostname')}"
 ServerConfig(url=sat_url, auth=['admin', 'changeme'], verify=False).save()
+
+"""
+The dynaconf object use to access the environment variable
+"""
+settings = Dynaconf(
+    envvar_prefix="UPGRADE",
+    core_loaders=["YAML"],
+    preload=["conf/*.yaml"],
+    envless_mode=True,
+    lowercase_read=True,
+)

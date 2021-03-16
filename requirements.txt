@@ -1,3 +1,9 @@
+# Version updates managed by pyup.io
+
+dynaconf==3.1.4
+broker==0.1.9
+jinja2==2.11.3
+
 # Get automation-tools from master
 git+https://github.com/SatelliteQE/automation-tools@master#egg=automation-tools
 

@@ -1,7 +1,5 @@
 """All the variants those changes during upgrade and the helper functions"""
-import os
-
-from upgrade_tests.helpers.constants import SUPPORTED_SAT_VERSIONS
+from upgrade.helpers import settings
 
 
 class VersionError(Exception):
@@ -133,9 +131,9 @@ _entity_varients = {
          '"veth*", "docker*", "tap*", "qbr*", "qvb*", "qvo*", "qr-*", '
          '"qg-*", "vlinuxbr*", "vovsbr*"]']*3,
         ['']*5 + ['*****']*3,
-        [f"{os.environ.get('REMOTE_EXECUTION_SSH_PASSWORD')}"]*5 + ['*****']*3,
-        [f"{os.environ.get('OAUTH_CONSUMER_KEY')}"]*5 + ['*****']*3,
-        [f"{os.environ.get('OAUTH_CONSUMER_SECRET')}"]*5 + ['*****']*3,
+        [f"{settings.upgrade.remote_execution_ssh_password}"]*5 + ['*****']*3,
+        [f"{settings.upgrade.oauth_consumer_key}"]*5 + ['*****']*3,
+        [f"{settings.upgrade.oauth_consumer_secret}"]*5 + ['*****']*3,
         ['ansible inventory']*6 + ['ansible - ansible inventory']*2,
         ['']*6 + ["external"]*2,
         ['']*6 + ["none"]*2,
@@ -254,10 +252,10 @@ _entity_varients = {
     'template': [
         # name variants
         ['idm_register']*3+['deprecated idm_register']*5,
-        ['satellite atomic kickstart default']*3+['deprecated satellite atomic kickstart default']*5, # noqa
+        ['satellite atomic kickstart default']*3+['deprecated satellite atomic kickstart default']*5,  # noqa
         ['satellite kickstart default']*3+['deprecated satellite kickstart default']*5,  # noqa
-        ['satellite kickstart default finish']*3+['deprecated satellite kickstart default finish']*5, # noqa
-        ['satellite kickstart default user data']*3+['deprecated satellite kickstart default user data']*5 # noqa
+        ['satellite kickstart default finish']*3+['deprecated satellite kickstart default finish']*5,  # noqa
+        ['satellite kickstart default user data']*3+['deprecated satellite kickstart default user data']*5  # noqa
     ]
 }
 
@@ -682,7 +680,7 @@ def depreciated_attrs_less_component_data(component, attr_data):
     :return list: attr_data with removed depreciated component entities from
         the _depreciated dict
     """
-    ver = os.environ.get('TO_VERSION')
+    ver = settings.upgrade.to_version
     if _depreciated.get(ver):
         if _depreciated[ver].get(component):
             for depr_attr_entity in _depreciated[ver][component]:
@@ -710,19 +708,22 @@ def assert_varients(component, pre, post):
         Else compares the actual preupgrade and postupgrade values and returns
         True/False accordingly
     """
-    if os.environ.get('FROM_VERSION') not in SUPPORTED_SAT_VERSIONS:
+    supported_sat_versions = settings.upgrade.supported_sat_versions
+    from_version = settings.upgrade.from_version
+    to_version = settings.upgrade.to_version
+    if from_version not in supported_sat_versions:
         raise VersionError(
             'Unsupported preupgrade version {} provided for '
-            'entity variants existence tests'.format(os.environ.get('FROM_VERSION')))
+            'entity variants existence tests'.format(from_version))
 
-    if os.environ.get('TO_VERSION') not in SUPPORTED_SAT_VERSIONS:
+    if to_version not in supported_sat_versions:
         raise VersionError(
             'Unsupported postupgrade version {} provided for '
-            'entity variants existence tests'.format(os.environ.get('TO_VERSION')))
+            'entity variants existence tests'.format(to_version))
 
     if component in _entity_varients:
         for single_list in _entity_varients[component]:
-            if pre == single_list[SUPPORTED_SAT_VERSIONS.index(os.environ.get('FROM_VERSION'))]:
-                if post == single_list[SUPPORTED_SAT_VERSIONS.index(os.environ.get('TO_VERSION'))]:
+            if pre == single_list[supported_sat_versions.index(from_version)]:
+                if post == single_list[supported_sat_versions.index(to_version)]:
                     return True
     return pre == post

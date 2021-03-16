@@ -1,0 +1,24 @@
+REPOS:
+  # Satellite's custom repos version format
+  SATELLITE_VERSION_UNDR: "@jinja {{this.robottelo.satellite_version | replace('.', '_')}}"
+  # RHEL 6,7 and 8 repos for RHAI, OSCAP etc
+  RHEL_REPO_HOST:
+  # Capsule repository
+  CAPSULE_REPO:
+  # rhel6 custom repo
+  RHEL6_OS:
+  # rhel7 custom repo
+  RHEL7_OS:
+  # Satellite tools repository
+  SATTOOLS_REPO:
+    RHEL6:
+    RHEL7:
+    RHEL8:
+  # Downstream Satellite-maintain repo
+  SATMAINTENANCE_REPO:
+  # Satellite 6 repository
+  SATELLITE6_REPO:
+  # Puppet repos
+  PUPPET4_REPO:
+  # Fake zoo repo
+  FAKE_REPO_ZOO3: "http://inecas.fedorapeople.org/fakerepos/zoo3/"

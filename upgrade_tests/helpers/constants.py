@@ -3,6 +3,12 @@ from nailgun import entities
 
 from upgrade.helpers import settings
 
+# FAKE REPOS
+FAKE_REPO_ZOO3 = 'http://inecas.fedorapeople.org/fakerepos/zoo3/'
+FROM_VERSION = os.environ.get('FROM_VERSION')
+TO_VERSION = os.environ.get('TO_VERSION')
+SUPPORTED_SAT_VERSIONS = ['6.7', '6.8', '6.9', '6.10']
+ALLOWED_ENDS = ['cli', 'api']
 
 to_version = settings.upgrade.to_version
 

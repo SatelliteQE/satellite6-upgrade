@@ -51,32 +51,34 @@ def product_setup_for_upgrade_on_brokers_machine(product, os_version, satellite,
 
     clients6 = clients7 = puppet_clients7 = puppet_clients6 = None
     logger.info('Setting up Satellite ....')
-    sat_host = satellite_setup(satellite)
-    if product == 'capsule' or product == 'n-1' or product == 'longrun':
+    satellite_setup(satellite)
+    if product in ['capsule', 'n-1', 'longrun']:
         cap_hosts = capsule.split()
         if len(cap_hosts) > 0:
             logger.info('Setting up Capsule ....')
-            cap_hosts = satellite_capsule_setup(
-                sat_host, cap_hosts, os_version, False if product == 'n-1' else True)
+            satellite_capsule_setup(
+                satellite, cap_hosts, os_version, False if product == 'n-1' else True)
         else:
-            logger.info(f'No capsule is available for capsule setup .... {cap_hosts}')
+            logger.info(
+                f'No capsule is available for capsule setup from provided capsules: {cap_hosts}')
             sys.exit(1)
-    if product == 'client' or product == 'longrun':
+    if product in ['client', 'longrun']:
         logger.info('Setting up Clients ....')
         clients6, clients7, puppet_clients7, puppet_clients6 = satellite6_client_setup()
 
     setups_dict = {
-        'sat_host': sat_host,
-        'capsule_hosts': cap_hosts,
-        'clients6': clients6,
-        'clients7': clients7,
-        'puppet_clients7': puppet_clients7,
-        'puppet_clients6': puppet_clients6
-    }
+        satellite: {
+            'sat_host': satellite,
+            'capsule_hosts': cap_hosts,
+            'clients6': clients6,
+            'clients7': clients7,
+            'puppet_clients7': puppet_clients7,
+            'puppet_clients6': puppet_clients6
+        }}
     create_setup_dict(setups_dict)
 
 
-def product_upgrade(product, upgrade_type):
+def product_upgrade(product, upgrade_type, satellite=None):
     """
     Used to drive the satellite, Capsule and Content-host upgrade based on their
     product type and upgrade type
@@ -151,7 +153,7 @@ def product_upgrade(product, upgrade_type):
     logger.info(f'Performing UPGRADE FROM {settings.upgrade.from_version} TO '
                 f'{settings.upgrade.to_version}')
     # Get the setup dict returned by setup_products_for_upgrade
-    setup_dict = get_setup_data()
+    setup_dict = get_setup_data(sat_hostname=satellite)
     sat_host = setup_dict['sat_host']
     cap_hosts = setup_dict['capsule_hosts']
     pre_upgrade_system_checks(cap_hosts)

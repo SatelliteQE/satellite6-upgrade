@@ -59,8 +59,8 @@ CUSTOM_CONTENTS = {
         'repo': 'capsuletools_repo',
     },
     'tools': {
-        'prod': f'tools6_latest_{settings.upgrade.os}',
-        'repo': f'tools6_latest_repo_{settings.upgrade.os}',
+        'prod': 'tools6_latest_{client_os}',
+        'repo': 'tools6_latest_repo_{client_os}',
     },
     'maintenance': {
         'prod': f'maintenance_latest_{os_ver}',

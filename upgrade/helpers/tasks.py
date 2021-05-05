@@ -660,7 +660,6 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     RHEV_CLIENT_AK
         The AK name used in client subscription
     """
-    client_os = client_os.upper()
     tools_repo_url = settings.repos.sattools_repo[client_os]
     if tools_repo_url is None:
         logger.warning('The Tools Repo URL for {} is not provided '
@@ -677,9 +676,10 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
         query={'search': 'name={}'.format(ak_name)})[0]
     cv = ak.content_view.read()
     lenv = ak.environment.read()
-    toolsproduct_name = CUSTOM_CONTENTS['tools']['prod']
-    toolsrepo_name = CUSTOM_CONTENTS['tools']['repo']
+    toolsproduct_name = CUSTOM_CONTENTS['tools']['prod'].format(client_os=client_os)
+    toolsrepo_name = CUSTOM_CONTENTS['tools']['repo'].format(client_os=client_os)
     # adding sleeps in between to avoid race conditions
+
     tools_product = entities.Product(name=toolsproduct_name, organization=org).create()
     tools_repo = entities.Repository(
         name=toolsrepo_name, product=tools_product, url=tools_repo_url,

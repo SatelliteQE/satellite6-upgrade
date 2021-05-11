@@ -382,8 +382,8 @@ def sync_rh_repos_to_satellite(org):
                 f" for name {server_repo.name}")
     start_time = job_execution_time("Repository sync")
     call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync, timeout=6000)
-    job_execution_time("repository {server_repo.name} sync (In past time-out value was 3600 "
-                       "but in current execution we set it 6000) takes", start_time)
+    job_execution_time(f"repository {server_repo.name} sync (In past time-out value was 3600 "
+                       f"but in current execution we set it 6000) takes", start_time)
     logger.info(f"entities repository sync operation completed successfully"
                 f" for name {server_repo.name}")
     scl_repo.repo_id = RHEL_CONTENTS['rhscl']['label']

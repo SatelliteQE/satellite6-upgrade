@@ -56,12 +56,9 @@ UPGRADE:
   UPGRADE_WITH_HTTP_PROXY: false
   # Default size of client's which we use for content host upgrade.
   CLIENTS_COUNT: "8"
-  # remote execution default password
-  REMOTE_EXECUTION_SSH_PASSWORD: "dog8code"
+  # SATQE_SHARED_PASSWORD for remote execution
   # Satellite's OAUTH_CONSUMER_KEY
-  OAUTH_CONSUMER_KEY:
   # Satellite's OAUTH_CONSUMER_SECRET
-  OAUTH_CONSUMER_SECRET:
   # Supported Satellite versions
   SUPPORTED_SAT_VERSIONS:
     - "6.7"

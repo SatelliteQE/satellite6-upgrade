@@ -1,6 +1,8 @@
 REPOS:
   # Satellite's custom repos version format
   SATELLITE_VERSION_UNDR: "@jinja {{this.robottelo.satellite_version | replace('.', '_')}}"
+  # Next repos tag for the maintenance repos
+  NEXT_MAINTENANCE_REPOS_TAG: '@jinja {{"_Next" if this.robottelo.satellite_version == "6.10" else ""}}'
   # RHEL 6,7 and 8 repos for RHAI, OSCAP etc
   RHEL_REPO_HOST:
   # Capsule repository

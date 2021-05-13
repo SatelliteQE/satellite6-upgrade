@@ -1,6 +1,4 @@
 """All the variants those changes during upgrade and the helper functions"""
-import os
-
 from upgrade.helpers import settings
 
 
@@ -133,9 +131,9 @@ _entity_varients = {
          '"veth*", "docker*", "tap*", "qbr*", "qvb*", "qvo*", "qr-*", '
          '"qg-*", "vlinuxbr*", "vovsbr*"]']*4,
         ['']*5 + ['*****']*4,
-        [f"{os.environ['SATQE_SHARED_PASSWORD'] if 'SATQE_SHARED_PASSWORD' in os.environ else ''}"]*5 + ['*****']*4,  # noqa
-        [f"{os.environ['OAUTH_CONSUMER_KEY'] if 'OAUTH_CONSUMER_KEY' in os.environ else ''}"]*5 + ['*****']*4,  # noqa
-        [f"{os.environ['OAUTH_CONSUMER_SECRET'] if 'OAUTH_CONSUMER_SECRET' in os.environ else ''}"]*5 + ['*****']*4,  # noqa
+        [f'{settings.upgrade.remote_ssh_password}']*5 + ['*****']*4,
+        [f'{settings.upgrade.oauth_consumer_key}']*5 + ['*****']*4,
+        [f'{settings.upgrade.oauth_consumer_secret}']*5 + ['*****']*4,
         ['ansible inventory']*6 + ['ansible - ansible inventory']*3,
         ['']*6 + ["external"]*3,
         ['']*6 + ["none"]*3,

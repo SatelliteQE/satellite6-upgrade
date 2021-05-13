@@ -189,6 +189,7 @@ def sync_capsule_repos_to_satellite(capsules):
         logger.warning(
             'The AK name is not provided for Capsule upgrade! Aborting...')
         sys.exit(1)
+    add_required_subscriptions_in_capsule_ak()
     org = entities.Organization(id=1).read()
     logger.info("Refreshing the attached manifest")
     with fabric_settings(warn_only=True):
@@ -1491,3 +1492,24 @@ def workaround_1829115():
     output = run(f"if [ -f {file_backup} ]; then mv {file_backup} {file_name}; fi")
     if output.return_code > 0:
         logger.warn("Failed to update the file")
+
+
+def add_required_subscriptions_in_capsule_ak():
+    """
+    Used to add the missing subscriptions in satellite's capsule activation key
+    """
+    org = entities.Organization(id=1).read()
+    capsule_ak = settings.upgrade.capsule_ak[settings.upgrade.os]
+    ak = entities.ActivationKey(organization=org).search(
+        query={'search': f'name={capsule_ak}'})[0]
+    with fabric_settings(warn_only=True):
+        rhel_sub_id = run("hammer subscription list|awk "
+                          "'/Red Hat Enterprise Linux Server, "
+                          "Premium \(Physical or Virtual Nodes\)/ {print $1}'")  # noqa
+        sat_sub_id = run("hammer subscription list|awk "
+                         "'/Red Hat Satellite Infrastructure Subscription/ {print $1}'")
+        for sub_id in [rhel_sub_id, sat_sub_id]:
+            output = run(f'hammer activation-key add-subscription '
+                         f'--subscription-id="{sub_id}" --id="{ak.id}"')
+            if output.return_code > 0:
+                logger.warn(output)

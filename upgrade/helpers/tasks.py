@@ -33,6 +33,7 @@ from nailgun import entities
 from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers import settings
+from upgrade.helpers.constants.constants import CAPSULE_SUBSCRIPTIONS
 from upgrade.helpers.constants.constants import CUSTOM_CONTENTS
 from upgrade.helpers.constants.constants import DEFAULT_LOCATION
 from upgrade.helpers.constants.constants import DEFAULT_ORGANIZATION
@@ -189,7 +190,6 @@ def sync_capsule_repos_to_satellite(capsules):
         logger.warning(
             'The AK name is not provided for Capsule upgrade! Aborting...')
         sys.exit(1)
-    add_required_subscriptions_in_capsule_ak()
     org = entities.Organization(id=1).read()
     logger.info("Refreshing the attached manifest")
     with fabric_settings(warn_only=True):
@@ -200,6 +200,7 @@ def sync_capsule_repos_to_satellite(capsules):
             logger.warn(result)
     ak = entities.ActivationKey(organization=org).search(
         query={'search': f'name={capsule_ak}'})[0]
+    add_satellite_subscriptions_in_capsule_ak(ak)
     logger.info(f"activation key {capsule_ak} used for capsule subscription and "
                 f"it found on the satellite")
     cv = ak.content_view.read()
@@ -1494,22 +1495,23 @@ def workaround_1829115():
         logger.warn("Failed to update the file")
 
 
-def add_required_subscriptions_in_capsule_ak():
+def add_satellite_subscriptions_in_capsule_ak(ak):
     """
-    Used to add the missing subscriptions in satellite's capsule activation key
+    Use to add the satellite subscriptions in capsule activation key, it helps to enable the
+    capsule repository.
+    :param ak:  capsule activation key object
     """
-    org = entities.Organization(id=1).read()
-    capsule_ak = settings.upgrade.capsule_ak[settings.upgrade.os]
-    ak = entities.ActivationKey(organization=org).search(
-        query={'search': f'name={capsule_ak}'})[0]
     with fabric_settings(warn_only=True):
-        rhel_sub_id = run("hammer subscription list|awk "
-                          "'/Red Hat Enterprise Linux Server, "
-                          "Premium \(Physical or Virtual Nodes\)/ {print $1}'")  # noqa
-        sat_sub_id = run("hammer subscription list|awk "
-                         "'/Red Hat Satellite Infrastructure Subscription/ {print $1}'")
-        for sub_id in [rhel_sub_id, sat_sub_id]:
-            output = run(f'hammer activation-key add-subscription '
-                         f'--subscription-id="{sub_id}" --id="{ak.id}"')
+        rhel_subscription = f'awk \'/{CAPSULE_SUBSCRIPTIONS["rhel_subscription"]}/ ' +\
+                            '{print $1}\''
+        sat_subscription = f'awk \'/{CAPSULE_SUBSCRIPTIONS["satellite_infra"]}/ ' + \
+                           '{print $1}\''
+        for subscription in rhel_subscription, sat_subscription:
+            output = run(f'hammer subscription list|{subscription}')
             if output.return_code > 0:
                 logger.warn(output)
+            else:
+                ak_output = run(f'hammer activation-key add-subscription --subscription-id='
+                                f'"{output}" --id="{ak.id}"')
+                if ak_output.return_code > 0:
+                    logger.warn(output)

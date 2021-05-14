@@ -94,6 +94,13 @@ CUSTOM_SAT_REPO = {
 }
 
 
+CAPSULE_SUBSCRIPTIONS = {
+    "rhel_subscription": "Red Hat Enterprise Linux Server, Premium "
+                         "\(Physical or Virtual Nodes\)",  # noqa
+    "satellite_infra": "Red Hat Satellite Infrastructure Subscription",
+}
+
+
 DEFAULT_LOCATION = "Default Location"
 DEFAULT_ORGANIZATION = "Default Organization"
 DEFAULT_ORGANIZATION_LABEL = "Default_Organization"

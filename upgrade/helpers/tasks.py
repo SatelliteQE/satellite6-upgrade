@@ -33,6 +33,7 @@ from fauxfactory import gen_string
 from nailgun import entities
 from robozilla.decorators import bz_bug_is_open
 
+from upgrade.helpers import nailgun_conf
 from upgrade.helpers import settings
 from upgrade.helpers.constants.constants import CAPSULE_SUBSCRIPTIONS
 from upgrade.helpers.constants.constants import CUSTOM_CONTENTS
@@ -65,20 +66,20 @@ def update_capsules_to_satellite(capsules):
     """
     for capsule in capsules:
         smart_proxy = (
-            entities.SmartProxy()
+            entities.SmartProxy(nailgun_conf)
             .search(query={'search': f'name={capsule}'})[0]
             .read()
         )
-        loc = entities.Location().search(
+        loc = entities.Location(nailgun_conf).search(
             query={'search': f'name="{DEFAULT_LOCATION}"'}
         )[0]
-        org = entities.Organization().search(
+        org = entities.Organization(nailgun_conf).search(
             query={'search': f'name="{DEFAULT_ORGANIZATION}"'}
         )[0]
         try:
-            smart_proxy.location.append(entities.Location(id=loc.id))
+            smart_proxy.location.append(entities.Location(nailgun_conf, id=loc.id))
             smart_proxy.update(['location'])
-            smart_proxy.organization.append(entities.Organization(id=org.id))
+            smart_proxy.organization.append(entities.Organization(nailgun_conf, id=org.id))
             smart_proxy.update(['organization'])
             logger.info("for Capsule default location and organization updated successfully")
         except requests.exceptions.HTTPError as err:
@@ -97,21 +98,19 @@ def http_proxy_config(capsule_hosts):
     Set the http-proxy on the satellite server.
     :param capsule_hosts: list of capsule host
     """
-    loc = entities.Location().search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
-    org = entities.Organization().search(query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
+    loc = entities.Location(nailgun_conf).search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
+    org = entities.Organization(nailgun_conf).search(query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
     name = gen_string('alpha', 15)
     proxy_url = settings.http_proxy.un_auth_proxy_url
-    entities.HTTPProxy(name=f"{name}",
-                       url=f"{proxy_url}",
-                       organization=f"{org.id}",
-                       location=f"{loc.id}"
-                       ).create()
+    entities.HTTPProxy(
+        nailgun_conf, name=f"{name}", url=f"{proxy_url}",
+        organization=f"{org.id}", location=f"{loc.id}").create()
     prop_name = {
         'http_proxy': f"{proxy_url}",
         'content_default_http_proxy': f"{name}"
     }
     for key, value in prop_name.items():
-        setting_object = entities.Setting().search(query={'search': f'name={key}'})[0]
+        setting_object = entities.Setting(nailgun_conf).search(query={'search': f'name={key}'})[0]
         setting_object.value = f"{value}"
         setting_object.update({'value'})
 
@@ -191,7 +190,7 @@ def sync_capsule_repos_to_satellite(capsules):
         logger.warning(
             'The AK name is not provided for Capsule upgrade! Aborting...')
         sys.exit(1)
-    org = entities.Organization(id=1).read()
+    org = entities.Organization(nailgun_conf, id=1).read()
     logger.info("Refreshing the attached manifest")
     with fabric_settings(warn_only=True):
         result = run(f'hammer subscription refresh-manifest --organization-id {org.id}')
@@ -199,7 +198,7 @@ def sync_capsule_repos_to_satellite(capsules):
             logger.info("manifest refreshed successfully")
         else:
             logger.warn(result)
-    ak = entities.ActivationKey(organization=org).search(
+    ak = entities.ActivationKey(nailgun_conf, organization=org).search(
         query={'search': f'name={capsule_ak}'})[0]
     add_satellite_subscriptions_in_capsule_ak(ak)
     logger.info(f"activation key {capsule_ak} used for capsule subscription and "
@@ -227,7 +226,7 @@ def sync_capsule_repos_to_satellite(capsules):
         resume_failed_task()
     logger.info(f"content view {cv.name} published successfully")
     published_ver = entities.ContentViewVersion(
-        id=max([cv_ver.id for cv_ver in cv.read().version])).read()
+        nailgun_conf, id=max([cv_ver.id for cv_ver in cv.read().version])).read()
     logger.info(f"content view {cv.name} promotion started successfully")
     published_ver.promote(data={'environment_ids': [lenv.id], 'force': False})
     logger.info(f"content view {cv.name} promotion completed successfully")
@@ -252,8 +251,9 @@ def sync_capsule_subscription_to_capsule_ak(org):
     # enable capsule repo from Redhat Repositories
     if settings.repos.capsule_repo:
         cap_product = entities.Product(
-            name=CUSTOM_CONTENTS['capsule']['prod'], organization=org).create()
+            nailgun_conf, name=CUSTOM_CONTENTS['capsule']['prod'], organization=org).create()
         cap_repo = entities.Repository(
+            nailgun_conf,
             name=CUSTOM_CONTENTS['capsule']['repo'],
             product=cap_product,
             url=settings.repos.capsule_repo,
@@ -281,13 +281,14 @@ def sync_capsule_subscription_to_capsule_ak(org):
                     logger.warn(result)
 
         cap_product = entities.Product(
+            nailgun_conf,
             name=RHEL_CONTENTS['capsule']['prod'],
             organization=org
         ).search(query={'per_page': 100})[0]
         logger.info(f"rhel capsule product {RHEL_CONTENTS['capsule']['prod']} is "
                     f"found enabled.")
         cap_reposet = entities.RepositorySet(
-            name=RHEL_CONTENTS['capsule']['repofull'], product=cap_product).search()[0]
+            nailgun_conf, name=RHEL_CONTENTS['capsule']['repofull'], product=cap_product).search()[0]
         logger.info("entities of repository {} search completed successfully".
                     format(RHEL_CONTENTS['capsule']['repofull']))
         try:
@@ -298,7 +299,7 @@ def sync_capsule_subscription_to_capsule_ak(org):
         except requests.exceptions.HTTPError as exp:
             logger.warn(exp)
         cap_repo = entities.Repository(
-            name=RHEL_CONTENTS['capsule']['repo']).search(
+            nailgun_conf, name=RHEL_CONTENTS['capsule']['repo']).search(
             query={'organization_id': org.id, 'per_page': 100}
         )[0]
         logger.info(f"capsule repository's repofull {RHEL_CONTENTS['capsule']['repofull']} "
@@ -308,7 +309,7 @@ def sync_capsule_subscription_to_capsule_ak(org):
                 f"for name {cap_repo.name}")
     start_time = job_execution_time("entity repository sync")
     # Expected value 2500
-    call_entity_method_with_timeout(entities.Repository(id=cap_repo.id).sync, timeout=4000)
+    call_entity_method_with_timeout(entities.Repository(nailgun_conf, id=cap_repo.id).sync, timeout=4000)
     job_execution_time(f"entity repository {cap_repo.name} sync (In past time-out value was "
                        f"2500 but in current execution we set it 4000)", start_time)
     logger.info(f"entities repository sync operation completed successfully "
@@ -329,12 +330,12 @@ def sync_rh_repos_to_satellite(org):
     arch = 'x86_64'
     # Enable rhscl repository
     scl_product = entities.Product(
-        name=RHEL_CONTENTS['rhscl_sat64']['prod'], organization=org
+        nailgun_conf, name=RHEL_CONTENTS['rhscl_sat64']['prod'], organization=org
     ).search(query={'per_page': 100})[0]
     logger.info(f"red hat software collection for product "
                 f"{RHEL_CONTENTS['rhscl_sat64']['prod']} is enabled")
     scl_reposet = entities.RepositorySet(
-        name=RHEL_CONTENTS['rhscl']['repo'], product=scl_product
+        nailgun_conf, name=RHEL_CONTENTS['rhscl']['repo'], product=scl_product
     ).search()[0]
     logger.info(f"red hat software collection repo "
                 f"{RHEL_CONTENTS['rhscl']['repo']} is enabled")
@@ -347,7 +348,7 @@ def sync_rh_repos_to_satellite(org):
     time.sleep(20)
     # Sync enabled Repo from cdn
     scl_repo = entities.Repository(
-        name=RHEL_CONTENTS['rhscl']['repofull']).search(
+        nailgun_conf, name=RHEL_CONTENTS['rhscl']['repofull']).search(
         query={'organization_id': org.id, 'per_page': 100}
     )[0]
     attempt = 0
@@ -355,7 +356,7 @@ def sync_rh_repos_to_satellite(org):
     while attempt <= 3:
         try:
             call_entity_method_with_timeout(
-                entities.Repository(id=scl_repo.id).sync, timeout=3500)
+                entities.Repository(nailgun_conf, id=scl_repo.id).sync, timeout=3500)
             break
         except requests.exceptions.HTTPError as exp:
             logger.warn(f"retry {attempt} after exception: {exp}")
@@ -364,11 +365,11 @@ def sync_rh_repos_to_satellite(org):
             attempt += 1
     # Enable RHEL 7 Server repository
     server_product = entities.Product(
-        name=RHEL_CONTENTS['server']['prod'], organization=org).\
+        nailgun_conf, name=RHEL_CONTENTS['server']['prod'], organization=org).\
         search(query={'per_page': 100})[0]
     logger.info(f"product {RHEL_CONTENTS['server']['prod']} is enable")
     server_reposet = entities.RepositorySet(
-        name=RHEL_CONTENTS['server']['repo'], product=server_product).search()[0]
+        nailgun_conf, name=RHEL_CONTENTS['server']['repo'], product=server_product).search()[0]
     logger.info(f"repository {RHEL_CONTENTS['server']['repo']} is enabled")
     try:
         server_reposet.enable(
@@ -379,12 +380,12 @@ def sync_rh_repos_to_satellite(org):
     time.sleep(20)
     # Sync enabled Repo from cdn
     server_repo = entities.Repository(
-        name=RHEL_CONTENTS['server']['repofull']
+        nailgun_conf, name=RHEL_CONTENTS['server']['repofull']
     ).search(query={'organization_id': org.id, 'per_page': 100})[0]
     logger.info(f"entities repository sync operation started successfully"
                 f" for name {server_repo.name}")
     start_time = job_execution_time("Repository sync")
-    call_entity_method_with_timeout(entities.Repository(id=server_repo.id).sync, timeout=6000)
+    call_entity_method_with_timeout(entities.Repository(nailgun_conf, id=server_repo.id).sync, timeout=6000)
     job_execution_time(f"repository {server_repo.name} sync (In past time-out value was 3600 "
                        f"but in current execution we set it 6000) takes", start_time)
     logger.info(f"entities repository sync operation completed successfully"
@@ -407,10 +408,12 @@ def sync_sattools_repos_to_satellite_for_capsule(org):
     sat_tools_repo = settings.repos.sattools_repo[settings.upgrade.os]
     if sat_tools_repo:
         sattools_product = entities.Product(
+            nailgun_conf,
             name=CUSTOM_CONTENTS['capsule_tools']['prod'],
             organization=org
         ).create()
         sattools_repo = entities.Repository(
+            nailgun_conf,
             name=CUSTOM_CONTENTS['capsule_tools']['repo'],
             product=sattools_product,
             url=sat_tools_repo,
@@ -438,10 +441,10 @@ def sync_sattools_repos_to_satellite_for_capsule(org):
                     logger.warn(result)
 
         sattools_product = entities.Product(
-            name=RHEL_CONTENTS['tools']['prod'], organization=org
+            nailgun_conf, name=RHEL_CONTENTS['tools']['prod'], organization=org
         ).search(query={'per_page': 100})[0]
         sat_reposet = entities.RepositorySet(
-            name=RHEL_CONTENTS['tools']['repofull'], product=sattools_product).search()[0]
+            nailgun_conf, name=RHEL_CONTENTS['tools']['repofull'], product=sattools_product).search()[0]
         logger.info(f"check the capsule tool's product"
                     f" {RHEL_CONTENTS['tools']['prod']} and"
                     f" repository {RHEL_CONTENTS['tools']['repo']} "
@@ -454,15 +457,15 @@ def sync_sattools_repos_to_satellite_for_capsule(org):
             logger.warn(exp)
         time.sleep(5)
         sattools_repo = entities.Repository(
-            name=RHEL_CONTENTS['tools']['repo']
+            nailgun_conf, name=RHEL_CONTENTS['tools']['repo']
         ).search(query={'organization_id': org.id, 'per_page': 100})[0]
         logger.info(f"entities repository search completed successfully for sattools "
                     f"repo {RHEL_CONTENTS['tools']['repofull']}")
     logger.info("entities repository sync started successfully for capsule repo name {}".
                 format(sattools_repo.name))
     start_time = job_execution_time("Entities repository sync")
-    call_entity_method_with_timeout(entities.Repository(id=sattools_repo.id).sync,
-                                    timeout=5000)
+    call_entity_method_with_timeout(
+        entities.Repository(nailgun_conf, id=sattools_repo.id).sync, timeout=5000)
     job_execution_time(f"entities repository {sattools_repo.name} "
                        f"sync(In past time-out value was 2500 "
                        f"but in current execution we set it 5000)", start_time)
@@ -485,9 +488,11 @@ def sync_maintenance_repos_to_satellite_for_capsule(org):
     arch = 'x86_64'
     if settings.repos.satmaintenance_repo:
         maintenance_product = entities.Product(
+            nailgun_conf,
             name=CUSTOM_CONTENTS['maintenance']['prod'],
             organization=org).create()
         maintenance_repo = entities.Repository(
+            nailgun_conf,
             name=CUSTOM_CONTENTS['maintenance']['repo'],
             product=maintenance_product, url=settings.repos.satmaintenance_repo,
             organization=org,
@@ -512,9 +517,10 @@ def sync_maintenance_repos_to_satellite_for_capsule(org):
             else:
                 logger.warn(result)
         maintenance_product = entities.Product(
-            name=RHEL_CONTENTS['maintenance']['prod'], organization=org
+            nailgun_conf, name=RHEL_CONTENTS['maintenance']['prod'], organization=org
         ).search(query={'per_page': 100})[0]
         maintenance_reposet = entities.RepositorySet(
+            nailgun_conf,
             name=RHEL_CONTENTS['maintenance']['repofull'],
             product=maintenance_product
         ).search()[0]
@@ -530,7 +536,7 @@ def sync_maintenance_repos_to_satellite_for_capsule(org):
             logger.warn(exp)
         time.sleep(5)
         maintenance_repo = entities.Repository(
-            name=RHEL_CONTENTS['maintenance']['repo']).search(
+            nailgun_conf, name=RHEL_CONTENTS['maintenance']['repo']).search(
             query={'organization_id': org.id, 'per_page': 100}
         )[0]
         logger.info(f"entities repository search completed successfully for maintenance "
@@ -538,8 +544,8 @@ def sync_maintenance_repos_to_satellite_for_capsule(org):
     logger.info(f"entities repository sync started successfully for "
                 f"maintenance repo {maintenance_repo.name}")
     start_time = job_execution_time("Entities repository sync")
-    call_entity_method_with_timeout(entities.Repository(id=maintenance_repo.id).sync,
-                                    timeout=5000)
+    call_entity_method_with_timeout(
+        entities.Repository(nailgun_conf, id=maintenance_repo.id).sync, timeout=5000)
     job_execution_time(f"entities repository {maintenance_repo.name} sync(In past time-out "
                        f"value was 2500 but in current execution we set it 5000)", start_time)
     logger.info(f"entities repository sync completed successfully for "
@@ -589,7 +595,7 @@ def add_subscription_for_capsule(ak, org):
         logger.info(f"activation key content override successfully for "
                     f"content label:{cap_repo.name}")
     else:
-        cap_sub = entities.Subscription().search(
+        cap_sub = entities.Subscription(nailgun_conf).search(
             query={'search': 'name={0}'.format(CUSTOM_CONTENTS['capsule']['prod'])})[0]
         ak.add_subscriptions(data={
             'quantity': 1,
@@ -606,7 +612,7 @@ def add_subscription_for_capsule(ak, org):
         logger.info(f"cdn activation key successfully override for maintenance content_label"
                     f" {maintenance_repo.name}")
     else:
-        maintenance_sub = entities.Subscription().search(
+        maintenance_sub = entities.Subscription(nailgun_conf).search(
             query={'search': 'name={0}'.format(
                 CUSTOM_CONTENTS['maintenance']['prod'])
             }
@@ -626,7 +632,7 @@ def add_subscription_for_capsule(ak, org):
         logger.info(f"cdn activation key successfully override) for "
                     f"capsule content_label {sattools_repo.name}")
     else:
-        captools_sub = entities.Subscription().search(
+        captools_sub = entities.Subscription(nailgun_conf).search(
             query={'search': f'name={CUSTOM_CONTENTS["capsule_tools"]["prod"]}'})[0]
         ak.add_subscriptions(data={
             'quantity': 1,
@@ -673,9 +679,9 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
                        'upgrade!'.format(client_os))
         sys.exit(1)
 
-    org = entities.Organization().search(
+    org = entities.Organization(nailgun_conf).search(
         query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
-    ak = entities.ActivationKey(organization=org).search(
+    ak = entities.ActivationKey(nailgun_conf, organization=org).search(
         query={'search': 'name={}'.format(ak_name)})[0]
     cv = ak.content_view.read()
     lenv = ak.environment.read()
@@ -683,14 +689,14 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     toolsrepo_name = CUSTOM_CONTENTS['tools']['repo'].format(client_os=client_os)
     # adding sleeps in between to avoid race conditions
 
-    tools_product = entities.Product(name=toolsproduct_name, organization=org).create()
+    tools_product = entities.Product(nailgun_conf, name=toolsproduct_name, organization=org).create()
     tools_repo = entities.Repository(
-        name=toolsrepo_name, product=tools_product, url=tools_repo_url,
+        nailgun_conf, name=toolsrepo_name, product=tools_product, url=tools_repo_url,
         organization=org, content_type='yum').create()
     logger.info(f"entities product {tools_product} and repository {toolsrepo_name} "
                 f"created successfully")
     start_time = job_execution_time("tools repo sync operation")
-    entities.Repository(id=tools_repo.id).sync()
+    entities.Repository(nailgun_conf, id=tools_repo.id).sync()
     job_execution_time(f"tools repo {toolsrepo_name} sync operation", start_time)
     logger.info(f"entities repository sync operation completed successfully "
                 f"for tool repos name {tools_repo.name}")
@@ -713,14 +719,14 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
         resume_failed_task()
     logger.info("content view published successfully")
     published_ver = entities.ContentViewVersion(
-        id=max([cv_ver.id for cv_ver in cv.read().version])).read()
+        nailgun_conf, id=max([cv_ver.id for cv_ver in cv.read().version])).read()
     logger.info(f"details of the published_ver is {published_ver}")
     start_time = job_execution_time("CV_Promotion")
     logger.info(f"published content view {cv.name} version promotion is started successfully")
     published_ver.promote(data={'environment_ids': [lenv.id], 'force': False})
     job_execution_time(f"content view {cv.name} promotion ", start_time)
     logger.info(f"published cv {cv.name} version has promoted successfully")
-    tools_sub = entities.Subscription().search(
+    tools_sub = entities.Subscription(nailgun_conf).search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
     ak.add_subscriptions(data={
         'quantity': 1,
@@ -729,7 +735,7 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     logger.info(f"subscription added successfully in capsule "
                 f"activation key for name {tools_sub.name}")
     # Add this latest tools repo to hosts to upgrade
-    sub = entities.Subscription().search(
+    sub = entities.Subscription(nailgun_conf).search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
     for host in hosts:
         host = entities.Host().search(query={'search': 'name={}'.format(host)})[0]
@@ -758,7 +764,7 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
         # Update the Default Organization name, which was updated in 6.2
         logger.info("update the default organization name, which was updated "
                     "in 6.2")
-        org = entities.Organization().search(
+        org = entities.Organization(nailgun_conf).search(
             query={'search': f'label="{DEFAULT_ORGANIZATION_LABEL}"'}
         )[0]
         org.name = f"{DEFAULT_ORGANIZATION}"
@@ -766,14 +772,14 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
         # Update the Default Location name, which was updated in 6.2
         logger.info("update the Default Location name, which was updated in "
                     "6.2")
-        loc = entities.Location().search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
+        loc = entities.Location(nailgun_conf).search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
         loc.name = f"{DEFAULT_LOCATION}"
         loc.update(['name'])
         if bz_bug_is_open(1502505):
             logger.info(
                 "Update the default_location_puppet_content value with "
                 "updated location name.Refer BZ:1502505")
-            puppet_location = entities.Setting().search(
+            puppet_location = entities.Setting(nailgun_conf).search(
                 query={'search': 'name=default_location_puppet_content'}
             )[0]
             puppet_location.value = f'{DEFAULT_LOCATION}'
@@ -821,12 +827,12 @@ def capsule_sync(cap_host):
 
     :param list cap_host: List of capsules to perform sync
     """
-    capsule = entities.SmartProxy().search(
+    capsule = entities.SmartProxy(nailgun_conf).search(
         query={'search': 'name={}'.format(cap_host)})[0]
     capsule.refresh()
     logger.info('Running Capsule sync for capsule host {0}'.
                 format(cap_host))
-    capsule = entities.Capsule().search(
+    capsule = entities.Capsule(nailgun_conf).search(
         query={'search': 'name={}'.format(cap_host)})[0]
     start_time = job_execution_time("Capsule content sync operation")
     try:
@@ -1104,7 +1110,7 @@ def wait_untill_capsule_sync(capsule):
 
     :param capsule: A capsule hostname
     """
-    cap = entities.Capsule().search(
+    cap = entities.Capsule(nailgun_conf).search(
         query={'search': f'name={capsule}'})[0]
     logger.info(f"Waiting for capsule {capsule} sync to finish ...")
     active_tasks = cap.content_get_sync()['active_sync_tasks']
@@ -1115,7 +1121,7 @@ def wait_untill_capsule_sync(capsule):
             'capsule: {}'.format(cap.name))
         start_time = job_execution_time("capsule_sync")
         for task in active_tasks:
-            entities.ForemanTask(id=task['id']).poll(timeout=9000)
+            entities.ForemanTask(nailgun_conf, id=task['id']).poll(timeout=9000)
         job_execution_time("Background capsule sync operation(In past time-out value was "
                            "2700 but in current execution we have set it 9000)",
                            start_time)
@@ -1167,14 +1173,14 @@ def add_custom_product_subscription_to_hosts(product, hosts):
     :param list hosts: List of content host names
     """
     for host in hosts:
-        sub = entities.Subscription().search(
+        sub = entities.Subscription(nailgun_conf).search(
             query={'search': f'name={product}'})[0]
         if float(settings.upgrade.from_version) <= 6.1:
             execute(
                 attach_subscription_to_host_from_content_host, sub.cp_id, host=host)
         else:
-            host = entities.Host().search(query={'search': f'name={host}'})[0]
-            entities.HostSubscription(host=host).add_subscriptions(
+            host = entities.Host(nailgun_conf).search(query={'search': f'name={host}'})[0]
+            entities.HostSubscription(nailgun_conf, host=host).add_subscriptions(
                 data={'subscriptions': [{'id': sub.id, 'quantity': 1}]})
 
 
@@ -1330,12 +1336,13 @@ def update_scap_content():
         :param scap_content: Name of scap-content to be used while creating policy.
         :param str policy_name: Name of policy to be created.
         """
-        org = entities.Organization().search(
+        org = entities.Organization(nailgun_conf).search(
             query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
-        loc = entities.Location().search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
+        loc = entities.Location(nailgun_conf).search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
         scap_content_profile_id = entities.ScapContents(
-            id=scap_content.id).read().scap_content_profiles[0]['id']
+            nailgun_conf, id=scap_content.id).read().scap_content_profiles[0]['id']
         entities.CompliancePolicies(
+            nailgun_conf,
             name=policy_name,
             scap_content_id=scap_content.id,
             scap_content_profile_id=scap_content_profile_id,
@@ -1360,18 +1367,18 @@ def update_scap_content():
                 elif updated_scap_content[entity].title == scap_content_name[1]:
                     create_policy(updated_scap_content[entity], compliance_policies[1])
             elif content_name == "policies_search":
-                entities.CompliancePolicies(id=policies_search[entity].id).delete()
+                entities.CompliancePolicies(nailgun_conf, id=policies_search[entity].id).delete()
             elif content_name == "scap_content_search":
-                entities.ScapContents(id=scap_content_search[entity].id).delete()
+                entities.ScapContents(nailgun_conf, id=scap_content_search[entity].id).delete()
 
     compliance_policies = ['RHEL 7 policy', 'RHEL 6 policy']
     scap_content_name = ['Red Hat rhel7 default content', 'Red Hat rhel6 default content']
-    scap_content_search = entities.ScapContents().search()
-    policies_search = entities.CompliancePolicies().search()
+    scap_content_search = entities.ScapContents(nailgun_conf).search()
+    policies_search = entities.CompliancePolicies(nailgun_conf).search()
     scap(policies_search, "policies_search")
     scap(scap_content_search, "scap_content_search")
     run('foreman-rake foreman_openscap:bulk_upload:default')
-    updated_scap_content = entities.ScapContents().search()
+    updated_scap_content = entities.ScapContents(nailgun_conf).search()
     scap(updated_scap_content, "updated_scap_content")
 
 

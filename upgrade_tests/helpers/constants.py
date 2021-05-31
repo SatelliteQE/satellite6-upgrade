@@ -2,7 +2,7 @@
 from nailgun import entities
 
 from upgrade.helpers import settings
-
+from upgrade.helpers import nailgun_conf
 
 to_version = settings.upgrade.to_version
 
@@ -106,7 +106,7 @@ CLI_ATTRIBUTES_KEY["content-view"] = 'content view id'
 # The id for an entity to get its data
 
 API_COMPONENTS = (lambda id=None: {
-    'domain': [entities.Domain(), entities.Domain(id=id)],
-    'subnet': [entities.Subnet(), entities.Subnet(id=id)],
-    'contentview': [entities.ContentView(), entities.ContentView(id=id)]
+    'domain': [entities.Domain(nailgun_conf), entities.Domain(nailgun_conf, id=id)],
+    'subnet': [entities.Subnet(nailgun_conf), entities.Subnet(nailgun_conf, id=id)],
+    'contentview': [entities.ContentView(nailgun_conf), entities.ContentView(nailgun_conf, id=id)]
 })

@@ -1,8 +1,8 @@
 """API and CLI upgrade Tests Constants"""
 from nailgun import entities
 
-from upgrade.helpers import settings
 from upgrade.helpers import nailgun_conf
+from upgrade.helpers import settings
 
 to_version = settings.upgrade.to_version
 

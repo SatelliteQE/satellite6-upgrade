@@ -4,10 +4,10 @@ Many commands are affected by environment variables. Unless stated otherwise,
 all environment variables are required.
 """
 import json
-import os
 import re
 import subprocess
 import time
+from pathlib import Path
 
 from fabric.api import execute
 from fabric.api import run
@@ -19,6 +19,7 @@ from upgrade.helpers.logger import logger
 logger = logger()
 
 setup_data_file = 'product_setup.json'
+setup_file = Path(setup_data_file)
 
 
 def reboot(halt_time=300):
@@ -239,12 +240,10 @@ def create_setup_dict(setups_dict):
     """
     data = {}
 
-    if os.path.exists(setup_data_file):
-        with open(setup_data_file) as rjson:
-            data = json.load(rjson)
-    with open(setup_data_file, 'w') as wjson:
-        data.update(setups_dict)
-        json.dump(data, wjson)
+    if setup_file.exists():
+        data = json.loads(setup_file.read_text())
+    data.update(setups_dict)
+    setup_file.write_text(json.dumps(data))
 
 
 def get_setup_data(sat_hostname):
@@ -257,10 +256,10 @@ def get_setup_data(sat_hostname):
     """
     sat_data = {}
     sat_host = sat_hostname or settings.upgrade.satellite_hostname
-    with open(setup_data_file) as rjson:
-        all_data = json.load(rjson)
-    if sat_host in all_data:
-        sat_data = all_data[sat_host]
+    if setup_file.exists():
+        all_data = json.loads(setup_file.read_text())
+        if sat_host in all_data:
+            sat_data = all_data[sat_host]
     return sat_data
 
 

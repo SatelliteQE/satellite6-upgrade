@@ -98,8 +98,10 @@ def http_proxy_config(capsule_hosts):
     Set the http-proxy on the satellite server.
     :param capsule_hosts: list of capsule host
     """
-    loc = entities.Location(nailgun_conf).search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
-    org = entities.Organization(nailgun_conf).search(query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
+    loc = entities.Location(nailgun_conf).search(
+        query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
+    org = entities.Organization(nailgun_conf).search(
+        query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
     name = gen_string('alpha', 15)
     proxy_url = settings.http_proxy.un_auth_proxy_url
     entities.HTTPProxy(
@@ -288,7 +290,8 @@ def sync_capsule_subscription_to_capsule_ak(org):
         logger.info(f"rhel capsule product {RHEL_CONTENTS['capsule']['prod']} is "
                     f"found enabled.")
         cap_reposet = entities.RepositorySet(
-            nailgun_conf, name=RHEL_CONTENTS['capsule']['repofull'], product=cap_product).search()[0]
+            nailgun_conf, name=RHEL_CONTENTS['capsule']['repofull'], product=cap_product
+        ).search()[0]
         logger.info("entities of repository {} search completed successfully".
                     format(RHEL_CONTENTS['capsule']['repofull']))
         try:
@@ -309,7 +312,8 @@ def sync_capsule_subscription_to_capsule_ak(org):
                 f"for name {cap_repo.name}")
     start_time = job_execution_time("entity repository sync")
     # Expected value 2500
-    call_entity_method_with_timeout(entities.Repository(nailgun_conf, id=cap_repo.id).sync, timeout=4000)
+    call_entity_method_with_timeout(
+        entities.Repository(nailgun_conf, id=cap_repo.id).sync, timeout=4000)
     job_execution_time(f"entity repository {cap_repo.name} sync (In past time-out value was "
                        f"2500 but in current execution we set it 4000)", start_time)
     logger.info(f"entities repository sync operation completed successfully "
@@ -385,7 +389,8 @@ def sync_rh_repos_to_satellite(org):
     logger.info(f"entities repository sync operation started successfully"
                 f" for name {server_repo.name}")
     start_time = job_execution_time("Repository sync")
-    call_entity_method_with_timeout(entities.Repository(nailgun_conf, id=server_repo.id).sync, timeout=6000)
+    call_entity_method_with_timeout(
+        entities.Repository(nailgun_conf, id=server_repo.id).sync, timeout=6000)
     job_execution_time(f"repository {server_repo.name} sync (In past time-out value was 3600 "
                        f"but in current execution we set it 6000) takes", start_time)
     logger.info(f"entities repository sync operation completed successfully"
@@ -444,7 +449,8 @@ def sync_sattools_repos_to_satellite_for_capsule(org):
             nailgun_conf, name=RHEL_CONTENTS['tools']['prod'], organization=org
         ).search(query={'per_page': 100})[0]
         sat_reposet = entities.RepositorySet(
-            nailgun_conf, name=RHEL_CONTENTS['tools']['repofull'], product=sattools_product).search()[0]
+            nailgun_conf, name=RHEL_CONTENTS['tools']['repofull'], product=sattools_product
+        ).search()[0]
         logger.info(f"check the capsule tool's product"
                     f" {RHEL_CONTENTS['tools']['prod']} and"
                     f" repository {RHEL_CONTENTS['tools']['repo']} "
@@ -689,7 +695,8 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     toolsrepo_name = CUSTOM_CONTENTS['tools']['repo'].format(client_os=client_os)
     # adding sleeps in between to avoid race conditions
 
-    tools_product = entities.Product(nailgun_conf, name=toolsproduct_name, organization=org).create()
+    tools_product = entities.Product(
+        nailgun_conf, name=toolsproduct_name, organization=org).create()
     tools_repo = entities.Repository(
         nailgun_conf, name=toolsrepo_name, product=tools_product, url=tools_repo_url,
         organization=org, content_type='yum').create()
@@ -772,7 +779,8 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
         # Update the Default Location name, which was updated in 6.2
         logger.info("update the Default Location name, which was updated in "
                     "6.2")
-        loc = entities.Location(nailgun_conf).search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
+        loc = entities.Location(nailgun_conf).search(
+            query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
         loc.name = f"{DEFAULT_LOCATION}"
         loc.update(['name'])
         if bz_bug_is_open(1502505):
@@ -1338,7 +1346,8 @@ def update_scap_content():
         """
         org = entities.Organization(nailgun_conf).search(
             query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
-        loc = entities.Location(nailgun_conf).search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
+        loc = entities.Location(nailgun_conf).search(
+            query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
         scap_content_profile_id = entities.ScapContents(
             nailgun_conf, id=scap_content.id).read().scap_content_profiles[0]['id']
         entities.CompliancePolicies(

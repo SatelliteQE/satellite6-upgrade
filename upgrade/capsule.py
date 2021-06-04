@@ -10,6 +10,7 @@ from upgrade.helpers import settings
 from upgrade.helpers.constants.constants import RHEL_CONTENTS
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import add_baseOS_repo
+from upgrade.helpers.tasks import capsule_sync
 from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import foreman_service_restart
@@ -19,6 +20,7 @@ from upgrade.helpers.tasks import sync_capsule_repos_to_satellite
 from upgrade.helpers.tasks import update_capsules_to_satellite
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
+from upgrade.helpers.tasks import wait_untill_capsule_sync
 from upgrade.helpers.tasks import workaround_1829115
 from upgrade.helpers.tasks import yum_repos_cleanup
 from upgrade.helpers.tools import copy_ssh_key
@@ -102,6 +104,11 @@ def satellite_capsule_upgrade(cap_host, sat_host):
 
     """
     logger.highlight('\n========== CAPSULE UPGRADE =================\n')
+    # Check the capsule sync before upgrade.
+    logger.info("Check the capsule sync after satellite upgrade to verify sync operation "
+                "with n-1 combination")
+    execute(capsule_sync, cap_host, host=sat_host)
+    wait_untill_capsule_sync(cap_host)
     from_version = settings.upgrade.from_version
     to_version = settings.upgrade.to_version
     setup_capsule_firewall()
@@ -141,6 +148,10 @@ def satellite_capsule_upgrade(cap_host, sat_host):
     host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
     upgrade_validation()
+    # Check the capsule sync after upgrade.
+    logger.info("check the capsule sync after capsule upgrade")
+    execute(capsule_sync, cap_host, host=sat_host)
+    wait_untill_capsule_sync(cap_host)
 
 
 def satellite_capsule_zstream_upgrade(cap_host):

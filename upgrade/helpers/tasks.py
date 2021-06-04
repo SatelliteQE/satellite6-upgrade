@@ -4,6 +4,7 @@ Many commands are affected by environment variables. Unless stated otherwise,
 all environment variables are required.
 """
 import os
+import re
 import socket
 import sys
 import time
@@ -731,29 +732,10 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     sub = entities.Subscription().search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
     for host in hosts:
-        if float(settings.upgrade.from_version) <= 6.1:
-            # If not User Hosts then, attach sub to dockered clients
-            if not all([
-                settings.upgrade.user_defined_client_hosts.rhel6,
-                settings.upgrade.user_defined_client_hosts.rhel7
-            ]):
-                execute(
-                    attach_subscription_to_host_from_content_host,
-                    sub.cp_id,
-                    True,
-                    host,
-                    host=settings.upgrade.docker_vm)
-            # Else, Attach subs to user hosts
-            else:
-                execute(
-                    attach_subscription_to_host_from_content_host,
-                    sub.cp_id,
-                    host=host)
-        else:
-            host = entities.Host().search(query={'search': 'name={}'.format(host)})[0]
-            logger.info(f"Adding the Subscription {sub.name} on host {host.name}")
-            entities.HostSubscription(host=host).add_subscriptions(
-                data={'subscriptions': [{'id': sub.id, 'quantity': 1}]})
+        host = entities.Host().search(query={'search': 'name={}'.format(host)})[0]
+        logger.info(f"Adding the Subscription {sub.name} on host {host.name}")
+        entities.HostSubscription(host=host).add_subscriptions(
+            data={'subscriptions': [{'id': sub.id, 'quantity': 1}]})
 
 
 def post_upgrade_test_tasks(sat_host, cap_host=None):
@@ -841,16 +823,16 @@ def capsule_sync(cap_host):
     """
     capsule = entities.SmartProxy().search(
         query={'search': 'name={}'.format(cap_host)})[0]
-    if float(settings.upgrade.to_version) >= 6.2:
-        logger.info('Refreshing features for capsule host {0}'.
-                    format(cap_host))
-        capsule.refresh()
+    capsule.refresh()
     logger.info('Running Capsule sync for capsule host {0}'.
                 format(cap_host))
     capsule = entities.Capsule().search(
         query={'search': 'name={}'.format(cap_host)})[0]
     start_time = job_execution_time("Capsule content sync operation")
-    capsule.content_sync()
+    try:
+        capsule.content_sync()
+    except Exception as ex:
+        logger.critical(ex)
     job_execution_time("Capsule content sync operation", start_time)
 
 
@@ -1495,6 +1477,34 @@ def workaround_1829115():
         logger.warn("Failed to update the file")
 
 
+def workaround_1967131(task_type="rollback"):
+    """
+    Use to apply the pulp migration workaround for 1967131
+    """
+    if bz_bug_is_open(1967131):
+        if task_type != "rollback":
+            output = run('sed -i "s/downloaded = record.downloaded if '
+                         'hasattr(record, \'downloaded\') else False/downloaded = '
+                         'hasattr(record, \'downloaded\') and (record.downloaded or '
+                         'record.downloaded is None)/g" '
+                         '/usr/lib/python3.6/site-packages/pulp_2to3_migration/app/'
+                         'pre_migration.py'
+                         )
+        else:
+            output = run('sed -i "s/downloaded = hasattr(record, \'downloaded\') and '
+                         '(record.downloaded or record.downloaded is None)/'
+                         'downloaded = record.downloaded if hasattr(record, \'downloaded\') '
+                         'else False/g" /usr/lib/python3.6/site-packages/pulp_2to3_migration/'
+                         'app/pre_migration.py')
+        foreman_service_restart()
+        if output.return_code == 0 and task_type != "rollback":
+            logger.info("patch applied successfully for "
+                        "https://bugzilla.redhat.com/show_bug.cgi?id=1967131")
+        else:
+            logger.info("patch rolledback successfully for "
+                        "https://bugzilla.redhat.com/show_bug.cgi?id=1967131")
+
+
 def add_satellite_subscriptions_in_capsule_ak(ak):
     """
     Use to add the satellite subscriptions in capsule activation key, it helps to enable the
@@ -1515,3 +1525,127 @@ def add_satellite_subscriptions_in_capsule_ak(ak):
                                 f'"{output}" --id="{ak.id}"')
                 if ak_output.return_code > 0:
                     logger.warn(output)
+
+
+def pulp2_pulp3_migration():
+    """
+    Use to perform the pulp migration before running the upgrade.
+    """
+    def estimation():
+        """
+        Use to calculate the approximate time for migration.
+        :return: migration-stats status code
+        """
+        logger.info(
+            "checking the approximate migration time before starting the pulp migration")
+        with fabric_settings(warn_only=True):
+            output = run("satellite-maintain content migration-stats")
+            for migration_time in output.split('\n'):
+                if re.search(r'Estimated migration time ', migration_time):
+                    logger.highlight(migration_time)
+            if output.return_code != 0:
+                logger.warn(output)
+        return output.return_code
+
+    def preparation():
+        """
+        Use to prepare the pulp migration environment.
+        :return: prep-<to_version>-upgrade status code
+        """
+        logger.info("starting the pulp pre-migration to change the ownership, permissions "
+                    "of the pulp content")
+        with fabric_settings(warn_only=True):
+            preup_time = datetime.now().replace(microsecond=0)
+            output = run(f"satellite-maintain prep-{settings.upgrade.to_version}-upgrade")
+            postup_time = datetime.now().replace(microsecond=0)
+            logger.info(output)
+            logger.highlight(f"pulp2-pulp3 pre-migration completed successfully and it took: "
+                             f"{str(postup_time - preup_time)}")
+            if output.return_code != 0:
+                logger.warn(output)
+                for line in output.split('\n'):
+                    if re.search(r'No such file or directory - /var/lib/pulp/content', line):
+                        return 0
+            return output.return_code
+
+    def migration():
+        """
+        Use to run the pulp2 to pulp3 migration step.
+        :return: satellite-maintain content prepare
+        """
+        with fabric_settings(warn_only=True):
+            preup_time = datetime.now().replace(microsecond=0)
+            output = run("satellite-maintain content prepare")
+            postup_time = datetime.now().replace(microsecond=0)
+            logger.info(output)
+            logger.highlight(f"pulp2-pulp3 migration took: {str(postup_time - preup_time)}")
+            if output.return_code != 0:
+                for line in output.split('\n'):
+                    if re.search(r'Failed executing foreman-rake katello:pulp3_migration, '
+                                 'exit status 255', line):
+                        post_migration_failure_fix(255)
+                        return 255
+                else:
+                    return output.return_code
+            return output.return_code
+
+    estimation_status = estimation()
+    if estimation_status != 0:
+        logger.critical("check why the estimation command gets failed")
+
+    preparation_status = preparation()
+    if preparation_status != 0:
+        return False
+
+    migration_status_code = migration()
+    if migration_status_code == 0:
+        logger.highlight("pulp2-pulp3 migration completed successfully")
+        return True
+    elif migration_status_code == 255:
+        remigration_status_code = migration()
+        if remigration_status_code == 0:
+            logger.highlight(f"pulp2-pulp3 remigration completed successfully because "
+                             f"migration job failed with status code {migration_status_code}")
+            return True
+        else:
+            output = run("foreman-rake katello:approve_corrupted_migration_content")
+            logger.info("Approved all the corrupted content to avoid upgrade failure")
+            if output.return_code != 0:
+                logger.warn(output)
+                return False
+            return True
+    return False
+
+
+def bg_orphaned_task_monitor():
+    """
+    Use to monitor the background orphaned cleanup task.
+    """
+    wait_until = 0
+    while wait_until < 7000:
+        command1 = "mongo pulp_database --eval "
+        command2 = '\"DBQuery.shellBatchSize = 100000000; db.task_status.find({ \\\$and:' \
+                   ' [ {\'task_type\': /orphan/ }, {\'state\': \'running\'} ] })\"'  # noqa
+        output = run(command1 + command2)
+        if re.search('task_id', output):
+            logger.info(f"orphaned process cleanup is running: {output}")
+            wait_until += 1
+            time.sleep(1)
+            continue
+        else:
+            break
+
+
+def post_migration_failure_fix(status_code):
+    """
+    Use to fix the pulp migration issues based on their status code.
+    :param status_code: status code of pulp migration failure
+    """
+    if status_code == 255:
+        with fabric_settings(warn_only=True):
+            output = run('foreman-rake katello:delete_orphaned_content')
+            status = output.return_code
+            if status != 0:
+                logger.warn(output)
+            time.sleep(100)
+        bg_orphaned_task_monitor()

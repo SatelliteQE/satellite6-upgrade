@@ -9,6 +9,7 @@ from automation_tools.utils import update_packages
 from fabric.api import env
 from fabric.api import execute
 from fabric.api import run
+from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers import settings
 from upgrade.helpers.constants.constants import CUSTOM_SAT_REPO
@@ -19,10 +20,12 @@ from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import foreman_packages_installation_check
 from upgrade.helpers.tasks import foreman_service_restart
 from upgrade.helpers.tasks import nonfm_upgrade
+from upgrade.helpers.tasks import pulp2_pulp3_migration
 from upgrade.helpers.tasks import repository_setup
 from upgrade.helpers.tasks import setup_satellite_repo
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
+from upgrade.helpers.tasks import workaround_1967131
 from upgrade.helpers.tasks import yum_repos_cleanup
 from upgrade.helpers.tools import host_ssh_availability_check
 from upgrade.helpers.tools import reboot
@@ -115,6 +118,14 @@ def satellite_upgrade(zstream=False):
                 CUSTOM_SAT_REPO[repo]["gpg"]
             )
         foreman_maintain_package_update()
+    if settings.upgrade.to_version == "6.10":
+        if bz_bug_is_open(1967131):
+            workaround_1967131(task_type="apply")
+        pulp_migration_status = pulp2_pulp3_migration()
+        if bz_bug_is_open(1967131):
+            workaround_1967131()
+        if not pulp_migration_status:
+            sys.exit(1)
 
     if settings.upgrade.foreman_maintain_satellite_upgrade:
         preup_time = datetime.now().replace(microsecond=0)

@@ -71,8 +71,8 @@ UPGRADE:
   # These environment variable used for existence test cases execution.
   EXISTENCE_TEST:
     ALLOWED_ENDS:
-      - "API"
-      - "CLI"
+      - "api"
+      - "cli"
     ENDPOINT:
   # The docker host onto wich the chost containers will be spawned
   DOCKER_VM:

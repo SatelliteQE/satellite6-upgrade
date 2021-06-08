@@ -30,7 +30,7 @@ class IncorrectTemplateTypeException(Exception):
     """Raise exception on wrong or No template type provided"""
 
 
-def csv_reader(component, subcommand):
+def csv_reader(component, subcommand, sat_host=None):
     """
     Reads all component entities data using hammer csv output and returns the
     dict representation of all the entities.
@@ -47,7 +47,7 @@ def csv_reader(component, subcommand):
     """
     comp_dict = dict()
     entity_list = list()
-    sat_host = get_setup_data()['sat_host']
+    sat_host = sat_host or get_setup_data()['sat_host']
     set_hammer_config()
     data = execute(
         hammer, f'{component} {subcommand}', 'csv', host=sat_host)[sat_host]
@@ -60,7 +60,7 @@ def csv_reader(component, subcommand):
     return comp_dict
 
 
-def set_api_server_config(user=None, passwd=None, verify=None):
+def set_api_server_config(sat_host=None, user=None, passwd=None, verify=None):
     """Sets ServerConfig configuration required by nailgun to read entities
 
     :param str user: The web username of satellite user
@@ -70,13 +70,10 @@ def set_api_server_config(user=None, passwd=None, verify=None):
     :param bool verify: The ssl verification to connect to satellite host
         False by default if not provided
     """
-    sat_host = get_setup_data()['sat_host']
-    auth = (
-        'admin' if not user else user,
-        'changeme' if not passwd else passwd
-    )
+    sat_host = sat_host or get_setup_data()['sat_host']
+    auth = (user or 'admin', passwd or 'changeme')
     url = f'https://{sat_host}'
-    verify = False if not verify else verify
+    verify = verify or False
     ServerConfig(auth=auth, url=url, verify=verify).save()
 
 
@@ -116,7 +113,7 @@ def api_reader(component):
     return comp_data
 
 
-def template_reader(template_type, template_id):
+def template_reader(template_type, template_id, sat_host=None):
     """Hammer read and returns the template dump of template_id
 
     :param str template_type: The satellite template type
@@ -124,14 +121,14 @@ def template_reader(template_type, template_id):
     :return str: The template content as string
     """
     set_hammer_config()
-    sat_host = get_setup_data()['sat_host']
+    sat_host = sat_host or get_setup_data()['sat_host']
     template_dump = execute(
         hammer, f'{template_type} dump --id {template_id}', 'base', host=sat_host
     )[sat_host]
     return template_dump
 
 
-def _template_writer(datastorestate, template_type, template_ids):
+def _template_writer(datastorestate, template_type, template_ids, sat_host=None):
     """Reads the template from satellite and writes the template to
     $pwd/```datastorestate```_templates/```template_type```/```template_ids```.erb
 
@@ -147,10 +144,10 @@ def _template_writer(datastorestate, template_type, template_ids):
         os.makedirs(templates_dir)
     for template_id in template_ids:
         with open(f'{templates_dir}/{template_id}.erb', 'w') as tempFile:
-            tempFile.write(template_reader(template_type, template_id))
+            tempFile.write(template_reader(template_type, template_id, sat_host))
 
 
-def set_templatestore(datastorestate):
+def set_templatestore(datastorestate, sat_host=None):
     """Creates the ```datastorestate```_templates directory and writes all templates inside there
     respective directory
 
@@ -158,8 +155,9 @@ def set_templatestore(datastorestate):
     """
     for template_type in ('job-template', 'template', 'partition-table'):
         temp_ids = [template['id'] for template in csv_reader(
-            template_type, 'list')[template_type]]
-        _template_writer(datastorestate, template_type, temp_ids)
+            template_type, 'list', sat_host)[template_type]]
+        _template_writer(
+            datastorestate, template_type, temp_ids, sat_host=sat_host)
 
 
 def _find_on_list_of_dicts(lst, data_key, all_=False):
@@ -218,7 +216,7 @@ def _find_on_list_of_dicts_using_search_criteria(
     return f'{search_key} : {search_value} entity missing'
 
 
-def set_datastore(datastore, endpoint):
+def set_datastore(datastore, endpoint, sat_host=None):
     """Creates an endpoint file with all the satellite components data in json
     format
 
@@ -247,15 +245,15 @@ def set_datastore(datastore, endpoint):
     if endpoint == 'cli':
         nonorged_comps_data = [
             csv_reader(
-                component, 'list') for component in CLI_COMPONENTS['org_not_required']]
+                component, 'list', sat_host) for component in CLI_COMPONENTS['org_not_required']]
         orged_comps_data = [
             csv_reader(
-                component, 'list --organization-id 1'
+                component, 'list --organization-id 1', sat_host
             ) for component in CLI_COMPONENTS['org_required']
         ]
         all_comps_data = nonorged_comps_data + orged_comps_data
     elif endpoint == 'api':
-        set_api_server_config()
+        set_api_server_config(sat_host)
         api_comps = list(API_COMPONENTS().keys())
         all_comps_data = [
             api_reader(component) for component in api_comps

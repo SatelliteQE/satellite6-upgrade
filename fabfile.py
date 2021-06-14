@@ -11,6 +11,7 @@ from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
 from upgrade.helpers.docker import refresh_subscriptions_on_docker_clients
 from upgrade.helpers.openstack import create_openstack_instance
 from upgrade.helpers.openstack import delete_openstack_instance
+from upgrade.helpers.tasks import create_capsule_ak
 from upgrade.helpers.tasks import generate_custom_certs
 from upgrade.helpers.tasks import job_execution_time
 from upgrade.helpers.tasks import sync_capsule_repos_to_satellite

@@ -1806,3 +1806,150 @@ def subscribe():
             time.sleep(5)
         logger.highlight("Unable to attach the system to pool. Aborting...")
         sys.exit(1)
+
+
+def create_capsule_ak():
+    """
+    Creates Activation Key for capsule upgrade on a blank Satellite
+    Prerequisities:
+        1. Manifest uploaded to the Satellite
+    Steps:
+        1. refresh the manifest
+        2. enable and sync repos independent of distribution
+        3. enable and sync remaining repos
+        4. create `Dev` and `QE` LCEs
+        5. create CV, add content, publish and promote to `Dev` LCE
+        6. create AK with `Dev` LCE and CV assigned
+        7. add subscriptions to AK
+    """
+    logger.info(f"Create capsule AK: current distribution is '{settings.upgrade.distribution}'")
+
+    org = entities.Organization(id=1).read()
+
+    # Refresh manifest
+    logger.info("Refreshing manifest..")
+    with fabric_settings(warn_only=False):
+        result = run(f'hammer subscription refresh-manifest --organization-id {org.id}')
+        if result.return_code == 0:
+            logger.info("manifest refreshed successfully")
+        else:
+            logger.warn(result)
+
+    # sync rhscl and rhel7 repos to SAT
+    logger.info("Syncing server and scl repo..")
+    scl_repo, server_repo = sync_rh_repos_to_satellite(org)
+
+    # sync remaining repos according to distribution
+    if settings.upgrade.distribution == "cdn":
+        settings.repos.capsule_repo = None
+        settings.repos.sattools_repo[settings.upgrade.os] = None
+        settings.repos.satmaintenance_repo = None
+    cap_repo = sync_capsule_subscription_to_capsule_ak(org)
+    maint_repo = sync_maintenance_repos_to_satellite_for_capsule(org)
+    sattools_repo = sync_sattools_repos_to_satellite_for_capsule(org)
+
+    # create Dev and QE LCEs
+    logger.info("Creating lifecycle environment..")
+    lib_lce = entities.LifecycleEnvironment(organization=org).search(
+        query={'search': 'name=Library'}
+    )[0]
+    dev_lce = entities.LifecycleEnvironment(organization=org, name="Dev", prior=lib_lce).create()
+    entities.LifecycleEnvironment(organization=org, name="QE", prior=dev_lce).create()
+
+    # create CV, add content, publish and promote to `Dev` LCE
+    logger.info("Creating content view..")
+    cv_name = f'{settings.upgrade.os}-capsule-cv'
+    cv = entities.ContentView(name=cv_name, organization=org).create()
+    cv.repository = [scl_repo, server_repo, cap_repo, maint_repo, sattools_repo]
+    cv.update(['repository'])
+
+    logger.info("content view publish operation started successfully")
+    try:
+        start_time = job_execution_time("CV_Publish")
+        call_entity_method_with_timeout(cv.read().publish, timeout=5000)
+        job_execution_time(f"content view {cv.name} publish operation(In past time-out value "
+                           f"was 2500 but in current execution we set it 5000)", start_time)
+    except Exception as exp:
+        logger.critical(f"content view {cv.name} publish failed with exception {exp}")
+        # Fix of 1770940, 1773601
+        logger.info(f"resuming the cancelled content view {cv.name} publish task")
+        resume_failed_task()
+    logger.info(f"content view {cv.name} published successfully")
+
+    logger.info("Promoting content view..")
+    cv = cv.read()
+    cv.version[0].promote(data={'environment_ids': [dev_lce.id]})
+
+    # create AK with `Dev` LCE and CV assigned
+    logger.info("Creating activation key..")
+    ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
+    ak = entities.ActivationKey(
+        organization=org, environment=dev_lce, content_view=cv, name=ak_name
+    ).create()
+
+    # Add subscriptions to AK
+    add_satellite_subscriptions_in_capsule_ak(ak)
+
+    with fabric_settings(warn_only=True):
+        result = run(f"hammer activation-key content-override --organization-id {org.id} "
+                     f"--name {ak_name} --content-label {scl_repo.repo_id} --value 1")
+        if result.return_code == 0:
+            logger.info(f"content-override for {scl_repo.repo_id} was set successfully")
+        else:
+            logger.warn(result)
+
+    if settings.repos.capsule_repo is None:
+        with fabric_settings(warn_only=True):
+            result = run(f"hammer activation-key content-override --organization-id {org.id} "
+                         f"--name {ak_name} --content-label {cap_repo.repo_id} --value 1")
+            if result.return_code == 0:
+                logger.info(f"content-override for {cap_repo.repo_id} was set successfully")
+            else:
+                logger.warn(result)
+    else:
+        cap_sub = entities.Subscription().search(
+            query={'search': 'name={0}'.format(CUSTOM_CONTENTS['capsule']['prod'])})[0]
+        ak.add_subscriptions(data={
+            'quantity': 1,
+            'subscription_id': cap_sub.id,
+        })
+        logger.info(f"capsule subscription {cap_sub.name} added successfully to capsule ak")
+
+    if settings.repos.satmaintenance_repo is None:
+        with fabric_settings(warn_only=True):
+            result = run(f"hammer activation-key content-override --organization-id {org.id} "
+                         f"--name {ak_name} --content-label {maint_repo.repo_id} --value 1")
+            if result.return_code == 0:
+                logger.info(f"content-override for {maint_repo.repo_id} was set successfully")
+            else:
+                logger.warn(result)
+    else:
+        maintenance_sub = entities.Subscription().search(
+            query={'search': 'name={0}'.format(
+                CUSTOM_CONTENTS['maintenance']['prod'])
+            }
+        )[0]
+        ak.add_subscriptions(data={
+            'quantity': 1,
+            'subscription_id': maintenance_sub.id,
+        })
+        logger.info(f" maintenance subscription {maintenance_sub.id} added successfully to "
+                    f"capsule ak")
+
+    if settings.repos.sattools_repo[settings.upgrade.os] is None:
+        with fabric_settings(warn_only=True):
+            result = run(f"hammer activation-key content-override --organization-id {org.id} "
+                         f"--name {ak_name} --content-label {sattools_repo.repo_id} --value 1")
+            if result.return_code == 0:
+                logger.info(f"content-override for {sattools_repo.repo_id} was set successfully")
+            else:
+                logger.warn(result)
+    else:
+        captools_sub = entities.Subscription().search(
+            query={'search': f'name={CUSTOM_CONTENTS["capsule_tools"]["prod"]}'})[0]
+        ak.add_subscriptions(data={
+            'quantity': 1,
+            'subscription_id': captools_sub.id,
+        })
+        logger.info(f"custom capsule Tools subscription {captools_sub.id} added successfully"
+                    f" to capsule ak")

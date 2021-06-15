@@ -21,6 +21,11 @@ from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import check_necessary_env_variables_for_upgrade
 from upgrade.helpers.tasks import post_upgrade_test_tasks
 from upgrade.helpers.tasks import pre_upgrade_system_checks
+from upgrade.helpers.tasks import satellite_restore
+from upgrade.helpers.tasks import satellite_restore_setup
+from upgrade.helpers.tasks import setup_foreman_maintain_repo
+from upgrade.helpers.tasks import subscribe
+from upgrade.helpers.tasks import unsubscribe
 from upgrade.helpers.tools import create_setup_dict
 from upgrade.helpers.tools import get_sat_cap_version
 from upgrade.helpers.tools import get_setup_data
@@ -59,8 +64,8 @@ def product_setup_for_upgrade_on_brokers_machine(product, os_version, satellite,
             satellite_capsule_setup(
                 satellite, cap_hosts, os_version, False if product == 'n-1' else True)
         else:
-            logger.info(
-                f'No capsule is available for capsule setup from provided capsules: {cap_hosts}')
+            logger.highlight(f'No capsule is available for capsule setup from provided'
+                             f' capsules: {cap_hosts}. Aborting...')
             sys.exit(1)
     if product in ['client', 'longrun']:
         logger.info('Setting up Clients ....')
@@ -76,6 +81,20 @@ def product_setup_for_upgrade_on_brokers_machine(product, os_version, satellite,
             'puppet_clients6': puppet_clients6
         }}
     create_setup_dict(setups_dict)
+
+
+def product_setup_for_db_upgrade(satellite):
+    """
+    Use to setup the customer db upgrade environment
+    :param satellite: The broker deployed rhel machine use for satellite restore and later we
+    use it for satellite upgrade
+    """
+    settings.upgrade.satellite_hostname = satellite
+    execute(unsubscribe, host=satellite)
+    execute(subscribe, host=satellite)
+    execute(setup_foreman_maintain_repo, host=satellite)
+    execute(satellite_restore_setup, host=satellite)
+    execute(satellite_restore, host=satellite)
 
 
 def product_upgrade(product, upgrade_type, satellite=None):
@@ -150,7 +169,7 @@ def product_upgrade(product, upgrade_type, satellite=None):
 
     env.disable_known_hosts = True
     check_necessary_env_variables_for_upgrade(product)
-    logger.info(f'Performing UPGRADE FROM {settings.upgrade.from_version} TO '
+    logger.info(f'performing upgrade from {settings.upgrade.from_version} TO '
                 f'{settings.upgrade.to_version}')
     # Get the setup dict returned by setup_products_for_upgrade
     setup_dict = get_setup_data(sat_hostname=satellite)
@@ -168,6 +187,7 @@ def product_upgrade(product, upgrade_type, satellite=None):
             product_upgrade_capsule(cap_host)
     elif (product == 'client' or product == 'longrun') and upgrade_type == 'client':
         product_upgrade_client()
+    execute(unsubscribe, host=sat_host)
 
 
 def check_upgrade_compatibility(upgrade_type, base_version, target_version):

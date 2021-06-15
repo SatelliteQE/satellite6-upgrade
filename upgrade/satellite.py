@@ -1,10 +1,7 @@
-import os
 import sys
-from datetime import datetime
 
 from automation_tools import install_prerequisites
 from automation_tools import setup_satellite_firewall
-from automation_tools import subscribe
 from automation_tools.utils import update_packages
 from fabric.api import env
 from fabric.api import execute
@@ -19,10 +16,13 @@ from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import foreman_packages_installation_check
 from upgrade.helpers.tasks import foreman_service_restart
+from upgrade.helpers.tasks import mongo_db_engine_upgrade
 from upgrade.helpers.tasks import nonfm_upgrade
 from upgrade.helpers.tasks import pulp2_pulp3_migration
 from upgrade.helpers.tasks import repository_setup
+from upgrade.helpers.tasks import satellite_backup
 from upgrade.helpers.tasks import setup_satellite_repo
+from upgrade.helpers.tasks import subscribe
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
 from upgrade.helpers.tasks import workaround_1967131
@@ -39,9 +39,6 @@ def satellite_setup(satellite_host):
     :param satellite_host:
     :return: satellite_host
     """
-    os.environ["RHN_USERNAME"] = settings.subscription.rhn_username
-    os.environ["RHN_PASSWORD"] = settings.subscription.rhn_password
-    os.environ["RHN_POOLID"] = settings.subscription.rhn_poolid
     execute(host_ssh_availability_check, satellite_host)
     execute(yum_repos_cleanup, host=satellite_host)
     execute(install_prerequisites, host=satellite_host)
@@ -88,8 +85,8 @@ def satellite_upgrade(zstream=False):
     logger.highlight('\n========== SATELLITE UPGRADE =================\n')
     if zstream:
         if not settings.upgrade.from_version == settings.upgrade.to_version:
-            logger.warning('zStream Upgrade on Satellite cannot be performed as '
-                           'FROM and TO versions are not same!')
+            logger.highlight('zStream Upgrade on Satellite cannot be performed as FROM and TO'
+                             ' versions are not same. Aborting...')
             sys.exit(1)
     major_ver = settings.upgrade.os[-1]
     common_sat_cap_repos = [
@@ -125,14 +122,11 @@ def satellite_upgrade(zstream=False):
         if bz_bug_is_open(1967131):
             workaround_1967131()
         if not pulp_migration_status:
+            logger.highlight("Pulp migration failed. Aborting")
             sys.exit(1)
 
     if settings.upgrade.foreman_maintain_satellite_upgrade:
-        preup_time = datetime.now().replace(microsecond=0)
         upgrade_using_foreman_maintain()
-        postup_time = datetime.now().replace(microsecond=0)
-        logger.highlight('Time taken for Satellite Upgrade - {}'.format(
-            str(postup_time - preup_time)))
     else:
         # To install the package using foreman-maintain and it is applicable
         # above 6.7 version.
@@ -156,3 +150,7 @@ def satellite_upgrade(zstream=False):
     host_ssh_availability_check(env.get('satellite_host'))
     # Test the Upgrade is successful
     upgrade_validation(True)
+    if settings.upgrade.mongodb_upgrade:
+        mongo_db_engine_upgrade()
+    if settings.upgrade.satellite_backup:
+        satellite_backup()

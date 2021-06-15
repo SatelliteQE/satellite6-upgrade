@@ -9,6 +9,7 @@ import socket
 import sys
 import time
 from datetime import datetime
+from random import randrange
 
 import requests
 from automation_tools import setup_alternate_capsule_ports
@@ -24,6 +25,7 @@ from automation_tools.utils import get_discovery_image
 from automation_tools.utils import update_packages
 from fabric.api import env
 from fabric.api import execute
+from fabric.api import hide
 from fabric.api import put
 from fabric.api import run
 from fabric.api import settings as fabric_settings
@@ -37,6 +39,7 @@ from upgrade.helpers import nailgun_conf
 from upgrade.helpers import settings
 from upgrade.helpers.constants.constants import CAPSULE_SUBSCRIPTIONS
 from upgrade.helpers.constants.constants import CUSTOM_CONTENTS
+from upgrade.helpers.constants.constants import CUSTOM_SAT_REPO
 from upgrade.helpers.constants.constants import DEFAULT_LOCATION
 from upgrade.helpers.constants.constants import DEFAULT_ORGANIZATION
 from upgrade.helpers.constants.constants import DEFAULT_ORGANIZATION_LABEL
@@ -65,11 +68,25 @@ def update_capsules_to_satellite(capsules):
     :param capsules:
     """
     for capsule in capsules:
-        smart_proxy = (
-            entities.SmartProxy(nailgun_conf)
-            .search(query={'search': f'name={capsule}'})[0]
-            .read()
-        )
+        for attempt in range(0, 4):
+            try:
+                smart_proxy = (
+                    entities.SmartProxy(nailgun_conf).search(query={
+                        'search': f'name={capsule}'
+                    })[0].read()
+                )
+                logger.info(f"object {smart_proxy}")
+                break
+            except IndexError as exp:
+                # listing the all available capsule
+                run("hammer capsule list")
+                logger.warn(f"No capsule availble in the capsule list retry {attempt} "
+                            f"after exception: {exp}")
+                if attempt == 3:
+                    logger.highlight("The searched capsule unavailable in the capsule list. "
+                                     "Aborting...")
+                    sys.exit(1)
+                time.sleep(10)
         loc = entities.Location(nailgun_conf).search(
             query={'search': f'name="{DEFAULT_LOCATION}"'}
         )[0]
@@ -141,6 +158,8 @@ def check_necessary_env_variables_for_upgrade(product):
         failure.append('Please provide OS version as rhel7 or rhel6, '
                        'And retry !')
     if failure:
+        logger.highlight("The provided information to perform the upgrade is in-sufficient. "
+                         "Aborting...")
         logger.warning('Cannot Proceed Upgrade as:')
         for msg in failure:
             logger.warning(msg)
@@ -189,16 +208,13 @@ def sync_capsule_repos_to_satellite(capsules):
     sat_tools_repo = settings.repos.sattools_repo[settings.upgrade.os]
     capsule_ak = settings.upgrade.capsule_ak[settings.upgrade.os]
     if capsule_ak is None:
-        logger.warning(
-            'The AK name is not provided for Capsule upgrade! Aborting...')
+        logger.highlight("The AK name is not provided for Capsule upgrade. Aborting...")
         sys.exit(1)
     org = entities.Organization(nailgun_conf, id=1).read()
     logger.info("Refreshing the attached manifest")
     with fabric_settings(warn_only=True):
         result = run(f'hammer subscription refresh-manifest --organization-id {org.id}')
-        if result.return_code == 0:
-            logger.info("manifest refreshed successfully")
-        else:
+        if result.return_code != 0:
             logger.warn(result)
     ak = entities.ActivationKey(nailgun_conf, organization=org).search(
         query={'search': f'name={capsule_ak}'})[0]
@@ -679,10 +695,12 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     if tools_repo_url is None:
         logger.warning('The Tools Repo URL for {} is not provided '
                        'to perform Client Upgrade !'.format(client_os))
+        logger.highlight(f"The Tools Repo URL for {client_os} is not provided "
+                         "to perform Client Upgrade. Aborting...")
         sys.exit(1)
     if ak_name is None:
-        logger.warning('The AK details are not provided for {0} Client '
-                       'upgrade!'.format(client_os))
+        logger.highlight(f"The AK details are not provided for {0} Client upgrade."
+                         " Aborting...")
         sys.exit(1)
 
     org = entities.Organization(nailgun_conf).search(
@@ -855,6 +873,7 @@ def foreman_service_restart():
     services = run('foreman-maintain service restart')
     if services.return_code > 0:
         logger.error('Unable to re-start the Satellite Services')
+        logger.highlight("Failed to restart the satellite services. Aborting...")
         sys.exit(1)
 
 
@@ -889,15 +908,15 @@ def setup_satellite_repo():
     # setting up foreman-maintain repo
     setup_foreman_maintain_repo()
     if settings.upgrade.distribution != 'cdn':
-        # Add Sat6 repo from latest compose
-        repository_setup("sat6",
-                         "satellite 6",
-                         "{}".format(settings.repos.satellite6_repo),
-                         1, 0)
-        repository_setup("sat6tools7",
-                         "satellite6-tools7",
-                         "{}".format(settings.repos.sattools_repo[settings.upgrade.os]),
-                         1, 0)
+        for repo in CUSTOM_SAT_REPO:
+            if repo != "foreman-maintain":
+                repository_setup(
+                    CUSTOM_SAT_REPO[repo]["repository"],
+                    CUSTOM_SAT_REPO[repo]["repository_name"],
+                    CUSTOM_SAT_REPO[repo]["base_url"],
+                    CUSTOM_SAT_REPO[repo]["enable"],
+                    CUSTOM_SAT_REPO[repo]["gpg"]
+                )
 
 
 def setup_foreman_maintain_repo():
@@ -917,10 +936,13 @@ def setup_foreman_maintain_repo():
     if settings.upgrade.distribution == 'cdn':
         enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
     else:
-        repository_setup("foreman-maintain",
-                         "foreman-maintain",
-                         "{}".format(settings.repos.satmaintenance_repo),
-                         1, 0)
+        repository_setup(
+            CUSTOM_SAT_REPO["foreman-maintain"]["repository"],
+            CUSTOM_SAT_REPO["foreman-maintain"]["repository_name"],
+            CUSTOM_SAT_REPO["foreman-maintain"]["base_url"],
+            CUSTOM_SAT_REPO["foreman-maintain"]["enable"],
+            CUSTOM_SAT_REPO["foreman-maintain"]["gpg"]
+        )
 
 
 def upgrade_using_foreman_maintain(sat_host=True):
@@ -1011,39 +1033,18 @@ def upgrade_using_foreman_maintain(sat_host=True):
 
     if sat_host:
         pre_satellite_upgrade_check()
+        preup_time = datetime.now().replace(microsecond=0)
         satellite_upgrade()
     else:
         pre_capsule_upgrade_check()
+        preup_time = datetime.now().replace(microsecond=0)
         capsule_upgrade()
+    postup_time = datetime.now().replace(microsecond=0)
 
-
-def upgrade_puppet3_to_puppet4():
-    """Task which upgrade satellite 6.3 from puppet3 to puppet4.
-
-    Environment Variables necessary to proceed Setup:
-    -----------------------------------------------------
-
-    DISTRIBUTION
-        The satellite upgrade using internal or cdn distribution.
-        e.g 'cdn','downstream'
-
-    PUPPET4_REPO
-        URL of puppet4 repo if distribution is downstream
-    """
-    env.disable_known_hosts = True
-    # setting up puppet4 repo
-    if settings.upgrade.distribution == 'cdn':
-        enable_repos('rhel-7-server-satellite-6.3-puppet4-rpms')
+    if sat_host:
+        logger.highlight(f'Time taken for satellite upgrade - {str(postup_time - preup_time)}')
     else:
-        repository_setup("Puppet4",
-                         "puppet4",
-                         "{}".format(settings.repos.puppet4_repo),
-                         1, 0)
-
-    # repolist
-    run('yum repolist')
-    # upgrade puppet
-    run('satellite-installer --upgrade-puppet')
+        logger.highlight(f'Time taken for capsule upgrade - {str(postup_time - preup_time)}')
 
 
 def get_osp_hostname(ipaddr):
@@ -1063,38 +1064,6 @@ def add_baseOS_repo(base_url):
     """
     repository_setup("rhel", "rhel",
                      base_url, 1, 0)
-
-
-def setup_satellite_clone():
-    """Task which install satellite-clone tool.
-
-    Environment Variables necessary to proceed Setup:
-    -----------------------------------------------------
-
-    DISTRIBUTION
-        The satellite upgrade using internal or CDN distribution.
-        e.g 'CDN','DOWNSTREAM'
-
-    MAINTAIN_REPO
-        URL of repo if distribution is DOWNSTREAM
-
-    BASE_URL
-        URL for the compose repository if distribution is DOWNSTREAM
-    """
-    env.disable_known_hosts = True
-    # setting up foreman-maintain repo
-    if settings.upgrade.distribution == 'cdn':
-        enable_repos('rhel-7-server-satellite-maintenance-6-rpms')
-    else:
-        repository_setup("maintainrepo",
-                         "maintain",
-                         "{}".format(settings.repos.satmaintenance_repo),
-                         1, 0)
-
-    # repolist
-    run('yum repolist')
-    # install foreman-maintain
-    run('yum install satellite-clone -y')
 
 
 def puppet_autosign_hosts(version, hosts, append=True):
@@ -1192,29 +1161,6 @@ def add_custom_product_subscription_to_hosts(product, hosts):
                 data={'subscriptions': [{'id': sub.id, 'quantity': 1}]})
 
 
-def check_status_of_running_task(command, attempt):
-    """
-        This function is used to check the running tasks status via foreman-maintain,
-        If task is running then wait for their completion otherwise move to
-        the next step.
-    """
-    retry = 0
-    while retry <= attempt:
-        status = run(f"{command} >/dev/null 2>&1; echo $?")
-        if status:
-            logger.info(f"Attempt{retry}: Command: {command}\n"
-                        "Task is still in running state")
-            retry += 1
-        else:
-            logger.info(f"Command: {command}\n "
-                        f"Check for running tasks:: [OK]")
-            return 0
-    else:
-        logger.info(f"Command: {command}\n"
-                    f"Exceeded the maximum attempt to check the "
-                    f"tasks running status")
-
-
 def repository_setup(repository, repository_name, base_url, enable, gpgcheck):
     """
     This is generic fucntion which is used to setup the repository
@@ -1296,7 +1242,7 @@ def nonfm_upgrade(satellite_upgrade=True,
         preup_time = datetime.now().replace(microsecond=0)
         upgrade_task(upgrade_type)
     postup_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for Satellite Upgrade - {}'.format(
+    logger.highlight('Time taken for satellite upgrade - {}'.format(
         str(postup_time - preup_time)))
 
 
@@ -1438,8 +1384,7 @@ def job_execution_time(task_name, start_time=None):
     if start_time:
         end_time = datetime.now().replace(microsecond=0)
         total_job_execution_time = str(end_time - start_time)
-        logger.highlight('Time taken by task {} - {}'.format(task_name,
-                                                             total_job_execution_time))
+        logger.highlight(f'Time taken by task {task_name} - {total_job_execution_time}')
     else:
         start_time = datetime.now().replace(microsecond=0)
         return start_time
@@ -1559,8 +1504,6 @@ def pulp2_pulp3_migration():
             for migration_time in output.split('\n'):
                 if re.search(r'Estimated migration time ', migration_time):
                     logger.highlight(migration_time)
-            if output.return_code != 0:
-                logger.warn(output)
         return output.return_code
 
     def preparation():
@@ -1574,11 +1517,9 @@ def pulp2_pulp3_migration():
             preup_time = datetime.now().replace(microsecond=0)
             output = run(f"satellite-maintain prep-{settings.upgrade.to_version}-upgrade")
             postup_time = datetime.now().replace(microsecond=0)
-            logger.info(output)
             logger.highlight(f"pulp2-pulp3 pre-migration completed successfully and it took: "
                              f"{str(postup_time - preup_time)}")
             if output.return_code != 0:
-                logger.warn(output)
                 for line in output.split('\n'):
                     if re.search(r'No such file or directory - /var/lib/pulp/content', line):
                         return 0
@@ -1590,20 +1531,41 @@ def pulp2_pulp3_migration():
         :return: satellite-maintain content prepare
         """
         with fabric_settings(warn_only=True):
-            preup_time = datetime.now().replace(microsecond=0)
             output = run("satellite-maintain content prepare")
-            postup_time = datetime.now().replace(microsecond=0)
-            logger.info(output)
-            logger.highlight(f"pulp2-pulp3 migration took: {str(postup_time - preup_time)}")
             if output.return_code != 0:
                 for line in output.split('\n'):
                     if re.search(r'Failed executing foreman-rake katello:pulp3_migration, '
                                  'exit status 255', line):
-                        post_migration_failure_fix(255)
-                        return 255
+                        post_migration_failure_fix(10255)
+                        return 100255
+                    elif re.search(r'Katello::Errors::Pulp3Error: Cursor not found', line):
+                        post_migration_failure_fix(10001)
+                        return 10001
                 else:
                     return output.return_code
             return output.return_code
+
+    def pulp_migration_remediation(status_code):
+        """
+        Use to remediate the pulp migration problem if the migration failed with
+        status code 255
+        :return: remidation status code
+        """
+        premigrate_remediation_time = datetime.now().replace(microsecond=0)
+        migration_remediation = migration()
+        if migration_remediation == 0:
+            postmigrate_remediation_time = datetime.now().replace(microsecond=0)
+            logger.highlight(f"pulp2-pulp3 migration remediation completed successfully because "
+                             f"migration job failed with status code "
+                             f"{status_code} and it took- "
+                             f"{str(postmigrate_remediation_time - premigrate_remediation_time)}")
+            return True
+        else:
+            output = run("foreman-rake katello:approve_corrupted_migration_content")
+            logger.info("Approved all the corrupted content to avoid upgrade failure")
+            if output.return_code != 0:
+                return False
+            return True
 
     estimation_status = estimation()
     if estimation_status != 0:
@@ -1613,23 +1575,28 @@ def pulp2_pulp3_migration():
     if preparation_status != 0:
         return False
 
+    premigrate_time = datetime.now().replace(microsecond=0)
     migration_status_code = migration()
     if migration_status_code == 0:
-        logger.highlight("pulp2-pulp3 migration completed successfully")
+        postmigrate_time = datetime.now().replace(microsecond=0)
+        logger.highlight(f"Pulp2-Pulp3 migration completed successfully and it "
+                         f"took- {str(postmigrate_time - premigrate_time)}")
         return True
-    elif migration_status_code == 255:
+    elif migration_status_code == 10001:
+        preremigrate_time = datetime.now().replace(microsecond=0)
         remigration_status_code = migration()
         if remigration_status_code == 0:
+            postremigrate_time = datetime.now().replace(microsecond=0)
             logger.highlight(f"pulp2-pulp3 remigration completed successfully because "
-                             f"migration job failed with status code {migration_status_code}")
+                             f"migration job failed with status code {migration_status_code}"
+                             f"and it took-  {str(postremigrate_time - preremigrate_time)} ")
             return True
-        else:
-            output = run("foreman-rake katello:approve_corrupted_migration_content")
-            logger.info("Approved all the corrupted content to avoid upgrade failure")
-            if output.return_code != 0:
-                logger.warn(output)
-                return False
-            return True
+        elif migration_status_code == 100255:
+            remediation_status_code = pulp_migration_remediation(migration_status_code)
+            return remediation_status_code
+    elif migration_status_code == 100255:
+        remediation_status_code = pulp_migration_remediation(migration_status_code)
+        return remediation_status_code
     return False
 
 
@@ -1657,11 +1624,174 @@ def post_migration_failure_fix(status_code):
     Use to fix the pulp migration issues based on their status code.
     :param status_code: status code of pulp migration failure
     """
-    if status_code == 255:
+    if status_code == 100255:
         with fabric_settings(warn_only=True):
-            output = run('foreman-rake katello:delete_orphaned_content')
-            status = output.return_code
-            if status != 0:
-                logger.warn(output)
+            run('foreman-rake katello:delete_orphaned_content')
             time.sleep(100)
         bg_orphaned_task_monitor()
+
+    if status_code == 10001:
+        with fabric_settings(warn_only=True):
+            logger.info("applied the workaround for "
+                        "https://bugzilla.redhat.com/show_bug.cgi?id=1972998")
+            run('mkdir /etc/systemd/system/pulpcore-worker@.service.d/;'
+                'cd /etc/systemd/system/pulpcore-worker@.service.d/; '
+                'echo -en "[Service] \nUser=pulp\nEnvironment='
+                'PULP_CONTENT_PREMIGRATION_BATCH_SIZE=50" >settings.conf')
+            run("systemctl daemon-reload")
+            foreman_service_restart()
+
+
+def satellite_restore_setup():
+    """
+    Use to setup the satellite restore for upstream satellite clone
+    """
+    if settings.clone.clone_rpm:
+        clone_dir = settings.clone.downstream_clone_dir
+    else:
+        clone_dir = settings.clone.upstream_clone_dir
+    backup_dir = settings.clone.backup_dir.replace("/", "\/")  # noqa
+    customer_name = settings.clone.customer_name + \
+                     str(settings.upgrade.from_version).replace(".", "") # noqa
+    with fabric_settings(warn_only=True):
+        run(f"curl -o /etc/yum.repos.d/rhel.repo {settings.repos.rhel7_repo}; "
+            f"yum install -y nfs-utils; mkdir -p {settings.clone.backup_dir}; "
+            f"mount -o v3 {settings.clone.db_server}:"
+            f"/root/customer-dbs {settings.clone.backup_dir}")
+        enable_disable_repo(enable_repos_name=[
+            f"rhel-{settings.upgrade.os[-1]}-server-ansible-"
+            f"{settings.upgrade.ansible_repo_version}-rpms"])
+        run("yum install -y ansible")
+
+    if settings.clone.clone_rpm:
+        run('yum repolist')
+        run('yum install satellite-clone -y')
+    else:
+        with fabric_settings(warn_only=True):
+            run("ssh-keygen -q -t rsa -N '' -f ~/.ssh/id_rsa <<<y >/dev/null 2>&1;"
+                "cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys;")
+
+        with fabric_settings(warn_only=True):
+            output = run(f"git clone {settings.clone.satellite_clone_upstream_repos}")
+            if output.return_code != 0:
+                logger.warn("upstream clone operation failed")
+            run(f'cp -a {clone_dir}/satellite-clone-vars.sample.yml '
+                f'{clone_dir}/satellite-clone-vars.yml;'
+                f'sed -i -e 2s/.*/"{settings.upgrade.satellite_hostname}"/ '
+                f'{clone_dir}/inventory;')
+    with fabric_settings(warn_only=True):
+        output = run(
+            f'echo "satellite_version: "{settings.upgrade.from_version}"" >> '
+            f'{clone_dir}/satellite-clone-vars.yml;'
+            f'echo "activationkey: "test_ak"" >> {clone_dir}/satellite-clone-vars.yml;'
+            f'echo "org: "{DEFAULT_ORGANIZATION}"" >> '
+            f'{clone_dir}/satellite-clone-vars.yml;'
+            f'sed -i -e "s/^#backup_dir.*/backup_dir: '
+            f'{backup_dir}\/{customer_name}/" '  # noqa
+            f'{clone_dir}/satellite-clone-vars.yml;'
+            f'echo "include_pulp_data: "{settings.clone.include_pulp_data}"" >>'
+            f' {clone_dir}/satellite-clone-vars.yml;'
+            f'echo "restorecon: "{settings.clone.restorecon}"" >>'
+            f' {clone_dir}/satellite-clone-vars.yml;'
+            f'echo "register_to_portal: true" >> {clone_dir}/satellite-clone-vars.yml;'
+            f'sed -i -e "/#org.*/arhn_pool: "{settings.subscription.rhn_poolid}""'
+            f' {clone_dir}/satellite-clone-vars.yml;'
+            f'sed -i -e "/#org.*/arhn_password: "{settings.subscription.rhn_password}"" '
+            f'{clone_dir}/satellite-clone-vars.yml;'
+            f'sed -i -e "/#org.*/arhn_user: "{settings.subscription.rhn_username}"" '
+            f'{clone_dir}/satellite-clone-vars.yml;'
+            f'sed -i -e "/#org.*/arhelversion: "{settings.upgrade.os[-1]}"" '
+            f'{clone_dir}/satellite-clone-vars.yml;'
+            f'sed -i -e "/subscription-manager register.*/d" '
+            f'{clone_dir}/roles/satellite-clone/tasks/main.yml;'
+            'sed -i -e "/Register\\/Subscribe the system to Red Hat Portal.*/a\\ \\ '
+            'command: subscription-manager register --force --user={{ rhn_user }} '
+            '--password={{ rhn_password }} --release={{ rhelversion }}Server" '
+            f'{clone_dir}/roles/satellite-clone/tasks/main.yml;'
+            'sed -i -e "/subscription-manager register.*/a- name: subscribe machine"'
+            f' {clone_dir}/roles/satellite-clone/tasks/main.yml;'
+            'sed -i -e "/subscribe machine.*/a\\ \\ command: subscription-manager '
+            'subscribe --pool={{ rhn_pool }}" '
+            f'{clone_dir}/roles/satellite-clone/'
+            f'tasks/main.yml')
+        if output.return_code != 0:
+            logger.critical(f"satellite clone setup failed: {output}")
+
+
+def satellite_restore():
+    """
+    Use to run the satellite restore
+    """
+    prerestore_time = datetime.now().replace(microsecond=0)
+    with fabric_settings(warn_only=True):
+        unsubscribe()
+        if settings.clone.clone_rpm:
+            restore_output = run("satellite-clone -y")
+        else:
+            with shell_env(ANSIBLE_HOST_KEY_CHECKING="false"):
+                ping_output = run(f"cd {settings.clone.upstream_clone_dir}; "
+                                  f"ansible all -i inventory -m ping -u root")
+                if ping_output.return_code != 0:
+                    logger.highlight(
+                        "The provided setup is in-accessible. Aborting...")
+                    sys.exit(1)
+                restore_output = run(f"cd {settings.clone.upstream_clone_dir}; "
+                                     f"ansible-playbook -i inventory "
+                                     f"satellite-clone-playbook.yml")
+        postrestore_time = datetime.now().replace(microsecond=0)
+        logger.highlight(f'Time taken for satellite restore - '
+                         f'{str(postrestore_time - prerestore_time)}')
+        run(f"umount {settings.clone.backup_dir}")
+        if restore_output.return_code != 0:
+            logger.highlight("Satellite restore complete with some error. "
+                             "Aborting... ")
+            sys.exit(1)
+
+
+def satellite_backup():
+    """
+    Use to perform the satellite backup after upgrade
+    """
+    satellite_backup_type = settings.upgrade.satellite_backup_type[randrange(2)]
+    logger.info(f"running satellite backup in {satellite_backup_type} mode")
+    preyum_time = datetime.now().replace(microsecond=0)
+    with fabric_settings(warn_only=True):
+        output = run(f"satellite-maintain backup {satellite_backup_type} "
+                     f"--skip-pulp-content -y {settings.clone.backup_dir}"
+                     f"_{satellite_backup_type}")
+        postyum_time = datetime.now().replace(microsecond=0)
+        logger.highlight(f'Time taken for {satellite_backup_type} satellite - '
+                         f'{str(postyum_time - preyum_time)}')
+        if output.return_code != 0:
+            logger.warn(f"satellite backup failed in {satellite_backup_type} mode")
+
+
+def unsubscribe():
+    """
+    Use to unsubscribe the setup from cdn.
+    """
+    with fabric_settings(warn_only=True):
+        run("subscription-manager unregister")
+        run('subscription-manager clean')
+
+
+def subscribe():
+    """
+    Use to subscribe the setup from cdn
+    :return:
+    """
+    with fabric_settings(warn_only=True):
+        with hide('running'):
+            run(f'subscription-manager register --force '
+                f'--user={settings.subscription.rhn_username} '
+                f'--password={settings.subscription.rhn_password} --release '
+                f'{settings.upgrade.os[-1]}Server')
+        attach_cmd = f'subscription-manager attach --pool {settings.subscription.rhn_poolid}'
+        has_pool_msg = 'This unit has already had the subscription matching pool ID'
+        for _ in range(10):
+            result = run(attach_cmd)
+            if result.succeeded or has_pool_msg in result:
+                return
+            time.sleep(5)
+        logger.highlight("Unable to attach the system to pool. Aborting...")
+        sys.exit(1)

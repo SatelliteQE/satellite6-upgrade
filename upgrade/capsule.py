@@ -47,7 +47,7 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
     elif os_version == 'rhel7':
         baseurl = settings.repos.rhel7_os
     else:
-        logger.warning('No OS Specified. Terminating..')
+        logger.highlight('No OS Specified. Aborting...')
         sys.exit(1)
     non_responsive_host = []
     for cap_host in capsule_hosts:
@@ -61,8 +61,8 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
             logger.warn("Please update the capsule template for fixed capsule version")
         execute(foreman_service_restart, host=cap_host)
         if non_responsive_host:
-            logger.warning(str(non_responsive_host) + ' these are '
-                                                      'non-responsive hosts')
+            logger.highlight(str(non_responsive_host) + ' these are non-responsive hosts. '
+                                                        'Aborting...')
             sys.exit(1)
         copy_ssh_key(satellite_host, capsule_hosts)
     if upgradable_capsule:
@@ -171,8 +171,8 @@ def satellite_capsule_zstream_upgrade(cap_host):
     from_version = settings.upgrade.from_version
     to_version = settings.upgrade.to_version
     if not from_version == to_version:
-        logger.warning('zStream Upgrade on Capsule cannot be performed as '
-                       'FROM and TO versions are not same!')
+        logger.highlight('zStream Upgrade on Capsule cannot be performed as FROM and TO '
+                         'versions are not same. Aborting...')
         sys.exit(1)
     major_ver = settings.upgrade.os[-1]
     ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]

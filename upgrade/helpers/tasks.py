@@ -212,10 +212,7 @@ def sync_capsule_repos_to_satellite(capsules):
         sys.exit(1)
     org = entities.Organization(nailgun_conf, id=1).read()
     logger.info("Refreshing the attached manifest")
-    with fabric_settings(warn_only=True):
-        result = run(f'hammer subscription refresh-manifest --organization-id {org.id}')
-        if result.return_code != 0:
-            logger.warn(result)
+    refresh_manifest(org.id)
     ak = entities.ActivationKey(nailgun_conf, organization=org).search(
         query={'search': f'name={capsule_ak}'})[0]
     add_satellite_subscriptions_in_capsule_ak(ak)
@@ -414,6 +411,41 @@ def sync_rh_repos_to_satellite(org):
     scl_repo.repo_id = RHEL_CONTENTS['rhscl']['label']
     server_repo.repo_id = RHEL_CONTENTS['server']['label']
     return scl_repo, server_repo
+
+
+def sync_ansible_repo_to_satellite(org):
+    """
+    Task to sync `RH Ansible Engine` used for capsule upgrade.
+    :param org: `nailgun.entities.Organization` entity where the repo will be synced
+    :return: `nailgun.entities.repository` entity for ansible
+    """
+    # Enable the repository
+    ansible_product = entities.Product(
+        nailgun_conf, name=RHEL_CONTENTS['ansible']['prod'], organization=org
+    ).search(query={'per_page': 100})[0]
+    ansible_reposet = entities.RepositorySet(
+        nailgun_conf, name=RHEL_CONTENTS['ansible']['repo'], product=ansible_product
+    ).search()[0]
+    try:
+        ansible_reposet.enable(
+            data={'basearch': 'x86_64', 'releasever': '7Server', 'organization_id': org.id})
+        logger.info("RH Ansible Engine repository enabled successfully")
+    except requests.exceptions.HTTPError as exp:
+        logger.warn(exp)
+    time.sleep(20)
+    # Sync the repo from CDN
+    ansible_repo = entities.Repository(
+        nailgun_conf, name=RHEL_CONTENTS['ansible']['repofull']).search(
+        query={'organization_id': org.id, 'per_page': 100}
+    )[0]
+    try:
+        call_entity_method_with_timeout(
+            entities.Repository(nailgun_conf, id=ansible_repo.id).sync, timeout=600)
+        logger.info("RH Ansible Engine repository synced successfully")
+    except requests.exceptions.HTTPError as exp:
+        logger.warn(f"RH Ansible engine repository sync failed with exception: {exp}")
+    ansible_repo.repo_id = RHEL_CONTENTS['ansible']['label']
+    return ansible_repo
 
 
 def sync_sattools_repos_to_satellite_for_capsule(org):
@@ -1817,7 +1849,7 @@ def create_capsule_ak():
         1. refresh the manifest
         2. enable and sync repos independent of distribution
         3. enable and sync remaining repos
-        4. create `Dev` and `QE` LCEs
+        4. create `Dev` and `QA` LCEs
         5. create CV, add content, publish and promote to `Dev` LCE
         6. create AK with `Dev` LCE and CV assigned
         7. add subscriptions to AK
@@ -1828,12 +1860,12 @@ def create_capsule_ak():
 
     # Refresh manifest
     logger.info("Refreshing manifest..")
-    with fabric_settings(warn_only=False):
-        result = run(f'hammer subscription refresh-manifest --organization-id {org.id}')
-        if result.return_code == 0:
-            logger.info("manifest refreshed successfully")
-        else:
-            logger.warn(result)
+    if not refresh_manifest(org.id):
+        sys.exit(1)
+
+    # sync ansible engine repo to SAT
+    logger.info("Syncing Ansible Engine repo..")
+    ans_repo = sync_ansible_repo_to_satellite(org)
 
     # sync rhscl and rhel7 repos to SAT
     logger.info("Syncing server and scl repo..")
@@ -1848,19 +1880,19 @@ def create_capsule_ak():
     maint_repo = sync_maintenance_repos_to_satellite_for_capsule(org)
     sattools_repo = sync_sattools_repos_to_satellite_for_capsule(org)
 
-    # create Dev and QE LCEs
+    # create Dev and QA LCEs
     logger.info("Creating lifecycle environment..")
     lib_lce = entities.LifecycleEnvironment(organization=org).search(
         query={'search': 'name=Library'}
     )[0]
     dev_lce = entities.LifecycleEnvironment(organization=org, name="Dev", prior=lib_lce).create()
-    entities.LifecycleEnvironment(organization=org, name="QE", prior=dev_lce).create()
+    entities.LifecycleEnvironment(organization=org, name="QA", prior=dev_lce).create()
 
     # create CV, add content, publish and promote to `Dev` LCE
     logger.info("Creating content view..")
     cv_name = f'{settings.upgrade.os}-capsule-cv'
     cv = entities.ContentView(name=cv_name, organization=org).create()
-    cv.repository = [scl_repo, server_repo, cap_repo, maint_repo, sattools_repo]
+    cv.repository = [ans_repo, scl_repo, server_repo, cap_repo, maint_repo, sattools_repo]
     cv.update(['repository'])
 
     logger.info("content view publish operation started successfully")
@@ -1889,6 +1921,14 @@ def create_capsule_ak():
 
     # Add subscriptions to AK
     add_satellite_subscriptions_in_capsule_ak(ak)
+
+    with fabric_settings(warn_only=True):
+        result = run(f"hammer activation-key content-override --organization-id {org.id} "
+                     f"--name {ak_name} --content-label {ans_repo.repo_id} --value 1")
+        if result.return_code == 0:
+            logger.info(f"content-override for {ans_repo.repo_id} was set successfully")
+        else:
+            logger.warn(result)
 
     with fabric_settings(warn_only=True):
         result = run(f"hammer activation-key content-override --organization-id {org.id} "
@@ -1953,3 +1993,16 @@ def create_capsule_ak():
         })
         logger.info(f"custom capsule Tools subscription {captools_sub.id} added successfully"
                     f" to capsule ak")
+
+
+def refresh_manifest(org_id):
+    """
+    A helper function to refresh manigest
+    :param org_id: id of an organization for manifest reftresh
+    :return: True if success
+    """
+    with fabric_settings(warn_only=True):
+        result = run(f"hammer subscription refresh-manifest --organization-id {org_id}")
+        if result.return_code != 0:
+            logger.warn(result)
+        return result.return_code == 0

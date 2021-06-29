@@ -730,12 +730,12 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
         cv.update(['repository'])
     except requests.exceptions.HTTPError as exp:
         logger.warn(exp)
-    logger.info("Content view publish operation is started successfully")
+    logger.info("content view publish operation is started successfully")
     try:
         start_time = job_execution_time("CV_Publish")
         call_entity_method_with_timeout(cv.read().publish, timeout=5000)
         # expected time out value is 3500
-        job_execution_time(f"Content view {cv.name} publish operation(In past time-out value was "
+        job_execution_time(f"content view {cv.name} publish operation(In past time-out value was "
                            f"3500 but in current execution we set it 5000) ", start_time)
     except Exception as exp:
         logger.critical(f"content view {cv.name} publish failed with exception {exp}")
@@ -763,9 +763,9 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     sub = entities.Subscription(nailgun_conf).search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
     for host in hosts:
-        host = entities.Host().search(query={'search': 'name={}'.format(host)})[0]
+        host = entities.Host(nailgun_conf).search(query={'search': 'name={}'.format(host)})[0]
         logger.info(f"Adding the Subscription {sub.name} on host {host.name}")
-        entities.HostSubscription(host=host).add_subscriptions(
+        entities.HostSubscription(nailgun_conf, host=host).add_subscriptions(
             data={'subscriptions': [{'id': sub.id, 'quantity': 1}]})
 
 
@@ -1482,10 +1482,11 @@ def add_satellite_subscriptions_in_capsule_ak(ak):
             if output.return_code > 0:
                 logger.warn(output)
             else:
-                ak_output = run(f'hammer activation-key add-subscription --subscription-id='
-                                f'"{output}" --id="{ak.id}"')
-                if ak_output.return_code > 0:
-                    logger.warn(output)
+                for sub_id in output.split("\n"):
+                    ak_output = run(f'hammer activation-key add-subscription --subscription-id='
+                                    f'"{sub_id}" --id="{ak.id}"')
+                    if ak_output.return_code > 0:
+                        logger.warn(output)
 
 
 def pulp2_pulp3_migration():
@@ -1739,12 +1740,12 @@ def satellite_restore():
                                      f"ansible-playbook -i inventory "
                                      f"satellite-clone-playbook.yml")
         postrestore_time = datetime.now().replace(microsecond=0)
-        logger.highlight(f'Time taken for satellite restore - '
+        logger.highlight(f'Time taken by satellite restore - '
                          f'{str(postrestore_time - prerestore_time)}')
         run(f"umount {settings.clone.backup_dir}")
         if restore_output.return_code != 0:
-            logger.highlight("Satellite restore complete with some error. "
-                             "Aborting... ")
+            logger.highlight("Satellite restore completed with some error. "
+                             "Aborting...")
             sys.exit(1)
 
 
@@ -1760,7 +1761,7 @@ def satellite_backup():
                      f"--skip-pulp-content -y {settings.clone.backup_dir}"
                      f"_{satellite_backup_type}")
         postyum_time = datetime.now().replace(microsecond=0)
-        logger.highlight(f'Time taken for {satellite_backup_type} satellite - '
+        logger.highlight(f'Time taken by {satellite_backup_type} satellite backup - '
                          f'{str(postyum_time - preyum_time)}')
         if output.return_code != 0:
             logger.warn(f"satellite backup failed in {satellite_backup_type} mode")

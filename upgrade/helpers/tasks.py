@@ -1922,78 +1922,23 @@ def create_capsule_ak():
 
     # Add subscriptions to AK
     add_satellite_subscriptions_in_capsule_ak(ak, org)
-
-    with fabric_settings(warn_only=True):
-        result = run(f"hammer activation-key content-override --organization-id {org.id} "
-                     f"--name {ak_name} --content-label {ans_repo.repo_id} --value 1")
-        if result.return_code == 0:
-            logger.info(f"content-override for {ans_repo.repo_id} was set successfully")
-        else:
-            logger.warn(result)
-
-    with fabric_settings(warn_only=True):
-        result = run(f"hammer activation-key content-override --organization-id {org.id} "
-                     f"--name {ak_name} --content-label {scl_repo.repo_id} --value 1")
-        if result.return_code == 0:
-            logger.info(f"content-override for {scl_repo.repo_id} was set successfully")
-        else:
-            logger.warn(result)
+    ak_content_override(org, ak_name, ans_repo)
+    ak_content_override(org, ak_name, scl_repo)
 
     if settings.repos.capsule_repo is None:
-        with fabric_settings(warn_only=True):
-            result = run(f"hammer activation-key content-override --organization-id {org.id} "
-                         f"--name {ak_name} --content-label {cap_repo.repo_id} --value 1")
-            if result.return_code == 0:
-                logger.info(f"content-override for {cap_repo.repo_id} was set successfully")
-            else:
-                logger.warn(result)
+        ak_content_override(org, ak_name, cap_repo)
     else:
-        cap_sub = entities.Subscription().search(
-            query={'organization_id': f'{org.id}',
-                   'search': f'name={CUSTOM_CONTENTS["capsule"]["prod"]}'})[0]
-        ak.add_subscriptions(data={
-            'quantity': 1,
-            'subscription_id': cap_sub.id,
-        })
-        logger.info(f"capsule subscription {cap_sub.name} added successfully to capsule ak")
+        ak_add_subscription(org, ak, CUSTOM_CONTENTS["capsule"]["prod"])
 
     if settings.repos.satmaintenance_repo is None:
-        with fabric_settings(warn_only=True):
-            result = run(f"hammer activation-key content-override --organization-id {org.id} "
-                         f"--name {ak_name} --content-label {maint_repo.repo_id} --value 1")
-            if result.return_code == 0:
-                logger.info(f"content-override for {maint_repo.repo_id} was set successfully")
-            else:
-                logger.warn(result)
+        ak_content_override(org, ak_name, maint_repo)
     else:
-        maintenance_sub = entities.Subscription().search(
-            query={'organization_id': f'{org.id}',
-                   'search': f'name={CUSTOM_CONTENTS["maintenance"]["prod"]}'})[0]
-        ak.add_subscriptions(data={
-            'quantity': 1,
-            'subscription_id': maintenance_sub.id,
-        })
-        logger.info(f" maintenance subscription {maintenance_sub.id} added successfully to "
-                    f"capsule ak")
+        ak_add_subscription(org, ak, CUSTOM_CONTENTS["maintenance"]["prod"])
 
     if settings.repos.sattools_repo[settings.upgrade.os] is None:
-        with fabric_settings(warn_only=True):
-            result = run(f"hammer activation-key content-override --organization-id {org.id} "
-                         f"--name {ak_name} --content-label {sattools_repo.repo_id} --value 1")
-            if result.return_code == 0:
-                logger.info(f"content-override for {sattools_repo.repo_id} was set successfully")
-            else:
-                logger.warn(result)
+        ak_content_override(org, ak_name, sattools_repo)
     else:
-        captools_sub = entities.Subscription().search(
-            query={'organization_id': f'{org.id}',
-                   'search': f'name={CUSTOM_CONTENTS["capsule_tools"]["prod"]}'})[0]
-        ak.add_subscriptions(data={
-            'quantity': 1,
-            'subscription_id': captools_sub.id,
-        })
-        logger.info(f"custom capsule Tools subscription {captools_sub.id} added successfully"
-                    f" to capsule ak")
+        ak_add_subscription(org, ak, CUSTOM_CONTENTS["capsule_tools"]["prod"])
 
 
 def refresh_manifest(org_id):
@@ -2007,3 +1952,36 @@ def refresh_manifest(org_id):
         if result.return_code != 0:
             logger.warn(result)
         return result.return_code == 0
+
+
+def ak_content_override(org, ak_name, repo):
+    """
+    A helper to override content of an Activation Key
+    :param org: Organization where the content is managed.
+    :param ak_name: Name of the AK
+    :param repo: Repo to be overriden
+    """
+    with fabric_settings(warn_only=True):
+        result = run(f"hammer activation-key content-override --organization-id {org.id} "
+                     f"--name {ak_name} --content-label {repo.repo_id} --value 1")
+        if result.return_code == 0:
+            logger.info(f"content-override for {repo.repo_id} was set successfully")
+        else:
+            logger.warn(result)
+
+
+def ak_add_subscription(org, ak, sub_name):
+    """
+    A helper to add a subscription to an Activation Key
+    :param org: Organization where the content is managed
+    :param ak: Activation Key to be changed
+    :param sub_name: Name of the subscription to be added
+    """
+    sub = entities.Subscription().search(
+        query={'organization_id': f'{org.id}',
+               'search': f'name={sub_name}'})[0]
+    ak.add_subscriptions(data={
+        'quantity': 1,
+        'subscription_id': sub.id,
+    })
+    logger.info(f"custom subscription {sub.name} added successfully to the AK {ak.name}")

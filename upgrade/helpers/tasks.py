@@ -215,7 +215,7 @@ def sync_capsule_repos_to_satellite(capsules):
     refresh_manifest(org.id)
     ak = entities.ActivationKey(nailgun_conf, organization=org).search(
         query={'search': f'name={capsule_ak}'})[0]
-    add_satellite_subscriptions_in_capsule_ak(ak)
+    add_satellite_subscriptions_in_capsule_ak(ak, org)
     logger.info(f"activation key {capsule_ak} used for capsule subscription and "
                 f"it found on the satellite")
     cv = ak.content_view.read()
@@ -1500,11 +1500,12 @@ def workaround_1967131(task_type="rollback"):
                     "https://bugzilla.redhat.com/show_bug.cgi?id=1967131")
 
 
-def add_satellite_subscriptions_in_capsule_ak(ak):
+def add_satellite_subscriptions_in_capsule_ak(ak, org):
     """
     Use to add the satellite subscriptions in capsule activation key, it helps to enable the
     capsule repository.
     :param ak:  capsule activation key object
+    :param org: organization object
     """
     with fabric_settings(warn_only=True):
         rhel_subscription = f'awk \'/{CAPSULE_SUBSCRIPTIONS["rhel_subscription"]}/ ' +\
@@ -1512,7 +1513,7 @@ def add_satellite_subscriptions_in_capsule_ak(ak):
         sat_subscription = f'awk \'/{CAPSULE_SUBSCRIPTIONS["satellite_infra"]}/ ' + \
                            '{print $1}\''
         for subscription in rhel_subscription, sat_subscription:
-            output = run(f'hammer subscription list|{subscription}')
+            output = run(f'hammer subscription list --organization-id="{org.id}" | {subscription}')
             if output.return_code > 0:
                 logger.warn(output)
             else:
@@ -1920,7 +1921,7 @@ def create_capsule_ak():
     ).create()
 
     # Add subscriptions to AK
-    add_satellite_subscriptions_in_capsule_ak(ak)
+    add_satellite_subscriptions_in_capsule_ak(ak, org)
 
     with fabric_settings(warn_only=True):
         result = run(f"hammer activation-key content-override --organization-id {org.id} "
@@ -1948,7 +1949,8 @@ def create_capsule_ak():
                 logger.warn(result)
     else:
         cap_sub = entities.Subscription().search(
-            query={'search': 'name={0}'.format(CUSTOM_CONTENTS['capsule']['prod'])})[0]
+            query={'organization_id': f'{org.id}',
+                   'search': f'name={CUSTOM_CONTENTS["capsule"]["prod"]}'})[0]
         ak.add_subscriptions(data={
             'quantity': 1,
             'subscription_id': cap_sub.id,
@@ -1965,10 +1967,8 @@ def create_capsule_ak():
                 logger.warn(result)
     else:
         maintenance_sub = entities.Subscription().search(
-            query={'search': 'name={0}'.format(
-                CUSTOM_CONTENTS['maintenance']['prod'])
-            }
-        )[0]
+            query={'organization_id': f'{org.id}',
+                   'search': f'name={CUSTOM_CONTENTS["maintenance"]["prod"]}'})[0]
         ak.add_subscriptions(data={
             'quantity': 1,
             'subscription_id': maintenance_sub.id,
@@ -1986,7 +1986,8 @@ def create_capsule_ak():
                 logger.warn(result)
     else:
         captools_sub = entities.Subscription().search(
-            query={'search': f'name={CUSTOM_CONTENTS["capsule_tools"]["prod"]}'})[0]
+            query={'organization_id': f'{org.id}',
+                   'search': f'name={CUSTOM_CONTENTS["capsule_tools"]["prod"]}'})[0]
         ak.add_subscriptions(data={
             'quantity': 1,
             'subscription_id': captools_sub.id,

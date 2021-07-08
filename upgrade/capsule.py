@@ -137,7 +137,12 @@ def satellite_capsule_upgrade(cap_host, sat_host):
             f"rhel-{major_ver}-server-ansible-{settings.upgrade.ansible_repo_version}-rpms"])
 
     if settings.upgrade.foreman_maintain_capsule_upgrade:
-        foreman_maintain_package_update()
+        if bz_bug_is_open("1967685") and settings.upgrade.to_version == '6.10':
+            run("yum install -y http://download.eng.bos.redhat.com/brewroot/"
+                "vol/rhel-7/packages/rubygem-foreman_maintain/0.8.3/1.el7sat/noarch/"
+                "rubygem-foreman_maintain-0.8.3-1.el7sat.noarch.rpm -y")
+        else:
+            foreman_maintain_package_update()
         upgrade_using_foreman_maintain(sat_host=False)
     else:
         nonfm_upgrade(satellite_upgrade=False,

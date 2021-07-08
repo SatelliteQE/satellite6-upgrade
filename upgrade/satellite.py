@@ -114,7 +114,12 @@ def satellite_upgrade(zstream=False):
                 CUSTOM_SAT_REPO[repo]["enable"],
                 CUSTOM_SAT_REPO[repo]["gpg"]
             )
-        foreman_maintain_package_update()
+        if bz_bug_is_open("1967685") and settings.upgrade.to_version == '6.10':
+            run("yum install -y http://download.eng.bos.redhat.com/brewroot/"
+                "vol/rhel-7/packages/rubygem-foreman_maintain/0.8.3/1.el7sat/noarch/"
+                "rubygem-foreman_maintain-0.8.3-1.el7sat.noarch.rpm -y")
+        else:
+            foreman_maintain_package_update()
     if settings.upgrade.to_version == "6.10":
         if bz_bug_is_open(1967131):
             workaround_1967131(task_type="apply")

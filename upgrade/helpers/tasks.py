@@ -1098,7 +1098,10 @@ def wait_untill_capsule_sync(capsule):
             'capsule: {}'.format(cap.name))
         start_time = job_execution_time("capsule_sync")
         for task in active_tasks:
-            entities.ForemanTask(nailgun_conf, id=task['id']).poll(timeout=9000)
+            try:
+                entities.ForemanTask(nailgun_conf, id=task['id']).poll(timeout=9000)
+            except Exception as ex:
+                logger.warn(f"Task id {task['id']} failed with {ex}")
         job_execution_time("Background capsule sync operation(In past time-out value was "
                            "2700 but in current execution we have set it 9000)",
                            start_time)

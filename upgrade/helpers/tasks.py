@@ -1445,28 +1445,27 @@ def workaround_1967131(task_type="rollback"):
     """
     Use to apply the pulp migration workaround for 1967131
     """
-    if bz_bug_is_open(1967131):
-        if task_type != "rollback":
-            output = run('sed -i "s/downloaded = record.downloaded if '
-                         'hasattr(record, \'downloaded\') else False/downloaded = '
-                         'hasattr(record, \'downloaded\') and (record.downloaded or '
-                         'record.downloaded is None)/g" '
-                         '/usr/lib/python3.6/site-packages/pulp_2to3_migration/app/'
-                         'pre_migration.py'
-                         )
-        else:
-            output = run('sed -i "s/downloaded = hasattr(record, \'downloaded\') and '
-                         '(record.downloaded or record.downloaded is None)/'
-                         'downloaded = record.downloaded if hasattr(record, \'downloaded\') '
-                         'else False/g" /usr/lib/python3.6/site-packages/pulp_2to3_migration/'
-                         'app/pre_migration.py')
-        foreman_service_restart()
-        if output.return_code == 0 and task_type != "rollback":
-            logger.info("patch applied successfully for "
-                        "https://bugzilla.redhat.com/show_bug.cgi?id=1967131")
-        else:
-            logger.info("patch rolledback successfully for "
-                        "https://bugzilla.redhat.com/show_bug.cgi?id=1967131")
+    if task_type != "rollback":
+        output = run('sed -i "s/downloaded = record.downloaded if '
+                     'hasattr(record, \'downloaded\') else False/downloaded = '
+                     'hasattr(record, \'downloaded\') and (record.downloaded or '
+                     'record.downloaded is None)/g" '
+                     '/usr/lib/python3.6/site-packages/pulp_2to3_migration/app/'
+                     'pre_migration.py'
+                     )
+    else:
+        output = run('sed -i "s/downloaded = hasattr(record, \'downloaded\') and '
+                     '(record.downloaded or record.downloaded is None)/'
+                     'downloaded = record.downloaded if hasattr(record, \'downloaded\') '
+                     'else False/g" /usr/lib/python3.6/site-packages/pulp_2to3_migration/'
+                     'app/pre_migration.py')
+    foreman_service_restart()
+    if output.return_code == 0 and task_type != "rollback":
+        logger.info("patch applied successfully for "
+                    "https://bugzilla.redhat.com/show_bug.cgi?id=1967131")
+    else:
+        logger.info("patch rolledback successfully for "
+                    "https://bugzilla.redhat.com/show_bug.cgi?id=1967131")
 
 
 def add_satellite_subscriptions_in_capsule_ak(ak):

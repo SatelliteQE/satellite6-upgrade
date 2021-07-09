@@ -121,11 +121,11 @@ def satellite_upgrade(zstream=False):
         else:
             foreman_maintain_package_update()
     if settings.upgrade.to_version == "6.10":
-        if bz_bug_is_open(1967131):
-            workaround_1967131(task_type="apply")
+        # Will remove the workaround section after template upgrade
+        workaround_1967131(task_type="apply")
         pulp_migration_status = pulp2_pulp3_migration()
-        if bz_bug_is_open(1967131):
-            workaround_1967131()
+        # Will remove the workaround section after template upgrade
+        workaround_1967131()
         if not pulp_migration_status:
             logger.highlight("Pulp migration failed. Aborting")
             sys.exit(1)

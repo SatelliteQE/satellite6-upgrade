@@ -1564,11 +1564,20 @@ def pulp2_pulp3_migration():
                              f"{str(postmigrate_remediation_time - premigrate_remediation_time)}")
             return True
         else:
-            output = run("foreman-rake katello:approve_corrupted_migration_content")
-            logger.info("Approved all the corrupted content to avoid upgrade failure")
-            if output.return_code != 0:
-                return False
-            return True
+            with fabric_settings(warn_only=True):
+                for attempt in range(0, 3):
+                    output = run("foreman-rake katello:approve_corrupted_migration_content")
+                    if output.return_code == 0:
+                        logger.highlight(
+                            f"Approved all the corrupted content to avoid upgrade failure in "
+                            f"attempt {attempt}"
+                        )
+                        # Service ping status failed due to BZ#1981017
+                        return True
+                    logger.warn(f"Corrupted content migration failed, Retry{attempt}...")
+                    foreman_service_restart()
+                    time.sleep(200)
+            return False
 
     estimation_status = estimation()
     if estimation_status != 0:
@@ -1577,7 +1586,6 @@ def pulp2_pulp3_migration():
     preparation_status = preparation()
     if preparation_status != 0:
         return False
-
     premigrate_time = datetime.now().replace(microsecond=0)
     migration_status_code = migration()
     if migration_status_code == 0:
@@ -1587,6 +1595,9 @@ def pulp2_pulp3_migration():
         return True
     elif migration_status_code == 10001:
         preremigrate_time = datetime.now().replace(microsecond=0)
+        # Service ping status failed due to BZ#1981017
+        foreman_service_restart()
+        time.sleep(100)
         remigration_status_code = migration()
         if remigration_status_code == 0:
             postremigrate_time = datetime.now().replace(microsecond=0)
@@ -1595,9 +1606,15 @@ def pulp2_pulp3_migration():
                              f"and it took-  {str(postremigrate_time - preremigrate_time)} ")
             return True
         elif migration_status_code == 100255:
+            # Service ping status failed due to BZ#1981017
+            foreman_service_restart()
+            time.sleep(100)
             remediation_status_code = pulp_migration_remediation(migration_status_code)
             return remediation_status_code
     elif migration_status_code == 100255:
+        # Service ping status failed due to BZ#1981017
+        foreman_service_restart()
+        time.sleep(100)
         remediation_status_code = pulp_migration_remediation(migration_status_code)
         return remediation_status_code
     return False

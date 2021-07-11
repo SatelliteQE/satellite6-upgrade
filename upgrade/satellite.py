@@ -107,6 +107,8 @@ def satellite_upgrade(zstream=False):
         enable_disable_repo(enable_repos_name=['rhel-7-server-satellite-maintenance-6-rpms'])
     else:
         for repo in CUSTOM_SAT_REPO:
+            if repo == "sat6tools7" and bz_bug_is_open(1980798):
+                continue
             repository_setup(
                 CUSTOM_SAT_REPO[repo]["repository"],
                 CUSTOM_SAT_REPO[repo]["repository_name"],

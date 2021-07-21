@@ -101,6 +101,9 @@ def satellite_upgrade(zstream=False):
     # disable all the repos
     enable_disable_repo(disable_repos_name=["*"])
 
+    # maintenance repository update for satellite upgrade
+    maintenance_repo_update()
+
     # It is required to enable the tools and server for non-fm upgrade because in
     # fm both the repos enabled by the fm tool.
     if not settings.upgrade.foreman_maintain_satellite_upgrade:
@@ -118,12 +121,7 @@ def satellite_upgrade(zstream=False):
                 CUSTOM_SAT_REPO[repo]["enable"],
                 CUSTOM_SAT_REPO[repo]["gpg"]
             )
-        if bz_bug_is_open("1967685") and settings.upgrade.to_version == '6.10':
-            run("yum install -y http://download.eng.bos.redhat.com/brewroot/"
-                "vol/rhel-7/packages/rubygem-foreman_maintain/0.8.3/1.el7sat/noarch/"
-                "rubygem-foreman_maintain-0.8.3-1.el7sat.noarch.rpm -y")
-        else:
-            foreman_maintain_package_update()
+        foreman_maintain_package_update()
     if settings.upgrade.to_version == "6.10":
         # Will remove the workaround section after template upgrade
         workaround_1967131(task_type="apply")

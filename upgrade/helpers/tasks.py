@@ -968,6 +968,7 @@ def maintenance_repo_update():
             logger.warn(f"updated downstream y-stream repo did not work "
                         f"so we rollbacked to the stable maintenance repo "
                         f"{settings.repos.satmaintenance_repo}")
+        CUSTOM_SAT_REPO["foreman-maintain"]["base_url"] = settings.repos.satmaintenance_repo
 
 
 def setup_foreman_maintain_repo():

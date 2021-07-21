@@ -16,6 +16,7 @@ from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import foreman_packages_installation_check
 from upgrade.helpers.tasks import foreman_service_restart
+from upgrade.helpers.tasks import maintenance_repo_update
 from upgrade.helpers.tasks import mongo_db_engine_upgrade
 from upgrade.helpers.tasks import nonfm_upgrade
 from upgrade.helpers.tasks import pulp2_pulp3_migration
@@ -44,6 +45,7 @@ def satellite_setup(satellite_host):
     execute(install_prerequisites, host=satellite_host)
     execute(subscribe, host=satellite_host)
     execute(foreman_service_restart, host=satellite_host)
+    maintenance_repo_update()
     env['satellite_host'] = satellite_host
     settings.upgrade.satellite_hostname = satellite_host
     logger.info(f'Satellite {satellite_host} is ready for Upgrade!')

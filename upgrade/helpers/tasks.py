@@ -951,6 +951,25 @@ def setup_satellite_repo():
                 )
 
 
+def maintenance_repo_update():
+    """
+    Use to update the maintenance repo url for downstream y-stream version
+    """
+    if settings.upgrade.to_version == '6.10' or settings.upgrade.downstream_fm_upgrade:
+        maintenance_repo = settings.repos.satmaintenance_repo
+        settings.repos.satmaintenance_repo = re.sub(
+            'Satellite_Maintenance_Next_RHEL7|Satellite_Maintenance_RHEL7',
+            f'Satellite_{settings.repos.satellite_version_undr}_with_RHEL7_Server',
+            settings.repos.satmaintenance_repo, 1)
+        logger.info(f"updated maintenance repo for downstream y stream upgrade "
+                    f"{settings.repos.satmaintenance_repo}")
+        if requests.get(f"{settings.repos.satmaintenance_repo }").status_code != 200:
+            settings.repos.satmaintenance_repo = maintenance_repo
+            logger.warn(f"updated downstream y-stream repo did not work "
+                        f"so we rollbacked to the stable maintenance repo "
+                        f"{settings.repos.satmaintenance_repo}")
+
+
 def setup_foreman_maintain_repo():
     """Task which setup repo for foreman-maintain.
 
@@ -1591,9 +1610,9 @@ def pulp2_pulp3_migration():
         migration_remediation = migration()
         if migration_remediation == 0:
             postmigrate_remediation_time = datetime.now().replace(microsecond=0)
-            logger.highlight(f"pulp2-pulp3 migration remediation completed successfully because "
-                             f"migration job failed with status code "
-                             f"{status_code} and it took- "
+            logger.highlight(f"Pulp2-Pulp3 migration remediation was completed after cleaning"
+                             f" the orphaned process (remediation ran after getting"
+                             f" {status_code}) successfully and it took- "
                              f"{str(postmigrate_remediation_time - premigrate_remediation_time)}")
             return True
         else:
@@ -1627,18 +1646,35 @@ def pulp2_pulp3_migration():
                          f"took- {str(postmigrate_time - premigrate_time)}")
         return True
     elif migration_status_code == 10001:
+        postmigrate_time = datetime.now().replace(microsecond=0)
+        logger.highlight(f"Pulp2-Pulp3 migration failed (in next step we will apply the "
+                         f"workaround and will re-execute the migration) with "
+                         f"{migration_status_code} and it took- "
+                         f"{str(postmigrate_time - premigrate_time)}")
         preremigrate_time = datetime.now().replace(microsecond=0)
         remigration_status_code = migration()
         if remigration_status_code == 0:
             postremigrate_time = datetime.now().replace(microsecond=0)
-            logger.highlight(f"pulp2-pulp3 remigration completed successfully because "
+            logger.highlight(f"Pulp2-Pulp3 remigration completed successfully because "
                              f"migration job failed with status code {migration_status_code}"
                              f"and it took-  {str(postremigrate_time - preremigrate_time)} ")
             return True
-        elif migration_status_code == 100255:
+        elif remigration_status_code == 100255:
+            postremigrate_time = datetime.now().replace(microsecond=0)
+            logger.highlight(f"Pulp2-Pulp3 remigration failed due to corrupted contents"
+                             f"(in the next step we will cleanup the orphaned process and "
+                             f"if it will not wok then approve the all corrupted contents "
+                             f"to unblock the upgrade) with status code {migration_status_code}"
+                             f"and it took-  {str(postremigrate_time - preremigrate_time)} ")
             remediation_status_code = pulp_migration_remediation(migration_status_code)
             return remediation_status_code
     elif migration_status_code == 100255:
+        postmigrate_time = datetime.now().replace(microsecond=0)
+        logger.highlight(f"Pulp2-Pulp3 migration failed due to corrupted contents"
+                         f"(in the next step we will cleanup the orphaned process and "
+                         f"if it will not wok then approve the all corrupted contents "
+                         f"to unblock the upgrade) with status code {migration_status_code}"
+                         f"and it took-  {str(postmigrate_time - premigrate_time)} ")
         remediation_status_code = pulp_migration_remediation(migration_status_code)
         return remediation_status_code
     return False

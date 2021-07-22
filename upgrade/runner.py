@@ -19,6 +19,7 @@ from upgrade.client import satellite6_client_upgrade
 from upgrade.helpers import settings
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import check_necessary_env_variables_for_upgrade
+from upgrade.helpers.tasks import maintenance_repo_update
 from upgrade.helpers.tasks import post_upgrade_test_tasks
 from upgrade.helpers.tasks import pre_upgrade_system_checks
 from upgrade.helpers.tasks import satellite_restore
@@ -92,6 +93,7 @@ def product_setup_for_db_upgrade(satellite):
     settings.upgrade.satellite_hostname = satellite
     execute(unsubscribe, host=satellite)
     execute(subscribe, host=satellite)
+    maintenance_repo_update()
     execute(setup_foreman_maintain_repo, host=satellite)
     execute(satellite_restore_setup, host=satellite)
     execute(satellite_restore, host=satellite)

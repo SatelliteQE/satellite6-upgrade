@@ -1303,9 +1303,9 @@ def nonfm_upgrade(satellite_upgrade=True,
 
 def upgrade_task(upgrade_type, cap_host=None):
     """
-    :param str upgrade_type: upgrade type would be an string either it is
+    :param string upgrade_type: upgrade type would be an string either it is
     satellite or capsule
-    :param str cap_host: hostname for capsule's major version upgrade
+    :param string cap_host: hostname for capsule's major version upgrade
     """
     if cap_host:
         run(f'satellite-installer --scenario {upgrade_type} '
@@ -1315,23 +1315,21 @@ def upgrade_task(upgrade_type, cap_host=None):
         run(f'satellite-installer --scenario {upgrade_type}')
 
 
-def upgrade_validation(upgrade_type=False):
+def upgrade_validation(upgrade_type="satellite", satellite_services_action="status"):
     """
     In this function we check the system states after upgrade.
-    :param bool upgrade_type: if upgrade_type is True then we check both the services.
+    :param str upgrade_type: satellite or capsule.
+    :param str satellite_services_action: start, stop and restart based on the resquest
     """
-    if upgrade_type:
-        with fabric_settings(warn_only=True):
+    with fabric_settings(warn_only=True):
+        if upgrade_type == "satellite":
             result = run('hammer ping', warn_only=True)
             if result.return_code != 0:
-                logger.warn(result)
-
-    with fabric_settings(warn_only=True):
-        result = run('foreman-maintain service status', warn_only=True)
-        if result.return_code != 0:
-            logger.warn(result)
-    if bz_bug_is_open(1860444) and not upgrade_type:
-        run('foreman-maintain service restart', warn_only=True)
+                logger.warn("hammer ping: some of satellite services in the failed state")
+        for action in set(["status", satellite_services_action]):
+            result = run(f'foreman-maintain service {action}', warn_only=True)
+            if result.return_code != 0:
+                logger.warn(f"foreman maintain {action} command failed")
 
 
 def update_scap_content():
@@ -1392,7 +1390,7 @@ def update_scap_content():
     scap(updated_scap_content, "updated_scap_content")
 
 
-def mongo_db_engine_upgrade(upgrade_type):
+def mongo_db_engine_upgrade(upgrade_type="satellite"):
     """
     The purpose of this method to perform the upgrade of mongo DB database engine
     from MMAPv1 to WiredTiger.
@@ -1573,7 +1571,7 @@ def pulp2_pulp3_migration():
             preup_time = datetime.now().replace(microsecond=0)
             output = run(f"satellite-maintain prep-{settings.upgrade.to_version}-upgrade")
             postup_time = datetime.now().replace(microsecond=0)
-            logger.highlight(f"pulp2-pulp3 pre-migration completed successfully and it took: "
+            logger.highlight(f"Pulp2-Pulp3 pre-migration completed successfully and it took: "
                              f"{str(postup_time - preup_time)}")
             if output.return_code != 0:
                 for line in output.split('\n'):
@@ -1620,7 +1618,7 @@ def pulp2_pulp3_migration():
             with fabric_settings(warn_only=True):
                 # Service ping status failed due to BZ#1981017, The problem disappears after
                 # sometime
-                for attempt in range(0, 40):
+                for attempt in range(1, 40):
                     output = run("foreman-rake katello:approve_corrupted_migration_content")
                     if output.return_code == 0:
                         logger.highlight(
@@ -1628,6 +1626,11 @@ def pulp2_pulp3_migration():
                             f"attempt {attempt}"
                         )
                         return True
+                    # Sometimes services fail but it appears after sometime
+                    # so no need to restart the services after every retry.
+                    if attempt % 5 == 0:
+                        upgrade_validation(upgrade_type="satellite",
+                                           satellite_services_action="start")
                     logger.warn(f"Corrupted content migration failed, Retry{attempt}...")
                     time.sleep(300)
             return False
@@ -1657,16 +1660,16 @@ def pulp2_pulp3_migration():
         if remigration_status_code == 0:
             postremigrate_time = datetime.now().replace(microsecond=0)
             logger.highlight(f"Pulp2-Pulp3 remigration completed successfully because "
-                             f"migration job failed with status code {migration_status_code}"
-                             f"and it took-  {str(postremigrate_time - preremigrate_time)} ")
+                             f"migration job failed with status code {migration_status_code} "
+                             f"and it took-  {str(postremigrate_time - preremigrate_time)}")
             return True
         elif remigration_status_code == 100255:
             postremigrate_time = datetime.now().replace(microsecond=0)
             logger.highlight(f"Pulp2-Pulp3 remigration failed due to corrupted contents"
                              f"(in the next step we will cleanup the orphaned process and "
                              f"if it will not wok then approve the all corrupted contents "
-                             f"to unblock the upgrade) with status code {migration_status_code}"
-                             f"and it took-  {str(postremigrate_time - preremigrate_time)} ")
+                             f"to unblock the upgrade) with status code {migration_status_code} "
+                             f"and it took-  {str(postremigrate_time - preremigrate_time)}")
             remediation_status_code = pulp_migration_remediation(migration_status_code)
             return remediation_status_code
     elif migration_status_code == 100255:
@@ -1674,7 +1677,7 @@ def pulp2_pulp3_migration():
         logger.highlight(f"Pulp2-Pulp3 migration failed due to corrupted contents"
                          f"(in the next step we will cleanup the orphaned process and "
                          f"if it will not wok then approve the all corrupted contents "
-                         f"to unblock the upgrade) with status code {migration_status_code}"
+                         f"to unblock the upgrade) with status code {migration_status_code} "
                          f"and it took-  {str(postmigrate_time - premigrate_time)} ")
         remediation_status_code = pulp_migration_remediation(migration_status_code)
         return remediation_status_code

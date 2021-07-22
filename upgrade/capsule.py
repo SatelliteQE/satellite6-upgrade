@@ -152,7 +152,7 @@ def satellite_capsule_upgrade(cap_host, sat_host):
     reboot(160)
     host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
-    upgrade_validation()
+    upgrade_validation(upgrade_type="capsule", satellite_services_action="restart")
     # Check the capsule sync after upgrade.
     logger.info("check the capsule sync after capsule upgrade")
     execute(capsule_sync, cap_host, host=sat_host)
@@ -209,4 +209,4 @@ def satellite_capsule_zstream_upgrade(cap_host):
         reboot(160)
     host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
-    upgrade_validation()
+    upgrade_validation(upgrade_type="capsule", satellite_services_action="restart")

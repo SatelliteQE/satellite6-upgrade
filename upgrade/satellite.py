@@ -156,7 +156,7 @@ def satellite_upgrade(zstream=False):
         reboot(180)
     host_ssh_availability_check(env.get('satellite_host'))
     # Test the Upgrade is successful
-    upgrade_validation(True)
+    upgrade_validation()
     if settings.upgrade.mongodb_upgrade:
         mongo_db_engine_upgrade()
     if settings.upgrade.satellite_backup:

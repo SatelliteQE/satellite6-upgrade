@@ -33,7 +33,6 @@ from fabric.api import warn_only
 from fabric.context_managers import shell_env
 from fauxfactory import gen_string
 from nailgun import entities
-from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers import nailgun_conf
 from upgrade.helpers import settings
@@ -817,31 +816,18 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
         )
     sat_version = settings.upgrade.to_version
     execute(setup_alternate_capsule_ports, host=sat_host)
-    if float(sat_version) > 6.1:
-        # Update the Default Organization name, which was updated in 6.2
-        logger.info("update the default organization name, which was updated "
-                    "in 6.2")
-        org = entities.Organization(nailgun_conf).search(
-            query={'search': f'label="{DEFAULT_ORGANIZATION_LABEL}"'}
-        )[0]
-        org.name = f"{DEFAULT_ORGANIZATION}"
-        org.update(['name'])
-        # Update the Default Location name, which was updated in 6.2
-        logger.info("update the Default Location name, which was updated in "
-                    "6.2")
-        loc = entities.Location(nailgun_conf).search(
-            query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
-        loc.name = f"{DEFAULT_LOCATION}"
-        loc.update(['name'])
-        if bz_bug_is_open(1502505):
-            logger.info(
-                "Update the default_location_puppet_content value with "
-                "updated location name.Refer BZ:1502505")
-            puppet_location = entities.Setting(nailgun_conf).search(
-                query={'search': 'name=default_location_puppet_content'}
-            )[0]
-            puppet_location.value = f'{DEFAULT_LOCATION}'
-            puppet_location.update(['value'])
+    logger.info("update the default organization name")
+    org = entities.Organization(nailgun_conf).search(
+        query={'search': f'label="{DEFAULT_ORGANIZATION_LABEL}"'}
+    )[0]
+    org.name = f"{DEFAULT_ORGANIZATION}"
+    org.update(['name'])
+    # Update the Default Location name
+    logger.info("update the Default Location name")
+    loc = entities.Location(nailgun_conf).search(
+        query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
+    loc.name = f"{DEFAULT_LOCATION}"
+    loc.update(['name'])
     # Increase log level to DEBUG, to get better logs in foreman_debug
     execute(lambda: run('sed -i -e \'/:level: / s/: .*/: '
                         'debug/\' /etc/foreman/settings.yaml'), host=sat_host)

@@ -130,6 +130,8 @@ def product_upgrade(product, upgrade_type, satellite=None):
                     get_sat_cap_version, 'sat', host=sat_host)[sat_host]
                 check_upgrade_compatibility(upgrade_type, current, upgraded)
                 execute(foreman_debug, f'satellite_{sat_host}', host=sat_host)
+                if product in ['satellite', 'n-1']:
+                    execute(unsubscribe, host=sat_host)
         except Exception:
             execute(foreman_debug, f'satellite_{sat_host}', host=sat_host)
             raise
@@ -151,6 +153,8 @@ def product_upgrade(product, upgrade_type, satellite=None):
                 execute(foreman_debug, f'capsule_{cap_host}', host=cap_host)
                 # Execute tasks as post upgrade tier1 tests
                 # are dependent
+            if product == 'capsule':
+                execute(unsubscribe, host=sat_host)
             if product == 'longrun':
                 post_upgrade_test_tasks(sat_host, cap_host)
         except Exception:
@@ -168,6 +172,8 @@ def product_upgrade(product, upgrade_type, satellite=None):
             'rhel7', puppet_clients7, puppet=True)
         satellite6_client_upgrade(
             'rhel6', puppet_clients6, puppet=True)
+        if product in ['longrun', 'client']:
+            execute(unsubscribe, host=sat_host)
 
     env.disable_known_hosts = True
     check_necessary_env_variables_for_upgrade(product)
@@ -180,7 +186,7 @@ def product_upgrade(product, upgrade_type, satellite=None):
     pre_upgrade_system_checks(cap_hosts)
     env['satellite_host'] = sat_host
 
-    if upgrade_type == "satellite":
+    if upgrade_type == 'satellite':
         product_upgrade_satellite(sat_host)
     elif (product == 'capsule' or product == 'longrun')\
             and upgrade_type == 'capsule':
@@ -189,7 +195,6 @@ def product_upgrade(product, upgrade_type, satellite=None):
             product_upgrade_capsule(cap_host)
     elif (product == 'client' or product == 'longrun') and upgrade_type == 'client':
         product_upgrade_client()
-    execute(unsubscribe, host=sat_host)
 
 
 def check_upgrade_compatibility(upgrade_type, base_version, target_version):

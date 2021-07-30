@@ -325,8 +325,15 @@ def sync_capsule_subscription_to_capsule_ak(org):
                 f"for name {cap_repo.name}")
     start_time = job_execution_time("entity repository sync")
     # Expected value 2500
-    call_entity_method_with_timeout(
-        entities.Repository(nailgun_conf, id=cap_repo.id).sync, timeout=4000)
+    try:
+        call_entity_method_with_timeout(
+            entities.Repository(nailgun_conf, id=cap_repo.id).sync, timeout=4000)
+        job_execution_time(
+            f"entity repository {cap_repo.name} sync (In past time-out value was "
+            f"2500 but in current execution we set it 4000)", start_time)
+    except Exception as exp:
+        logger.warn(f"Capsule repository sync failed with exception: {exp}")
+        repos_sync_failure_remiediation(org, cap_repo, timeout=4000)
     job_execution_time(f"entity repository {cap_repo.name} sync (In past time-out value was "
                        f"2500 but in current execution we set it 4000)", start_time)
     logger.info(f"entities repository sync operation completed successfully "
@@ -368,18 +375,17 @@ def sync_rh_repos_to_satellite(org):
         nailgun_conf, name=RHEL_CONTENTS['rhscl']['repofull']).search(
         query={'organization_id': org.id, 'per_page': 100}
     )[0]
-    attempt = 0
-    # Fixed upgrade issue: #368
-    while attempt <= 3:
-        try:
-            call_entity_method_with_timeout(
-                entities.Repository(nailgun_conf, id=scl_repo.id).sync, timeout=3500)
-            break
-        except requests.exceptions.HTTPError as exp:
-            logger.warn(f"retry {attempt} after exception: {exp}")
-            # Wait 10 seconds to reattempt the same retry option
-            time.sleep(10)
-            attempt += 1
+    start_time = job_execution_time("Repository sync")
+    try:
+        call_entity_method_with_timeout(
+            entities.Repository(nailgun_conf, id=scl_repo.id).sync, timeout=3500
+        )
+    except Exception as exp:
+        logger.warn(f"RHCL repository sync failed with exception: {exp}")
+        repos_sync_failure_remiediation(org, scl_repo, timeout=3500)
+    job_execution_time(f"repository {scl_repo.name} sync (In past time-out value was 2000 "
+                       f"but in current execution we set it 3500) takes", start_time)
+
     # Enable RHEL 7 Server repository
     server_product = entities.Product(
         nailgun_conf, name=RHEL_CONTENTS['server']['prod'], organization=org).\
@@ -402,8 +408,12 @@ def sync_rh_repos_to_satellite(org):
     logger.info(f"entities repository sync operation started successfully"
                 f" for name {server_repo.name}")
     start_time = job_execution_time("Repository sync")
-    call_entity_method_with_timeout(
-        entities.Repository(nailgun_conf, id=server_repo.id).sync, timeout=6000)
+    try:
+        call_entity_method_with_timeout(
+            entities.Repository(nailgun_conf, id=server_repo.id).sync, timeout=6000)
+    except Exception as exp:
+        logger.warn(f"RH Server repository sync failed with exception: {exp}")
+        repos_sync_failure_remiediation(org, server_repo, timeout=6000)
     job_execution_time(f"repository {server_repo.name} sync (In past time-out value was 3600 "
                        f"but in current execution we set it 6000) takes", start_time)
     logger.info(f"entities repository sync operation completed successfully"
@@ -444,6 +454,7 @@ def sync_ansible_repo_to_satellite(org):
         logger.info("RH Ansible Engine repository synced successfully")
     except requests.exceptions.HTTPError as exp:
         logger.warn(f"RH Ansible engine repository sync failed with exception: {exp}")
+        repos_sync_failure_remiediation(org, ansible_repo, timeout=600)
     ansible_repo.repo_id = RHEL_CONTENTS['ansible']['label']
     return ansible_repo
 
@@ -518,8 +529,13 @@ def sync_sattools_repos_to_satellite_for_capsule(org):
     logger.info("entities repository sync started successfully for capsule repo name {}".
                 format(sattools_repo.name))
     start_time = job_execution_time("Entities repository sync")
-    call_entity_method_with_timeout(
-        entities.Repository(nailgun_conf, id=sattools_repo.id).sync, timeout=5000)
+    try:
+        call_entity_method_with_timeout(
+            entities.Repository(nailgun_conf, id=sattools_repo.id).sync, timeout=5000)
+    except Exception as exp:
+        logger.warn(f"RH Satellite tool repository sync failed with exception: {exp}")
+        repos_sync_failure_remiediation(org, sattools_repo, timeout=5000)
+
     job_execution_time(f"entities repository {sattools_repo.name} "
                        f"sync(In past time-out value was 2500 "
                        f"but in current execution we set it 5000)", start_time)
@@ -598,8 +614,13 @@ def sync_maintenance_repos_to_satellite_for_capsule(org):
     logger.info(f"entities repository sync started successfully for "
                 f"maintenance repo {maintenance_repo.name}")
     start_time = job_execution_time("Entities repository sync")
-    call_entity_method_with_timeout(
-        entities.Repository(nailgun_conf, id=maintenance_repo.id).sync, timeout=5000)
+    try:
+        call_entity_method_with_timeout(
+            entities.Repository(nailgun_conf, id=maintenance_repo.id).sync, timeout=5000)
+    except Exception as exp:
+        logger.warn(f"RH Maintenance repository sync failed with exception: {exp}")
+        repos_sync_failure_remiediation(org, maintenance_repo, timeout=5000)
+
     job_execution_time(f"entities repository {maintenance_repo.name} sync(In past time-out "
                        f"value was 2500 but in current execution we set it 5000)", start_time)
     logger.info(f"entities repository sync completed successfully for "
@@ -1457,6 +1478,28 @@ def resume_failed_task():
                     f"manual investigation is required")
 
 
+def repos_sync_failure_remiediation(org, repo_object, timeout=3000):
+    """
+    Use to rerun the repository sync after manifest refresh
+    :param org: nailgun org object
+    :param repo_object: nailgun repos object
+    :param timeout: sync timeout
+    """
+    try:
+        logger.info(f"Run the {repo_object.name} repository sync again after manifest refresh")
+        _ = refresh_manifest(org.id)
+        # To handle HTTPError: 404 Client Error: Not Found for url:
+        # https://xyz.com/katello/api/v2/repositories/2456/sync
+        repo_object = entities.Repository(
+            nailgun_conf, name=f'{repo_object.name}').search(
+            query={'organization_id': org.id, 'per_page': 100}
+        )[0]
+        call_entity_method_with_timeout(
+            entities.Repository(nailgun_conf, id=repo_object.id).sync, timeout=timeout)
+    except Exception as exp:
+        logger.warn(f"Repos sync remediation failed due to {exp}")
+
+
 def foreman_maintain_package_update():
     """
     Install the latest fm rubygem-foreman_maintain to get the latest y-stream upgrade path.
@@ -1489,33 +1532,6 @@ def workaround_1829115():
     output = run(f"if [ -f {file_backup} ]; then mv {file_backup} {file_name}; fi")
     if output.return_code > 0:
         logger.warn("Failed to update the file")
-
-
-def workaround_1967131(task_type="rollback"):
-    """
-    Use to apply the pulp migration workaround for 1967131
-    """
-    if task_type != "rollback":
-        output = run('sed -i "s/downloaded = record.downloaded if '
-                     'hasattr(record, \'downloaded\') else False/downloaded = '
-                     'hasattr(record, \'downloaded\') and (record.downloaded or '
-                     'record.downloaded is None)/g" '
-                     '/usr/lib/python3.6/site-packages/pulp_2to3_migration/app/'
-                     'pre_migration.py'
-                     )
-    else:
-        output = run('sed -i "s/downloaded = hasattr(record, \'downloaded\') and '
-                     '(record.downloaded or record.downloaded is None)/'
-                     'downloaded = record.downloaded if hasattr(record, \'downloaded\') '
-                     'else False/g" /usr/lib/python3.6/site-packages/pulp_2to3_migration/'
-                     'app/pre_migration.py')
-    foreman_service_restart()
-    if output.return_code == 0 and task_type != "rollback":
-        logger.info("patch applied successfully for "
-                    "https://bugzilla.redhat.com/show_bug.cgi?id=1967131")
-    else:
-        logger.info("patch rolledback successfully for "
-                    "https://bugzilla.redhat.com/show_bug.cgi?id=1967131")
 
 
 def add_satellite_subscriptions_in_capsule_ak(ak, org):

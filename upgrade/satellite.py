@@ -26,7 +26,6 @@ from upgrade.helpers.tasks import setup_satellite_repo
 from upgrade.helpers.tasks import subscribe
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
-from upgrade.helpers.tasks import workaround_1967131
 from upgrade.helpers.tasks import yum_repos_cleanup
 from upgrade.helpers.tools import host_ssh_availability_check
 from upgrade.helpers.tools import reboot
@@ -123,11 +122,7 @@ def satellite_upgrade(zstream=False):
             )
         foreman_maintain_package_update()
     if settings.upgrade.to_version == "6.10":
-        # Will remove the workaround section after template upgrade
-        workaround_1967131(task_type="apply")
         pulp_migration_status = pulp2_pulp3_migration()
-        # Will remove the workaround section after template upgrade
-        workaround_1967131()
         if not pulp_migration_status:
             logger.highlight("Pulp migration failed. Aborting")
             sys.exit(1)

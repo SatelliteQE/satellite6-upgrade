@@ -1592,11 +1592,11 @@ def pulp2_pulp3_migration():
                 for line in output.split('\n'):
                     if re.search(r'Failed executing foreman-rake katello:pulp3_migration, '
                                  'exit status 255', line):
-                        post_migration_failure_fix(10255)
+                        post_migration_failure_fix(100255)
                         return 100255
                     elif re.search(r'Katello::Errors::Pulp3Error: Cursor not found', line):
-                        post_migration_failure_fix(10001)
-                        return 10001
+                        post_migration_failure_fix(100001)
+                        return 100001
                 else:
                     return output.return_code
             return output.return_code
@@ -1651,7 +1651,7 @@ def pulp2_pulp3_migration():
         logger.highlight(f"Pulp2-Pulp3 migration completed successfully and it "
                          f"took- {str(postmigrate_time - premigrate_time)}")
         return True
-    elif migration_status_code == 10001:
+    elif migration_status_code == 100001:
         postmigrate_time = datetime.now().replace(microsecond=0)
         logger.highlight(f"Pulp2-Pulp3 migration failed (in next step we will apply the "
                          f"workaround and will re-execute the migration) with "
@@ -1698,8 +1698,8 @@ def bg_orphaned_task_monitor():
         output = run(command1 + command2)
         if re.search('task_id', output):
             logger.info(f"orphaned process cleanup is running: {output}")
-            wait_until += 1
-            time.sleep(1)
+            wait_until += 10
+            time.sleep(10)
             continue
         else:
             break
@@ -1716,7 +1716,7 @@ def post_migration_failure_fix(status_code):
             time.sleep(100)
         bg_orphaned_task_monitor()
 
-    if status_code == 10001:
+    if status_code == 100001:
         with fabric_settings(warn_only=True):
             logger.info("applied the workaround for "
                         "https://bugzilla.redhat.com/show_bug.cgi?id=1972998")

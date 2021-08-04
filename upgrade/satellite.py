@@ -19,6 +19,7 @@ from upgrade.helpers.tasks import foreman_service_restart
 from upgrade.helpers.tasks import maintenance_repo_update
 from upgrade.helpers.tasks import mongo_db_engine_upgrade
 from upgrade.helpers.tasks import nonfm_upgrade
+from upgrade.helpers.tasks import post_migration_failure_fix
 from upgrade.helpers.tasks import pulp2_pulp3_migration
 from upgrade.helpers.tasks import repository_setup
 from upgrade.helpers.tasks import satellite_backup
@@ -122,6 +123,8 @@ def satellite_upgrade(zstream=False):
             )
         foreman_maintain_package_update()
     if settings.upgrade.to_version == "6.10":
+        # To fix the memory related issues for BZ#1989378
+        post_migration_failure_fix(100001)
         pulp_migration_status = pulp2_pulp3_migration()
         if not pulp_migration_status:
             logger.highlight("Pulp migration failed. Aborting")

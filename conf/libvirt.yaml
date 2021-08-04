@@ -1,4 +1,4 @@
-COMPUTE_RESOURCES:
+LIBVIRT:
   # External Libvirt Hostname
   LIBVIRT_HOSTNAME:
   LIBVIRT_URL:

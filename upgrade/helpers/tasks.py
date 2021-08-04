@@ -861,13 +861,13 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     )
     # Execute task for creating latest discovery iso required for unattended test
     env.disable_known_hosts = True
-    if host_pings(settings.compute_resources.libvirt_hostname):
+    if host_pings(settings.libvirt.libvirt_hostname):
         execute(
             get_discovery_image,
-            host=settings.compute_resources.libvirt_hostname
+            host=settings.libvirt.libvirt_hostname
         )
     else:
-        logger.warn(f"libvirt host {settings.compute_resources.libvirt_hostname} "
+        logger.warn(f"libvirt host {settings.libvirt.libvirt_hostname} "
                     f"is not working, please check and fix it in the code")
     # Commenting out until GH issue:#135
     # Removing the original manifest from Default Organization (Org-id 1),

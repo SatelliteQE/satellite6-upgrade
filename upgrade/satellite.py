@@ -122,7 +122,11 @@ def satellite_upgrade(zstream=False):
                 CUSTOM_SAT_REPO[repo]["gpg"]
             )
         foreman_maintain_package_update()
-    if settings.upgrade.to_version == "6.10":
+
+    if bz_bug_is_open(1995650) and settings.upgrade.to_version == '6.10':
+        run("yum remove -y rubygem-passenger")
+
+    if settings.upgrade.to_version == '6.10':
         # To fix the memory related issues for BZ#1989378
         post_migration_failure_fix(100001)
         pulp_migration_status = pulp2_pulp3_migration()

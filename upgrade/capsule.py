@@ -11,6 +11,7 @@ from upgrade.helpers.constants.constants import RHEL_CONTENTS
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import add_baseOS_repo
 from upgrade.helpers.tasks import capsule_sync
+from upgrade.helpers.tasks import create_capsule_ak
 from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import foreman_service_restart
@@ -70,15 +71,17 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
             settings.repos.capsule_repo = None
             settings.repos.sattools_repo[settings.upgrade.os] = None
             settings.repos.satmaintenance_repo = None
+        new_ak_status = execute(create_capsule_ak, host=satellite_host)
         execute(update_capsules_to_satellite, capsule_hosts, host=satellite_host)
         if settings.upgrade.upgrade_with_http_proxy:
             http_proxy_config(capsule_hosts)
-        execute(sync_capsule_repos_to_satellite, capsule_hosts, host=satellite_host)
-        for cap_host in capsule_hosts:
-            settings.upgrade.capsule_hostname = cap_host
-            execute(add_baseOS_repo, baseurl, host=cap_host)
-            execute(yum_repos_cleanup, host=cap_host)
-            logger.info(f'Capsule {cap_host} is ready for Upgrade')
+        if False in new_ak_status.values():
+            execute(sync_capsule_repos_to_satellite, capsule_hosts, host=satellite_host)
+            for cap_host in capsule_hosts:
+                settings.upgrade.capsule_hostname = cap_host
+                execute(add_baseOS_repo, baseurl, host=cap_host)
+                execute(yum_repos_cleanup, host=cap_host)
+                logger.info(f'Capsule {cap_host} is ready for Upgrade')
         return capsule_hosts
 
 

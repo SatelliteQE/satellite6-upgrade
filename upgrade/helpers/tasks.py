@@ -211,7 +211,8 @@ def sync_capsule_repos_to_satellite(capsules):
         sys.exit(1)
     org = entities.Organization(nailgun_conf, id=1).read()
     logger.info("Refreshing the attached manifest")
-    refresh_manifest(org.id)
+    entities.Subscription(nailgun_conf).refresh_manifest(data={'organization_id': org.id},
+                                                         timeout=5000)
     ak = entities.ActivationKey(nailgun_conf, organization=org).search(
         query={'search': f'name={capsule_ak}'})[0]
     add_satellite_subscriptions_in_capsule_ak(ak, org)
@@ -264,16 +265,28 @@ def sync_capsule_subscription_to_capsule_ak(org):
     # If custom capsule repo is not given then
     # enable capsule repo from Redhat Repositories
     if settings.repos.capsule_repo:
-        cap_product = entities.Product(
-            nailgun_conf, name=CUSTOM_CONTENTS['capsule']['prod'], organization=org).create()
-        cap_repo = entities.Repository(
-            nailgun_conf,
-            name=CUSTOM_CONTENTS['capsule']['repo'],
-            product=cap_product,
-            url=settings.repos.capsule_repo,
-            organization=org,
-            content_type='yum',
-        ).create()
+        try:
+            cap_product = entities.Product(
+                nailgun_conf, name=CUSTOM_CONTENTS['capsule']['prod'], organization=org).create()
+        except Exception as ex:
+            logger.warn(ex)
+            cap_product = entities.Product(nailgun_conf, organization=org).search(
+                query={"search": f'name={CUSTOM_CONTENTS["capsule"]["prod"]}'}
+            )[0]
+        try:
+            cap_repo = entities.Repository(
+                nailgun_conf,
+                name=CUSTOM_CONTENTS['capsule']['repo'],
+                product=cap_product,
+                url=settings.repos.capsule_repo,
+                organization=org,
+                content_type='yum',
+            ).create()
+        except Exception as ex:
+            logger.warn(ex)
+            cap_repo = entities.Repository(
+                nailgun_conf, organization=org, product=cap_product
+            ).search(query={"search": f'name={CUSTOM_CONTENTS["capsule"]["repo"]}'})[0]
         logger.info("capsule repository {} created successfully for product {}".
                     format(CUSTOM_CONTENTS['capsule']['repo'],
                            CUSTOM_CONTENTS['capsule']['prod']))
@@ -470,23 +483,34 @@ def sync_sattools_repos_to_satellite_for_capsule(org):
     to_version = settings.upgrade.to_version
     sat_tools_repo = settings.repos.sattools_repo[settings.upgrade.os]
     if sat_tools_repo:
-        sattools_product = entities.Product(
-            nailgun_conf,
-            name=CUSTOM_CONTENTS['capsule_tools']['prod'],
-            organization=org
-        ).create()
-        sattools_repo = entities.Repository(
-            nailgun_conf,
-            name=CUSTOM_CONTENTS['capsule_tools']['repo'],
-            product=sattools_product,
-            url=sat_tools_repo,
-            organization=org,
-            content_type='yum',
-        ).create()
+        try:
+            sattools_product = entities.Product(
+                nailgun_conf,
+                name=CUSTOM_CONTENTS['capsule_tools']['prod'],
+                organization=org
+            ).create()
+        except Exception as ex:
+            logger.warn(ex)
+            sattools_product = entities.Product(nailgun_conf, organization=org).search(
+                query={"search": f'name={CUSTOM_CONTENTS["capsule_tools"]["prod"]}'}
+            )[0]
+        try:
+            sattools_repo = entities.Repository(
+                nailgun_conf,
+                name=CUSTOM_CONTENTS['capsule_tools']['repo'],
+                product=sattools_product,
+                url=sat_tools_repo,
+                organization=org,
+                content_type='yum',
+            ).create()
+        except Exception as ex:
+            logger.warn(ex)
+            sattools_repo = entities.Repository(
+                nailgun_conf, organization=org, product=sattools_product
+            ).search(query={"search": f'name={CUSTOM_CONTENTS["capsule_tools"]["repo"]}'})[0]
         logger.info(f"custom tools product {CUSTOM_CONTENTS['capsule_tools']['prod']} "
                     f"and repository {CUSTOM_CONTENTS['capsule_tools']['repo']} created"
                     f" from satellite tools url")
-
     else:
         if from_version != to_version:
             tools_name = RHEL_CONTENTS['tools']['repofull']
@@ -556,17 +580,29 @@ def sync_maintenance_repos_to_satellite_for_capsule(org):
     to_version = settings.upgrade.to_version
     arch = 'x86_64'
     if settings.repos.satmaintenance_repo:
-        maintenance_product = entities.Product(
-            nailgun_conf,
-            name=CUSTOM_CONTENTS['maintenance']['prod'],
-            organization=org).create()
-        maintenance_repo = entities.Repository(
-            nailgun_conf,
-            name=CUSTOM_CONTENTS['maintenance']['repo'],
-            product=maintenance_product, url=settings.repos.satmaintenance_repo,
-            organization=org,
-            content_type='yum'
-        ).create()
+        try:
+            maintenance_product = entities.Product(
+                nailgun_conf,
+                name=CUSTOM_CONTENTS['maintenance']['prod'],
+                organization=org).create()
+        except Exception as ex:
+            logger.warn(ex)
+            maintenance_product = entities.Product(
+                nailgun_conf, organization=org).search(
+                query={"search": f'name={CUSTOM_CONTENTS["maintenance"]["prod"]}'})[0]
+        try:
+            maintenance_repo = entities.Repository(
+                nailgun_conf,
+                name=CUSTOM_CONTENTS['maintenance']['repo'],
+                product=maintenance_product, url=settings.repos.satmaintenance_repo,
+                organization=org,
+                content_type='yum'
+            ).create()
+        except Exception as ex:
+            logger.warn(ex)
+            maintenance_repo = entities.Repository(
+                nailgun_conf, organization=org, product=maintenance_product
+            ).search(query={"search": f'name={CUSTOM_CONTENTS["maintenance"]["repo"]}'})[0]
         logger.info(f"the custom maintenance product "
                     f"{CUSTOM_CONTENTS['maintenance']['prod']} "
                     f"and repository {CUSTOM_CONTENTS['maintenance']['repo']} is created from "
@@ -1473,7 +1509,8 @@ def repos_sync_failure_remiediation(org, repo_object, timeout=3000):
     """
     try:
         logger.info(f"Run the {repo_object.name} repository sync again after manifest refresh")
-        _ = refresh_manifest(org.id)
+        entities.Subscription(nailgun_conf).refresh_manifest(data={'organization_id': org.id},
+                                                             timeout=5000)
         # To handle HTTPError: 404 Client Error: Not Found for url:
         # https://xyz.com/katello/api/v2/repositories/2456/sync
         repo_object = entities.Repository(
@@ -1520,24 +1557,31 @@ def workaround_1829115():
         logger.warn("Failed to update the file")
 
 
-def add_satellite_subscriptions_in_capsule_ak(ak, org):
+def add_satellite_subscriptions_in_capsule_ak(ak, org, custom_repo=None):
     """
     Use to add the satellite subscriptions in capsule activation key, it helps to enable the
     capsule repository.
     :param ak:  capsule activation key object
     :param org: organization object
+    :param custom_repo: custom repos object
     """
     with fabric_settings(warn_only=True):
-        rhel_subscription = f'awk \'/{CAPSULE_SUBSCRIPTIONS["rhel_subscription"]}/ ' +\
-                            '{print $1}\''
-        sat_subscription = f'awk \'/{CAPSULE_SUBSCRIPTIONS["satellite_infra"]}/ ' + \
-                           '{print $1}\''
-        for subscription in rhel_subscription, sat_subscription:
+        if not custom_repo:
+            rhel_subscription = f'awk \'/{CAPSULE_SUBSCRIPTIONS["rhel_subscription"]}/ ' +\
+                                '{print $1}\''
+            sat_subscription = f'awk \'/{CAPSULE_SUBSCRIPTIONS["satellite_infra"]}/ ' + \
+                               '{print $1}\''
+            subscription_map = [rhel_subscription, sat_subscription]
+        else:
+            subscription_map = [f'awk \'/{custom_repo.product.read_json()["name"]}/ ' +
+                                '{print $1}\'']
+
+        for subscription in subscription_map:
             output = run(f'hammer subscription list --organization-id="{org.id}" | {subscription}')
             if output.return_code > 0:
                 logger.warn(output)
             else:
-                for sub_id in output.split("\n"):
+                for sub_id in output.splitlines():
                     ak_output = run(f'hammer activation-key add-subscription --subscription-id='
                                     f'"{sub_id}" --id="{ak.id}"')
                     if ak_output.return_code > 0:
@@ -1884,115 +1928,152 @@ def subscribe():
 
 def create_capsule_ak():
     """
-    Creates Activation Key for capsule upgrade on a blank Satellite
-    Prerequisities:
-        1. Manifest uploaded to the Satellite
-    Steps:
-        1. refresh the manifest
-        2. enable and sync repos independent of distribution
-        3. enable and sync remaining repos
-        4. create `Dev` and `QA` LCEs
-        5. create CV, add content, publish and promote to `Dev` LCE
-        6. create AK with `Dev` LCE and CV assigned
-        7. add subscriptions to AK
+    Use to creates a activation key for capsule upgrade on a blank Satellite
     """
-    logger.info(f"Create capsule AK: current distribution is '{settings.upgrade.distribution}'")
+    def activation_key_availability_check(org):
+        """
+        Use to identifying the activation keys availabilty in the setup
+        """
+        ak = entities.ActivationKey(nailgun_conf, organization=org).search(
+            query={"search": f"name={settings.upgrade.capsule_ak[settings.upgrade.os]}"}
+        )
+        return ak
 
-    org = entities.Organization(id=1).read()
+    def manifest_upload(org):
+        """
+        Use to download and upload the manifest file.
+        """
+        manifest_name = settings.fake_manifest.url.default.split('/')[-1]
+        try:
+            with open(f'{manifest_name}', 'rb') as manifest:
+                entities.Subscription(nailgun_conf).upload(data={'organization_id': org.id},
+                                                           files={'content': manifest})
+        except Exception as ex:
+            logger.warn(ex)
+        entities.Subscription(nailgun_conf).refresh_manifest(data={'organization_id': org.id},
+                                                             timeout=5000)
 
-    # Refresh manifest
-    logger.info("Refreshing manifest..")
-    if not refresh_manifest(org.id):
-        sys.exit(1)
+    def repos_sync(org):
+        """
+        Use to setup the repository sync
+        """
+        logger.info("Syncing Ansible Engine repo..")
+        ans_repo = sync_ansible_repo_to_satellite(org)
+        logger.info("Syncing server and scl repo..")
+        rhscl_repo, server_repo = sync_rh_repos_to_satellite(org)
+        cap_repo = sync_capsule_subscription_to_capsule_ak(org)
+        maint_repo = sync_maintenance_repos_to_satellite_for_capsule(org)
+        captools_repo = sync_sattools_repos_to_satellite_for_capsule(org)
+        repos_map = {
+            'ansible': ans_repo,
+            'rhscl': rhscl_repo,
+            "server": server_repo,
+            'capsule': cap_repo,
+            'maintenance': maint_repo,
+            'capsule_tools': captools_repo,
+        }
+        return repos_map
 
-    # sync ansible engine repo to SAT
-    logger.info("Syncing Ansible Engine repo..")
-    ans_repo = sync_ansible_repo_to_satellite(org)
+    def lifecycle_setup(org):
+        """
+        Use to create the lifecycle environment for the non specific group
+        """
+        logger.info("Creating lifecycle environment..")
+        lib_lce = entities.LifecycleEnvironment(nailgun_conf, organization=org).search(
+            query={"search": "name=Library"}
+        )[0]
+        try:
+            dev_lce = entities.LifecycleEnvironment(
+                nailgun_conf, organization=org, name="Dev", prior=lib_lce
+            ).create()
+        except Exception as ex:
+            logger.warn(ex)
+            dev_lce = entities.LifecycleEnvironment(nailgun_conf, organization=org).search(
+                query={"search": "name=Dev"}
+            )[0]
+        try:
+            entities.LifecycleEnvironment(
+                nailgun_conf, organization=org, name="QA", prior=dev_lce
+            ).create()
+        except Exception as ex:
+            logger.warn(ex)
+        return dev_lce
 
-    # sync rhscl and rhel7 repos to SAT
-    logger.info("Syncing server and scl repo..")
-    scl_repo, server_repo = sync_rh_repos_to_satellite(org)
+    def content_view_setup(org, lce, repos_map):
+        """
+            Use to create the content view and promote it to the sacrificed group
+        """
+        logger.info("Creating content view..")
+        cv_name = f'{settings.upgrade.os}_capsule_cv'
+        try:
+            cv = entities.ContentView(nailgun_conf, name=cv_name, organization=org).create()
+        except Exception as ex:
+            logger.warn(ex)
+            cv = entities.ContentView(nailgun_conf, name=cv_name, organization=org).search(
+                query={"search": f"name={cv_name}"}
+            )[0]
+        cv.repository = repos_map.values()
+        cv.update(['repository'])
+        logger.info("content view publish operation started successfully")
+        try:
+            start_time = job_execution_time("CV_Publish")
+            call_entity_method_with_timeout(cv.read().publish, timeout=5000)
+            job_execution_time(
+                f"content view {cv.name} publish operation(In past time-out value "
+                f"was 2500 but in current execution we set it 5000)",
+                start_time,
+            )
+        except Exception as exp:
+            logger.critical(f"content view {cv.name} publish failed with exception {exp}")
+            # Fix of 1770940, 1773601
+            logger.info(f"resuming the cancelled content view {cv.name} publish task")
+            resume_failed_task()
+        logger.info(f"content view {cv.name} published successfully")
 
-    # sync remaining repos according to distribution
-    if settings.upgrade.distribution == "cdn":
-        settings.repos.capsule_repo = None
-        settings.repos.sattools_repo[settings.upgrade.os] = None
-        settings.repos.satmaintenance_repo = None
-    cap_repo = sync_capsule_subscription_to_capsule_ak(org)
-    maint_repo = sync_maintenance_repos_to_satellite_for_capsule(org)
-    sattools_repo = sync_sattools_repos_to_satellite_for_capsule(org)
+        logger.info("Promoting content view..")
+        cv = cv.read()
+        cv.version[-1].promote(data={'environment_ids': [lce.id]})
+        return cv
 
-    # create Dev and QA LCEs
-    logger.info("Creating lifecycle environment..")
-    lib_lce = entities.LifecycleEnvironment(organization=org).search(
-        query={'search': 'name=Library'}
+    def activation_key_setup(org, cv, lce, repos_map):
+        """
+        Use to create the activation key for capsule upgrade
+        """
+        logger.info("Creating activation key..")
+        ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
+        try:
+            ak = entities.ActivationKey(
+                nailgun_conf, organization=org, environment=lce, content_view=cv,
+                name=ak_name
+            ).create()
+        except Exception as ex:
+            logger.warn(ex)
+            ak = entities.ActivationKey(nailgun_conf, organization=org).search(
+                query={"search": f"name={ak_name}"}
+            )[0]
+        # Add subscriptions to AK
+        add_satellite_subscriptions_in_capsule_ak(ak, org)
+        for repo_name, repo_object in repos_map.items():
+            if repo_name not in ['ansible', 'rhscl', 'server'] and \
+                    settings.upgrade.distribution != "cdn":
+                add_satellite_subscriptions_in_capsule_ak(ak, org, custom_repo=repo_object)
+            ak_content_override(org, ak_name, repo_object)
+    org_object = entities.Organization(nailgun_conf).search(
+        query={'search': f'name="{DEFAULT_ORGANIZATION}"'}
     )[0]
-    dev_lce = entities.LifecycleEnvironment(organization=org, name="Dev", prior=lib_lce).create()
-    entities.LifecycleEnvironment(organization=org, name="QA", prior=dev_lce).create()
 
-    # create CV, add content, publish and promote to `Dev` LCE
-    logger.info("Creating content view..")
-    cv_name = f'{settings.upgrade.os}-capsule-cv'
-    cv = entities.ContentView(name=cv_name, organization=org).create()
-    cv.repository = [ans_repo, scl_repo, server_repo, cap_repo, maint_repo, sattools_repo]
-    cv.update(['repository'])
-
-    logger.info("content view publish operation started successfully")
-    try:
-        start_time = job_execution_time("CV_Publish")
-        call_entity_method_with_timeout(cv.read().publish, timeout=5000)
-        job_execution_time(f"content view {cv.name} publish operation(In past time-out value "
-                           f"was 2500 but in current execution we set it 5000)", start_time)
-    except Exception as exp:
-        logger.critical(f"content view {cv.name} publish failed with exception {exp}")
-        # Fix of 1770940, 1773601
-        logger.info(f"resuming the cancelled content view {cv.name} publish task")
-        resume_failed_task()
-    logger.info(f"content view {cv.name} published successfully")
-
-    logger.info("Promoting content view..")
-    cv = cv.read()
-    cv.version[0].promote(data={'environment_ids': [dev_lce.id]})
-
-    # create AK with `Dev` LCE and CV assigned
-    logger.info("Creating activation key..")
-    ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
-    ak = entities.ActivationKey(
-        organization=org, environment=dev_lce, content_view=cv, name=ak_name
-    ).create()
-
-    # Add subscriptions to AK
-    add_satellite_subscriptions_in_capsule_ak(ak, org)
-    ak_content_override(org, ak_name, ans_repo)
-    ak_content_override(org, ak_name, scl_repo)
-
-    if settings.repos.capsule_repo is None:
-        ak_content_override(org, ak_name, cap_repo)
+    activation_key_status = activation_key_availability_check(org_object)
+    if not activation_key_status:
+        manifest_upload(org_object)
+        repos_map_object = repos_sync(org_object)
+        lce_object = lifecycle_setup(org_object)
+        cv_object = content_view_setup(org_object, lce_object, repos_map_object)
+        activation_key_setup(org_object, cv_object, lce_object, repos_map_object)
+        return True
     else:
-        ak_add_subscription(org, ak, CUSTOM_CONTENTS["capsule"]["prod"])
-
-    if settings.repos.satmaintenance_repo is None:
-        ak_content_override(org, ak_name, maint_repo)
-    else:
-        ak_add_subscription(org, ak, CUSTOM_CONTENTS["maintenance"]["prod"])
-
-    if settings.repos.sattools_repo[settings.upgrade.os] is None:
-        ak_content_override(org, ak_name, sattools_repo)
-    else:
-        ak_add_subscription(org, ak, CUSTOM_CONTENTS["capsule_tools"]["prod"])
-
-
-def refresh_manifest(org_id):
-    """
-    A helper function to refresh manigest
-    :param org_id: id of an organization for manifest reftresh
-    :return: True if success
-    """
-    with fabric_settings(warn_only=True):
-        result = run(f"hammer subscription refresh-manifest --organization-id {org_id}")
-        if result.return_code != 0:
-            logger.warn(result)
-        return result.return_code == 0
+        logger.info(f"{settings.upgrade.capsule_ak[settings.upgrade.os]} Activation key is "
+                    f"configured")
+        return False
 
 
 def ak_content_override(org, ak_name, repo):
@@ -2018,7 +2099,7 @@ def ak_add_subscription(org, ak, sub_name):
     :param ak: Activation Key to be changed
     :param sub_name: Name of the subscription to be added
     """
-    sub = entities.Subscription().search(
+    sub = entities.Subscription(nailgun_conf).search(
         query={'organization_id': f'{org.id}',
                'search': f'name={sub_name}'})[0]
     ak.add_subscriptions(data={

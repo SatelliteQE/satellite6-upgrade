@@ -1590,8 +1590,7 @@ def pulp2_pulp3_migration():
             output = run("satellite-maintain content prepare")
             if output.return_code != 0:
                 for line in output.split('\n'):
-                    if re.search(r'Failed executing foreman-rake katello:pulp3_migration, '
-                                 'exit status 255', line):
+                    if re.search(r'foreman-rake katello:pulp3_migration, exit status 255', line):
                         post_migration_failure_fix(100255)
                         return 100255
                     elif re.search(r'Katello::Errors::Pulp3Error: Cursor not found', line):

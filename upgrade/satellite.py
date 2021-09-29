@@ -127,6 +127,8 @@ def satellite_upgrade(zstream=False):
         run("yum remove -y rubygem-passenger")
 
     if settings.upgrade.to_version == '6.10':
+        # BZ#2008432
+        settings.upgrade.whitelist_param = ", check-for-newer-packages"
         # To fix the memory related issues for BZ#1989378
         post_migration_failure_fix(100001)
         pulp_migration_status = pulp2_pulp3_migration()

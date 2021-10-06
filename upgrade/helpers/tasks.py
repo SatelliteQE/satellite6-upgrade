@@ -1358,7 +1358,7 @@ def upgrade_task(upgrade_type, cap_host=None):
         run(f'satellite-installer --scenario {upgrade_type}')
 
 
-def upgrade_validation(upgrade_type="satellite", satellite_services_action="status"):
+def upgrade_validation(upgrade_type="satellite", satellite_services_action="status -b"):
     """
     In this function we check the system states after upgrade.
     :param str upgrade_type: satellite or capsule.
@@ -1369,7 +1369,7 @@ def upgrade_validation(upgrade_type="satellite", satellite_services_action="stat
             result = run('hammer ping', warn_only=True)
             if result.return_code != 0:
                 logger.warn("hammer ping: some of satellite services in the failed state")
-        for action in set(["status", satellite_services_action]):
+        for action in set(["status -b", satellite_services_action]):
             result = run(f'foreman-maintain service {action}', warn_only=True)
             if result.return_code != 0:
                 logger.warn(f"foreman maintain {action} command failed")
@@ -1508,19 +1508,29 @@ def repos_sync_failure_remiediation(org, repo_object, timeout=3000):
     :param timeout: sync timeout
     """
     try:
-        logger.info(f"Run the {repo_object.name} repository sync again after manifest refresh")
+        logger.info(f'Run the {repo_object.name} repository sync again after manifest refresh')
         entities.Subscription(nailgun_conf).refresh_manifest(data={'organization_id': org.id},
                                                              timeout=5000)
-        # To handle HTTPError: 404 Client Error: Not Found for url:
-        # https://xyz.com/katello/api/v2/repositories/2456/sync
-        repo_object = entities.Repository(
-            nailgun_conf, name=f'{repo_object.name}').search(
-            query={'organization_id': org.id, 'per_page': 100}
-        )[0]
-        call_entity_method_with_timeout(
-            entities.Repository(nailgun_conf, id=repo_object.id).sync, timeout=timeout)
     except Exception as exp:
-        logger.warn(f"Repos sync remediation failed due to {exp}")
+        logger.warn(f'manifst refresh failed due to {exp}')
+    # To handle HTTPError: 404 Client Error: Not Found for url:
+    # https://xyz.com/katello/api/v2/repositories/2456/sync
+    for attempt in range(1, 5):
+        try:
+            time.sleep(50)
+            repo_object = entities.Repository(
+                nailgun_conf, name=f'{repo_object.name}').search(
+                query={'organization_id': org.id, 'per_page': 100}
+            )[0]
+            call_entity_method_with_timeout(
+                entities.Repository(nailgun_conf, id=repo_object.id).sync, timeout=timeout)
+            break
+        except Exception as exp:
+            # some time pulp_celerybeat services gets down, needs investigation for that,
+            # for now as workaround we are starting the services
+            upgrade_validation(upgrade_type="satellite",
+                               satellite_services_action="start")
+            logger.warn(f'Retry:{attempt} Repos sync remediation failed due to {exp}')
 
 
 def foreman_maintain_package_update():

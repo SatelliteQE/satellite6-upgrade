@@ -23,6 +23,7 @@ from automation_tools.repository import enable_repos
 from automation_tools.satellite6.capsule import generate_capsule_certs
 from automation_tools.utils import get_discovery_image
 from automation_tools.utils import update_packages
+from fabric import exceptions
 from fabric.api import env
 from fabric.api import execute
 from fabric.api import hide
@@ -1641,18 +1642,23 @@ def pulp2_pulp3_migration():
         :return: satellite-maintain content prepare
         """
         with fabric_settings(warn_only=True):
-            output = run("satellite-maintain content prepare")
-            if output.return_code != 0:
-                for line in output.split('\n'):
-                    if re.search(r'foreman-rake katello:pulp3_migration, exit status 255', line):
-                        post_migration_failure_fix(100255)
-                        return 100255
-                    elif re.search(r'Katello::Errors::Pulp3Error: Cursor not found', line):
-                        post_migration_failure_fix(100001)
-                        return 100001
-                else:
-                    return output.return_code
-            return output.return_code
+            try:
+                output = run("satellite-maintain content prepare", timeout=14000)
+                if output.return_code != 0:
+                    for line in output.split('\n'):
+                        if re.search(r'foreman-rake katello:pulp3_migration, exit status 255',
+                                     line):
+                            post_migration_failure_fix(100255)
+                            return 100255
+                        elif re.search(r'Katello::Errors::Pulp3Error: Cursor not found', line):
+                            post_migration_failure_fix(100001)
+                            return 100001
+                    else:
+                        return output.return_code
+                return output.return_code
+            except exceptions.CommandTimeout:
+                logger.warn('running pulp migration check after the task timeout')
+                pulp_migration_monitoring_after_timeout()
 
     def pulp_migration_remediation(status_code):
         """
@@ -1689,6 +1695,19 @@ def pulp2_pulp3_migration():
                     logger.warn(f"Corrupted content migration failed, Retry{attempt}...")
                     time.sleep(300)
             return False
+
+    def pulp_migration_monitoring_after_timeout():
+        """
+        This function is used to monitor the pulp migration after timeout.
+        """
+        while True:
+            output = run("hammer task list|awk '/Content Migration/ && /running/ {print $1}'")
+            if output.strip():
+                logger.info("Pulp migration is still running, waiting for their completion")
+                time.sleep(60)
+            else:
+                break
+        migration()
 
     estimation_status = estimation()
     if estimation_status != 0:

@@ -34,6 +34,7 @@ from fabric.api import warn_only
 from fabric.context_managers import shell_env
 from fauxfactory import gen_string
 from nailgun import entities
+from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers import nailgun_conf
 from upgrade.helpers import settings
@@ -1041,6 +1042,21 @@ def setup_foreman_maintain_repo():
         )
 
 
+def hammer_config():
+    """
+    Use to update the hammer config file on the satellite
+    """
+    run('mkdir -p /root/.hammer/cli.modules.d')
+    hammer_file = StringIO()
+    hammer_file.write('--- \n')
+    hammer_file.write(' :foreman: \n')
+    hammer_file.write('  :username: admin\n')
+    hammer_file.write('  :password: changeme \n')
+    put(local_path=hammer_file,
+        remote_path='/root/.hammer/cli.modules.d/foreman.yml')
+    hammer_file.close()
+
+
 def upgrade_using_foreman_maintain(sat_host=True):
     """Task which upgrades the product using foreman-maintain tool.
 
@@ -1056,17 +1072,6 @@ def upgrade_using_foreman_maintain(sat_host=True):
      satellite otherwise capsule.
     """
     env.disable_known_hosts = True
-    # setup hammer config
-    if sat_host:
-        run('mkdir -p /root/.hammer/cli.modules.d')
-        hammer_file = StringIO()
-        hammer_file.write('--- \n')
-        hammer_file.write(' :foreman: \n')
-        hammer_file.write('  :username: admin\n')
-        hammer_file.write('  :password: changeme \n')
-        put(local_path=hammer_file,
-            remote_path='/root/.hammer/cli.modules.d/foreman.yml')
-        hammer_file.close()
 
     def pre_satellite_upgrade_check():
         with warn_only():
@@ -1128,6 +1133,7 @@ def upgrade_using_foreman_maintain(sat_host=True):
                     f' {settings.upgrade.to_version} -y')
 
     if sat_host:
+        workaround_2000605()
         pre_satellite_upgrade_check()
         preup_time = datetime.now().replace(microsecond=0)
         satellite_upgrade()
@@ -1643,7 +1649,7 @@ def pulp2_pulp3_migration():
         """
         with fabric_settings(warn_only=True):
             try:
-                output = run("satellite-maintain content prepare", timeout=14000)
+                output = run("satellite-maintain content prepare", timeout=800)
                 if output.return_code != 0:
                     for line in output.split('\n'):
                         if re.search(r'foreman-rake katello:pulp3_migration, exit status 255',
@@ -1659,6 +1665,8 @@ def pulp2_pulp3_migration():
             except exceptions.CommandTimeout:
                 logger.warn('running pulp migration check after the task timeout')
                 pulp_migration_monitoring_after_timeout()
+                post_migration_failure_fix(100255)
+                return 100255
 
     def pulp_migration_remediation(status_code):
         """
@@ -1703,11 +1711,11 @@ def pulp2_pulp3_migration():
         while True:
             output = run("hammer task list|awk '/Content Migration/ && /running/ {print $1}'")
             if output.strip():
-                logger.info("Pulp migration is still running, waiting for their completion")
+                logger.info("Pulp migration is still running, wait for 60 seconds to get "
+                            "the update...")
                 time.sleep(60)
             else:
                 break
-        migration()
 
     estimation_status = estimation()
     if estimation_status != 0:
@@ -2136,3 +2144,12 @@ def ak_add_subscription(org, ak, sub_name):
         'subscription_id': sub.id,
     })
     logger.info(f"custom subscription {sub.name} added successfully to the AK {ak.name}")
+
+
+def workaround_2000605():
+    """
+    Use to clean the inventory_upload generate report task before run the upgrade
+    """
+    if settings.clone.customer_name and bz_bug_is_open(2000605):
+        run("foreman-rake foreman_tasks:cleanup TASK_SEARCH='result == pending' STATES='running'"
+            " NAME='ForemanInventoryUpload::Async::GenerateReportJob' VERBOSE=true")

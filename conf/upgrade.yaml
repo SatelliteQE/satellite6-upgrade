@@ -52,7 +52,7 @@ UPGRADE:
   # System Reboot after upgrade
   SATELLITE_CAPSULE_SETUP_REBOOT: true
   # Upgrade with http-proxy
-  UPGRADE_WITH_HTTP_PROXY: false
+  UPGRADE_WITH_HTTP_PROXY: true
   # Default size of client's which we use for content host upgrade.
   CLIENTS_COUNT: "8"
   # Satellite's REMOTE_SSH_PASSWORD

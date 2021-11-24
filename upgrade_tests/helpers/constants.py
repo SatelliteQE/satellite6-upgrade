@@ -13,11 +13,9 @@ CLI_COMPONENTS = {
             'capsule',
             'compute-resource',
             'discovery',
-            'discovery-rule' if to_version is not None and float(to_version) >= 6.3
-            else 'discovery_rule',
+            'discovery-rule',
             'domain',
-            'puppet-environment' if to_version is not None and float(to_version) >= 6.7
-            else 'environment',
+            'puppet-environment',
             'filter',
             'host',
             'hostgroup',
@@ -60,8 +58,7 @@ CLI_ATTRIBUTES_KEY = dict.fromkeys(
         'content-host',
         'compute-resource',
         'discovery',
-        'discovery-rule' if to_version is not None and float(to_version) >= 6.3
-        else 'discovery_rule',
+        'discovery-rule',
         'domain',
         'environment',
         'filter',
@@ -93,7 +90,7 @@ CLI_ATTRIBUTES_KEY.update(dict.fromkeys(
     [
         'partition-table',
         'product',
-        'settings'
+        'settings',
     ],
     'name')
 )

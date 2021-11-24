@@ -27,10 +27,8 @@ from upgrade_tests.helpers.existence import pytest_ids
 component = 'hostgroup'
 hg_name = compare_postupgrade(component, 'name')
 hg_os = compare_postupgrade(component, 'operating system')
-hg_lc = compare_postupgrade(
-    component,
-    ('environment', 'environment', 'environment', 'puppet environment',
-     'puppet environment', 'puppet environment', 'puppet environment', 'puppet environment'))
+hg_lc = compare_postupgrade(component, ('puppet environment', 'puppet environment',
+                                        'puppet environment', 'puppet environment'))
 
 
 # Tests

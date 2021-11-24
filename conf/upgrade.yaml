@@ -1,8 +1,8 @@
 UPGRADE:
   # Base version of the Satellite, Capsule.
-  FROM_VERSION: "6.9"
+  FROM_VERSION: "6.10"
   # Target version of the Satellite, Capsule.
-  TO_VERSION: "6.10"
+  TO_VERSION: "7.0"
   # Satellite, Capsule hosts RHEL operating system version.
   OS: "rhel7"
   # Capsule's activation key will only be available when we spawn the VM using upgrade template.
@@ -63,10 +63,10 @@ UPGRADE:
   OAUTH_CONSUMER_SECRET:
   # Supported Satellite versions
   SUPPORTED_SAT_VERSIONS:
-    - "6.7"
-    - "6.8"
-    - "6.9"
-    - "6.10"
+    - '6.8'
+    - '6.9'
+    - '6.10'
+    - '7.0'
   # These environment variable used for existence test cases execution.
   EXISTENCE_TEST:
     ALLOWED_ENDS:

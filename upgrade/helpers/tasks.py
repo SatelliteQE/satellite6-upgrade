@@ -34,7 +34,6 @@ from fabric.api import warn_only
 from fabric.context_managers import shell_env
 from fauxfactory import gen_string
 from nailgun import entities
-from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers import nailgun_conf
 from upgrade.helpers import settings
@@ -1000,11 +999,12 @@ def maintenance_repo_update():
     """
     Use to update the maintenance repo url for downstream y-stream version
     """
-    if settings.upgrade.to_version == '6.10' or settings.upgrade.downstream_fm_upgrade:
+    os_version = settings.upgrade.os.upper()
+    if settings.upgrade.to_version == '7.0' or settings.upgrade.downstream_fm_upgrade:
         maintenance_repo = settings.repos.satmaintenance_repo
         settings.repos.satmaintenance_repo = re.sub(
-            'Satellite_Maintenance_Next_RHEL7|Satellite_Maintenance_RHEL7',
-            f'Satellite_{settings.repos.satellite_version_undr}_with_RHEL7_Server',
+            f'Satellite_Maintenance_Next_{os_version}|Satellite_Maintenance_{os_version}',
+            f'Satellite_{settings.repos.satellite_version_undr}_with_{os_version}_Server',
             settings.repos.satmaintenance_repo, 1)
         logger.info(f"updated maintenance repo for downstream y stream upgrade "
                     f"{settings.repos.satmaintenance_repo}")
@@ -1101,8 +1101,8 @@ def upgrade_using_foreman_maintain(sat_host=True):
                 f'--whitelist="disk-performance" '
                 f'--target-version {settings.upgrade.to_version}.z -y')
         else:
-            # use beta until 6.10 becomes GA
-            if settings.upgrade.to_version == '6.10':
+            # use beta until 7.0 becomes GA
+            if settings.upgrade.to_version == '7.0':
                 with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
                     run(f'foreman-maintain upgrade run --whitelist="disk-performance'
                         f'{settings.upgrade.whitelist_param}" --target-version '
@@ -1133,7 +1133,6 @@ def upgrade_using_foreman_maintain(sat_host=True):
                     f' {settings.upgrade.to_version} -y')
 
     if sat_host:
-        workaround_2000605()
         pre_satellite_upgrade_check()
         preup_time = datetime.now().replace(microsecond=0)
         satellite_upgrade()
@@ -2146,10 +2145,17 @@ def ak_add_subscription(org, ak, sub_name):
     logger.info(f"custom subscription {sub.name} added successfully to the AK {ak.name}")
 
 
-def workaround_2000605():
+def workaround_2031154():
     """
-    Use to clean the inventory_upload generate report task before run the upgrade
+    Use to remove the core_taskreservedresource from the pulpcore table to fix the repository
+    sync issue
     """
-    if settings.clone.customer_name and bz_bug_is_open(2000605):
-        run("foreman-rake foreman_tasks:cleanup TASK_SEARCH='result == pending' STATES='running'"
-            " NAME='ForemanInventoryUpload::Async::GenerateReportJob' VERBOSE=true")
+    with fabric_settings(warn_only=True):
+        run(
+            r"for i in pulpcore-api pulpcore-content pulpcore-worker\*; "
+            "do systemctl stop $i; done;"
+            "echo 'select * from core_taskreservedresource'| su - postgres -c 'psql pulpcore';"
+            "echo 'truncate table core_taskreservedresource'| su - postgres -c 'psql pulpcore';"
+            "echo 'select * from core_taskreservedresource'| su - postgres -c 'psql pulpcore'"
+        )
+    upgrade_validation(upgrade_type="satellite", satellite_services_action="restart")

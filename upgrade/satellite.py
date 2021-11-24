@@ -28,6 +28,7 @@ from upgrade.helpers.tasks import setup_satellite_repo
 from upgrade.helpers.tasks import subscribe
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
+from upgrade.helpers.tasks import workaround_6563341
 from upgrade.helpers.tasks import yum_repos_cleanup
 from upgrade.helpers.tools import host_ssh_availability_check
 from upgrade.helpers.tools import reboot
@@ -50,6 +51,8 @@ def satellite_setup(satellite_host):
     env['satellite_host'] = satellite_host
     settings.upgrade.satellite_hostname = satellite_host
     execute(hammer_config, host=satellite_host)
+    # remove the workaround after 2031154 fixes
+    execute(workaround_6563341, host=satellite_host)
     logger.info(f'Satellite {satellite_host} is ready for Upgrade!')
     return satellite_host
 

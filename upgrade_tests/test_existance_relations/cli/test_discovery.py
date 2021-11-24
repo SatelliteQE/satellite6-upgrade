@@ -117,6 +117,6 @@ def test_positive_discovery_by_subnet(pre, post):
     :expectedresults: All discovered hosts subnet should be retained post
         upgrade
     """
-    post = post.split(' (')[0] if float(to_version) >= 6.3 else post
-    pre = post.split(' (')[0] if float(from_version) >= 6.3 else pre
+    post = post.split(' (')[0]
+    pre = post.split(' (')[0]
     assert existence(pre, post)

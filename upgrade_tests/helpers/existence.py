@@ -351,10 +351,10 @@ def compare_postupgrade(component, attribute):
         before upgrade and second attribute value of post upgrade
     """
     endpoint = settings.upgrade.existence_test.endpoint
-    supported_sat_version = settings.upgrade.supported_sat_versions
+    supported_sat_versions = settings.upgrade.supported_sat_versions
     if isinstance(attribute, tuple):
-        pre_attr = attribute[supported_sat_version.index(settings.upgrade.from_version)]
-        post_attr = attribute[supported_sat_version.index(settings.upgrade.to_version)]
+        pre_attr = attribute[supported_sat_versions.index(settings.upgrade.from_version)]
+        post_attr = attribute[supported_sat_versions.index(settings.upgrade.to_version)]
     elif isinstance(attribute, str):
         pre_attr = post_attr = attribute
     else:
@@ -417,7 +417,7 @@ def compare_templates(template_type):
     """Helper to compare provisioning, ptables and job templates
     Returns every template_type templates data from preupgrade and postupgrade datastore if
     the compFile finds the difference else return (true, true) to directly pass the test without
-    actually comapring the contents of templates
+    actually comparing the contents of templates
 
     :param str template_type: The template type
     """

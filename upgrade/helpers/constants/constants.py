@@ -79,22 +79,22 @@ CUSTOM_CONTENTS = {
 
 CUSTOM_SAT_REPO = {
     "sat6": {
-        "repository": "sat",
-        "repository_name": "satellite",
-        "base_url": f"{settings.repos.satellite_repo}",
+        "repository": "sat6",
+        "repository_name": "satellite 6",
+        "base_url": f"{settings.repos.satellite6_repo}",
         "enable": 1,
         "gpg": 0,
     },
-    "sattools": {
-        "repository": "sattools",
-        "repository_name": "satellite-tools",
+    "sat6tools7": {
+        "repository": "sat6tools7",
+        "repository_name": "satellite6-tools7",
         "base_url": f"{settings.repos.sattools_repo[settings.upgrade.os]}",
         "enable": 1,
         "gpg": 0,
     },
     "foreman-maintain": {
-        "repository": "maintenance",
-        "repository_name": "maintenance-repo",
+        "repository": "maintenance6",
+        "repository_name": "maintenance6-repo",
         "base_url": f"{settings.repos.satmaintenance_repo}",
         "enable": 1,
         "gpg": 0,

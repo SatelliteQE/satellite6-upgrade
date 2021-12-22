@@ -7,7 +7,7 @@ jinja2==2.11.3
 # Get automation-tools from master
 git+https://github.com/SatelliteQE/automation-tools@master#egg=automation-tools
 
-# Get nailgun from master
-git+https://github.com/SatelliteQE/nailgun.git@master#egg=nailgun
+# Get nailgun from 6.9.z
+git+https://github.com/SatelliteQE/nailgun.git@6.9.z#egg=nailgun
 
 --editable .

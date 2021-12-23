@@ -3,7 +3,7 @@ name: update_upgrade_image
 on:
   push:
     branches:
-      - master
+      - 6.10.z
 
 env:
     PYCURL_SSL_LIBRARY: gnutls

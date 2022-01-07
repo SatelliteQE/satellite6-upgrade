@@ -266,7 +266,7 @@ def docker_client_missing_package_installation(clients, agent):
         logger.info(f'Installing client {hostname} on docker container: {container}')
         try:
             for _ in range(1, 15):
-                yum_status = docker_execute_command(container, f'pgrep yum', True)
+                yum_status = docker_execute_command(container, 'pgrep yum', True)
                 if yum_status == '':
                     break
                 logger.info("yum command is running wait fot 60 seconds...")

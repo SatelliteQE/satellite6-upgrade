@@ -1322,7 +1322,7 @@ def nonfm_upgrade(satellite_upgrade=True,
     # Stop foreman-maintain services
     run('foreman-maintain service stop')
     run('yum clean all', warn_only=True)
-    # Updating the packages again after setting sat6 repo
+    # Updating the packages again after setting sat repo
     logger.info(f'Updating system and {upgrade_type} packages... ')
     preyum_time = datetime.now().replace(microsecond=0)
     update_packages(quiet=False)

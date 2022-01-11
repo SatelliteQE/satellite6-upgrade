@@ -875,13 +875,13 @@ def setup_satellite_repo():
     # setting up foreman-maintain repo
     setup_foreman_maintain_repo()
     if settings.upgrade.distribution != 'cdn':
-        # Add Sat6 repo from latest compose
-        repository_setup("sat6",
-                         "satellite 6",
+        # Add Sat repo from latest compose
+        repository_setup("sat",
+                         "satellite",
                          "{}".format(settings.repos.satellite6_repo),
                          1, 0)
-        repository_setup("sat6tools7",
-                         "satellite6-tools7",
+        repository_setup("sattools",
+                         "satellite-tools",
                          "{}".format(settings.repos.sattools_repo[settings.upgrade.os]),
                          1, 0)
 
@@ -1258,7 +1258,7 @@ def nonfm_upgrade(satellite_upgrade=True,
     # Stop foreman-maintain services
     run('foreman-maintain service stop')
     run('yum clean all', warn_only=True)
-    # Updating the packages again after setting sat6 repo
+    # Updating the packages again after setting sat repo
     logger.info(f'Updating system and {upgrade_type} packages... ')
     preyum_time = datetime.now().replace(microsecond=0)
     update_packages(quiet=False)

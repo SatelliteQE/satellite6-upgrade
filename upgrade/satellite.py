@@ -107,7 +107,9 @@ def satellite_upgrade(zstream=False):
     if not settings.upgrade.foreman_maintain_satellite_upgrade:
         enable_disable_repo(enable_repos_name=common_sat_cap_repos)
     if settings.upgrade.distribution == 'cdn':
-        enable_disable_repo(enable_repos_name=['rhel-7-server-satellite-maintenance-6-rpms'])
+        enable_disable_repo(
+            enable_repos_name=[f'rhel-{major_ver}-server-satellite-maintenance-6-rpms']
+        )
     else:
         for repo in CUSTOM_SAT_REPO:
             repository_setup(

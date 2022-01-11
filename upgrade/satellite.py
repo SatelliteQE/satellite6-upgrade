@@ -52,7 +52,7 @@ def satellite_setup(satellite_host):
     settings.upgrade.satellite_hostname = satellite_host
     execute(hammer_config, host=satellite_host)
     # remove the workaround after 2031154 fixes
-    if settings.upgrade.to_version == '6.10':
+    if settings.upgrade.from_version == '6.10':
         execute(workaround_2031154, host=satellite_host)
     logger.info(f'Satellite {satellite_host} is ready for Upgrade!')
     return satellite_host
@@ -115,10 +115,12 @@ def satellite_upgrade(zstream=False):
     if not settings.upgrade.foreman_maintain_satellite_upgrade:
         enable_disable_repo(enable_repos_name=common_sat_cap_repos)
     if settings.upgrade.distribution == 'cdn':
-        enable_disable_repo(enable_repos_name=['rhel-7-server-satellite-maintenance-6-rpms'])
+        enable_disable_repo(
+            enable_repos_name=[f'rhel-{major_ver}-server-satellite-maintenance-6-rpms']
+        )
     else:
         for repo in CUSTOM_SAT_REPO:
-            if repo == "sat6tools7" and bz_bug_is_open(1980798):
+            if repo == "sattools" and bz_bug_is_open(1980798):
                 continue
             repository_setup(
                 CUSTOM_SAT_REPO[repo]["repository"],

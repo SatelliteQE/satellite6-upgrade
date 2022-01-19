@@ -72,7 +72,7 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
             settings.repos.satmaintenance_repo = None
         execute(update_capsules_to_satellite, capsule_hosts, host=satellite_host)
         if settings.upgrade.upgrade_with_http_proxy:
-            http_proxy_config(capsule_hosts)
+            execute(http_proxy_config, capsule_hosts, host=satellite_host)
         execute(sync_capsule_repos_to_satellite, capsule_hosts, host=satellite_host)
         for cap_host in capsule_hosts:
             settings.upgrade.capsule_hostname = cap_host

@@ -64,11 +64,25 @@ def update_capsules_to_satellite(capsules):
     :param capsules:
     """
     for capsule in capsules:
-        smart_proxy = (
-            entities.SmartProxy()
-            .search(query={'search': f'name={capsule}'})[0]
-            .read()
-        )
+        for attempt in range(0, 4):
+            try:
+                smart_proxy = (
+                    entities.SmartProxy().search(query={
+                        'search': f'name={capsule}'
+                    })[0].read()
+                )
+                logger.info(f"object {smart_proxy}")
+                break
+            except IndexError as exp:
+                # listing the all available capsule
+                run("hammer capsule list")
+                logger.warn(f"No capsule availble in the capsule list retry {attempt} "
+                            f"after exception: {exp}")
+                if attempt == 3:
+                    logger.highlight("The searched capsule unavailable in the capsule list. "
+                                     "Aborting...")
+                    sys.exit(1)
+                time.sleep(10)
         loc = entities.Location().search(
             query={'search': f'name="{DEFAULT_LOCATION}"'}
         )[0]
@@ -97,15 +111,15 @@ def http_proxy_config(capsule_hosts):
     Set the http-proxy on the satellite server.
     :param capsule_hosts: list of capsule host
     """
-    loc = entities.Location().search(query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
-    org = entities.Organization().search(query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
+    loc = entities.Location().search(
+        query={'search': f'name="{DEFAULT_LOCATION}"'})[0]
+    org = entities.Organization().search(
+        query={'search': f'name="{DEFAULT_ORGANIZATION}"'})[0]
     name = gen_string('alpha', 15)
     proxy_url = settings.http_proxy.un_auth_proxy_url
-    entities.HTTPProxy(name=f"{name}",
-                       url=f"{proxy_url}",
-                       organization=f"{org.id}",
-                       location=f"{loc.id}"
-                       ).create()
+    entities.HTTPProxy(
+        name=f"{name}", url=f"{proxy_url}",
+        organization=f"{org.id}", location=f"{loc.id}").create()
     prop_name = {
         'http_proxy': f"{proxy_url}",
         'content_default_http_proxy': f"{name}"
@@ -127,7 +141,6 @@ def http_proxy_config(capsule_hosts):
 
 def check_necessary_env_variables_for_upgrade(product):
     """Checks if necessary Environment Variables are provided
-
     :param string product: The product name to upgrade
     """
     failure = []
@@ -140,6 +153,8 @@ def check_necessary_env_variables_for_upgrade(product):
         failure.append('Please provide OS version as rhel7 or rhel6, '
                        'And retry !')
     if failure:
+        logger.highlight("The provided information to perform the upgrade is in-sufficient. "
+                         "Aborting...")
         logger.warning('Cannot Proceed Upgrade as:')
         for msg in failure:
             logger.warning(msg)

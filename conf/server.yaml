@@ -12,4 +12,4 @@ SERVER:
     # internal, ga, beta
     SOURCE: internal
     # The base os rhel version where the satellite installed
-    RHEL_RELEASE: '7'
+    RHEL_VERSION: '7'

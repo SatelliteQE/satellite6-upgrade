@@ -10,7 +10,7 @@ all the nailgun API's
 """
 
 sat_url = f"https://{os.environ.get('satellite_hostname')}"
-ServerConfig(url=sat_url, auth=['admin', 'changeme'], verify=False).save()
+nailgun_conf = ServerConfig(url=sat_url, auth=('admin', 'changeme'), verify=False)
 
 """
 The dynaconf object use to access the environment variable

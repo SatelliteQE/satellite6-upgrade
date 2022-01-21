@@ -1,18 +1,17 @@
 UPGRADE:
-  # Base version of the Satellite and Capsule
+  # Base version of the Satellite, Capsule.
   FROM_VERSION: "6.8"
-  # Target version of the Satellite, Capsule(depends on the type of product)
+  # Target version of the Satellite, Capsule.
   TO_VERSION: "6.9"
   # Satellite, Capsule hosts RHEL operating system version.
   OS: "rhel7"
-  # Capsule's activation key, These keys will only available if we create the satellite vm -
-  # using the satellite's upgrade template.
+  # Capsule's activation key will only be available when we spawn the VM using upgrade template.
   CAPSULE_AK:
     RHEL6: "rhel6_capsule_ak"
     RHEL7: "rhel7_capsule_ak"
     RHEL8: "rhel8_capsule_ak"
-  # RHEL6 & RHEL7's client activation key, These keys will only available if we create the -
-  # Satellite vm using the upgrade template.
+  # RHEL6 & RHEL7's client will only be available when we spawn the VM using upgrade template,
+  # it is used in content host upgrade.
   CLIENT_AK:
     RHEL6: "clientak_rhel6"
     RHEL7: "clientak_rhel7"
@@ -35,14 +34,14 @@ UPGRADE:
   ANSIBLE_REPO_VERSION: "2.9"
   # By default Satellite upgrade perform by foreman-maintain.
   FOREMAN_MAINTAIN_SATELLITE_UPGRADE: true
-  # User defined Satellite host.
+  # Satellite hostname.
   SATELLITE_HOSTNAME:
-  # User defined Capsule host.
+  # capsule hostname
   CAPSULE_HOSTNAME:
   # This statement will true until downstream release not become beta.
   DOWNSTREAM_FM_UPGRADE: false
   # Used to whitelist the mentioned params in the foreman-maintain upgrade.
-  WHITELIST_PARAM:
+  WHITELIST_PARAM: ""
   # Capsule upgrade via foreman-maintain, due to limited version support, we keep it as false.
   FOREMAN_MAINTAIN_CAPSULE_UPGRADE: false
   # User Defined clients, we use it for content host upgrade.
@@ -53,7 +52,7 @@ UPGRADE:
   # System Reboot after upgrade
   SATELLITE_CAPSULE_SETUP_REBOOT: true
   # Upgrade with http-proxy
-  UPGRADE_WITH_HTTP_PROXY: false
+  UPGRADE_WITH_HTTP_PROXY: true
   # Default size of client's which we use for content host upgrade.
   CLIENTS_COUNT: "8"
   # Satellite's REMOTE_SSH_PASSWORD
@@ -64,17 +63,25 @@ UPGRADE:
   OAUTH_CONSUMER_SECRET:
   # Supported Satellite versions
   SUPPORTED_SAT_VERSIONS:
-    - "6.7"
-    - "6.8"
-    - "6.9"
-    - "6.10"
+    - '6.8'
+    - '6.9'
+    - '6.10'
+    - '7.0'
   # These environment variable used for existence test cases execution.
   EXISTENCE_TEST:
     ALLOWED_ENDS:
-      - "API"
-      - "CLI"
+      - "api"
+      - "cli"
     ENDPOINT:
-  # The docker host onto wich the chost containers will be spawned
+  # The docker host for container spawn
   DOCKER_VM:
   # The upgrade VLAN vm_domain
   VM_DOMAIN:
+  # upgrade the mongodb to wiredTiger after upgrade
+  MONGODB_UPGRADE: false
+  # satellite backup
+  SATELLITE_BACKUP: false
+  # satellite backup type
+  SATELLITE_BACKUP_TYPE:
+    - "online"
+    - "offline"

@@ -11,6 +11,7 @@ from upgrade.helpers.constants.constants import RHEL_CONTENTS
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import add_baseOS_repo
 from upgrade.helpers.tasks import capsule_sync
+from upgrade.helpers.tasks import create_capsule_ak
 from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import foreman_service_restart
@@ -35,7 +36,6 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
                             upgradable_capsule=True):
     """
     Setup all pre-requisites for user provided capsule
-
     :param satellite_host: Satellite hostname to which the capsule registered
     :param capsule_hosts: List of capsule which mapped with satellite host
     :param os_version: The OS version onto which the capsule installed e.g: rhel6, rhel7
@@ -47,7 +47,7 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
     elif os_version == 'rhel7':
         baseurl = settings.repos.rhel7_os
     else:
-        logger.warning('No OS Specified. Terminating..')
+        logger.highlight('No OS Specified. Aborting...')
         sys.exit(1)
     non_responsive_host = []
     for cap_host in capsule_hosts:
@@ -61,8 +61,8 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
             logger.warn("Please update the capsule template for fixed capsule version")
         execute(foreman_service_restart, host=cap_host)
         if non_responsive_host:
-            logger.warning(str(non_responsive_host) + ' these are '
-                                                      'non-responsive hosts')
+            logger.highlight(str(non_responsive_host) + ' these are non-responsive hosts. '
+                                                        'Aborting...')
             sys.exit(1)
         copy_ssh_key(satellite_host, capsule_hosts)
     if upgradable_capsule:
@@ -70,28 +70,27 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
             settings.repos.capsule_repo = None
             settings.repos.sattools_repo[settings.upgrade.os] = None
             settings.repos.satmaintenance_repo = None
+        new_ak_status = execute(create_capsule_ak, host=satellite_host)
         execute(update_capsules_to_satellite, capsule_hosts, host=satellite_host)
         if settings.upgrade.upgrade_with_http_proxy:
             execute(http_proxy_config, capsule_hosts, host=satellite_host)
-        execute(sync_capsule_repos_to_satellite, capsule_hosts, host=satellite_host)
-        for cap_host in capsule_hosts:
-            settings.upgrade.capsule_hostname = cap_host
-            execute(add_baseOS_repo, baseurl, host=cap_host)
-            execute(yum_repos_cleanup, host=cap_host)
-            logger.info(f'Capsule {cap_host} is ready for Upgrade')
+        if False in new_ak_status.values():
+            execute(sync_capsule_repos_to_satellite, capsule_hosts, host=satellite_host)
+            for cap_host in capsule_hosts:
+                settings.upgrade.capsule_hostname = cap_host
+                execute(add_baseOS_repo, baseurl, host=cap_host)
+                execute(yum_repos_cleanup, host=cap_host)
+                logger.info(f'Capsule {cap_host} is ready for Upgrade')
         return capsule_hosts
 
 
 def satellite_capsule_upgrade(cap_host, sat_host):
     """Upgrades capsule from existing version to latest version.
-
     :param string cap_host: Capsule hostname onto which the capsule upgrade
     will run
     :param string sat_host : Satellite hostname from which capsule certs are to
     be generated
-
     The following environment variables affect this command:
-
     CAPSULE_URL
         Optional, defaults to available capsule version in CDN.
         URL for capsule of latest compose to upgrade.
@@ -101,7 +100,6 @@ def satellite_capsule_upgrade(cap_host, sat_host):
     TO_VERSION
         Capsule version to upgrade to and enable repos while upgrading.
         e.g '6.1','6.2'
-
     """
     logger.highlight('\n========== CAPSULE UPGRADE =================\n')
     # Check the capsule sync before upgrade.
@@ -147,7 +145,7 @@ def satellite_capsule_upgrade(cap_host, sat_host):
     reboot(160)
     host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
-    upgrade_validation()
+    upgrade_validation(upgrade_type="capsule", satellite_services_action="restart")
     # Check the capsule sync after upgrade.
     logger.info("check the capsule sync after capsule upgrade")
     execute(capsule_sync, cap_host, host=sat_host)
@@ -156,12 +154,9 @@ def satellite_capsule_upgrade(cap_host, sat_host):
 
 def satellite_capsule_zstream_upgrade(cap_host):
     """Upgrades Capsule to its latest zStream version
-
     :param string cap_host: Capsule hostname onto which the capsule upgrade
     will run
-
     Note: For zstream upgrade both 'To' and 'From' version should be same
-
     FROM_VERSION
         Current satellite version which will be upgraded to latest version
     TO_VERSION
@@ -171,8 +166,8 @@ def satellite_capsule_zstream_upgrade(cap_host):
     from_version = settings.upgrade.from_version
     to_version = settings.upgrade.to_version
     if not from_version == to_version:
-        logger.warning('zStream Upgrade on Capsule cannot be performed as '
-                       'FROM and TO versions are not same!')
+        logger.highlight('zStream Upgrade on Capsule cannot be performed as FROM and TO '
+                         'versions are not same. Aborting...')
         sys.exit(1)
     major_ver = settings.upgrade.os[-1]
     ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
@@ -204,4 +199,4 @@ def satellite_capsule_zstream_upgrade(cap_host):
         reboot(160)
     host_ssh_availability_check(cap_host)
     # Check if Capsule upgrade is success
-    upgrade_validation()
+    upgrade_validation(upgrade_type="capsule", satellite_services_action="restart")

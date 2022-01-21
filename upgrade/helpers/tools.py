@@ -7,14 +7,19 @@ import json
 import re
 import subprocess
 import time
+from pathlib import Path
 
 from fabric.api import execute
 from fabric.api import run
 from nailgun import entity_mixins
 
+from upgrade.helpers import settings
 from upgrade.helpers.logger import logger
 
 logger = logger()
+
+setup_data_file = 'product_setup.json'
+setup_file = Path(setup_data_file)
 
 
 def reboot(halt_time=300):
@@ -233,11 +238,15 @@ def create_setup_dict(setups_dict):
     :param dict setups_dict: Dictionary of all return value of
     setup_products_for_upgrade
     """
-    with open('product_setup', 'w') as pref:
-        json.dump(setups_dict, pref)
+    data = {}
+
+    if setup_file.exists():
+        data = json.loads(setup_file.read_text())
+    data.update(setups_dict)
+    setup_file.write_text(json.dumps(data))
 
 
-def get_setup_data():
+def get_setup_data(sat_hostname):
     """Open's the file to return the values from
     setup_products_for_upgrade to product_upgrade task
     task
@@ -245,9 +254,13 @@ def get_setup_data():
     :returns dict: The dict of all the returns values of
     setup_products_for_upgrade that were saved in the product_setup file
     """
-    with open('product_setup', 'r') as pref:
-        data = json.load(pref)
-    return data
+    sat_data = {}
+    sat_host = sat_hostname or settings.upgrade.satellite_hostname
+    if setup_file.exists():
+        all_data = json.loads(setup_file.read_text())
+        if sat_host in all_data:
+            sat_data = all_data[sat_host]
+    return sat_data
 
 
 def call_entity_method_with_timeout(entity_callable, timeout=300, **kwargs):

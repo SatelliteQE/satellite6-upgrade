@@ -1,3 +1,4 @@
+import re
 import sys
 import time
 
@@ -21,12 +22,9 @@ logger = logger()
 def satellite6_client_setup():
     """Sets up required things on upgrade running machine and on Client to
     perform client upgrade later
-
     If not personal clients, then it creates docker containers as clients on
     rhevm vm.
-
     Environment Variable:
-
     DOCKER_VM
         The Docker VM IP/Hostname on rhevm to create clients
     """
@@ -142,13 +140,27 @@ def satellite6_client_setup():
         # Resetting autosign conf
         execute(
             puppet_autosign_hosts, from_version, [''], False, host=sat_host)
+        time.sleep(400)
+        logger.info("wait for all the running yum command's completions")
+        for agent in puppet_clients7, puppet_clients6:
+            execute(
+                docker_client_missing_package_installation,
+                agent,
+                "puppet-agent",
+                host=docker_vm
+            )
+        for agent in clients6, clients7:
+            execute(
+                docker_client_missing_package_installation,
+                agent, "katello-agent",
+                host=docker_vm
+            )
     logger.info('Clients are ready for Upgrade.')
     return clients6, clients7, puppet_clients7, puppet_clients6
 
 
 def satellite6_client_upgrade(os_version, clients, puppet=False):
     """Upgrades clients from existing version to latest version
-
     :param string os_version: The rhel os onto which the client is installed or
         to be installed
     :param list clients: The list of clients onto which the upgrade will be
@@ -161,8 +173,7 @@ def satellite6_client_upgrade(os_version, clients, puppet=False):
             os_version.upper(), 'PUPPET' if puppet else 'KATELLO'))
     old_repo = f'rhel-{settings.upgrade.os[-1]}-server-satellite-tools-' \
         f'{settings.upgrade.from_version}-rpms'
-    puppet_agent = 'puppet' if float(settings.upgrade.to_version) <= 6.3 else 'puppet-agent'
-    agent = puppet_agent if puppet else 'katello-agent'
+    agent = 'puppet-agent' if puppet else 'katello-agent'
     if settings.upgrade.user_defined_client_hosts.rhel6 or \
             settings.upgrade.user_defined_client_hosts.rhel7:
         user_clients_upgrade(old_repo, clients, agent)
@@ -184,53 +195,41 @@ def satellite6_client_upgrade(os_version, clients, puppet=False):
             host=docker_vm
         )[docker_vm]
         for hostname, version in tuple(client_vers.items()):
-            logger.highlight(
-                'The {0} on client {1} upgraded '
-                'to version {2}'.format(agent, hostname, version))
+            logger.highlight(f'The {agent} on client {hostname} upgraded to version {version}')
 
 
 def user_clients_upgrade(old_repo, clients, agent):
     """Helper function to run upgrade on user provided clients
-
     :param string old_repo: The old tools repo to disable before updating
         katello-agent package
     :param list clients: The list of clients onto which katello-agent package
         will be updated
-    :param string agent: puppet/ puppet-agent / katello-agent
+    :param string agent: puppet-agent / katello-agent
     """
     for client in clients:
         execute(disable_repos, old_repo, host=client)
-        execute(
-            lambda: run('yum update -y {}'.format(agent)), host=client)
-        post = version_filter(execute(
-            lambda: run('rpm -q {}'.format(agent)), host=client)[client])
-        logger.highlight(
-            '{0} on {1} upgraded to {2}'.format(agent, client, post))
+        execute(lambda: run(f'yum update -y {agent}'), host=client)
+        post = version_filter(execute(lambda: run(f'rpm -q {agent}'), host=client)[client])
+        logger.highlight(f'{agent} on {client} upgraded to {post}')
 
 
 def docker_clients_upgrade(old_repo, clients, agent):
     """Helper function to run upgrade on docker containers as clients
-
     :param string old_repo: The old tools repo to disable before updating
         katello-agent package
     :param dict clients: The dictionary containing client_name as key and
         container_id as value
-    :param string agent: puppet/ puppet-agent / katello-agent
+    :param string agent: puppet-agent / katello-agent
     """
     for hostname, container in tuple(clients.items()):
-        logger.info('Upgrading client {0} on docker container: {1}'.format(
-            hostname, container))
-        docker_execute_command(
-            container, 'subscription-manager repos --disable {}'.format(
-                old_repo))
-        docker_execute_command(
-            container, 'yum update -y {}'.format(agent), True)
+        logger.info(f'Upgrading client {hostname} on docker container: {container}')
+        docker_execute_command(container, f'subscription-manager repos --disable {old_repo}')
+        docker_execute_command(container, f'yum update -y {agent}', True)
 
 
 def docker_clients_agent_version(clients, agent):
     """Determines and returns the katello or puppet agent version on docker
     clients
-
     :param dict clients: The dictionary containing client_name as key and
         container_id as value
     :param string agent: puppet/ puppet-agent / katello-agent
@@ -239,7 +238,45 @@ def docker_clients_agent_version(clients, agent):
     """
     clients_dict = {}
     for hostname, container in tuple(clients.items()):
-        pst = version_filter(
-            docker_execute_command(container, 'rpm -q {}'.format(agent)))
-        clients_dict[hostname] = pst
+        try:
+            command_output = docker_execute_command(container, f'rpm -q {agent}')
+            pst = version_filter(command_output)
+            clients_dict[hostname] = pst
+        except Exception as ex:
+            logger.warn(ex)
+            clients_dict[hostname] = f"{agent} package not updated"
     return clients_dict
+
+
+def docker_client_missing_package_installation(clients, agent):
+    """
+    Use to install the missing packages of puppet agent and katello-agent
+    :param dict clients: The dictionary containing client_name as key and
+        container_id as value
+    :param string agent: puppet-agent / katello-agent
+    """
+    for hostname, container in tuple(clients.items()):
+        logger.info(f'Installing client {hostname} on docker container: {container}')
+        try:
+            for _ in range(1, 15):
+                yum_status = docker_execute_command(container, 'pgrep yum', True)
+                if yum_status == '':
+                    break
+                logger.info("yum command is running wait fot 60 seconds...")
+                time.sleep(60)
+            command_output = docker_execute_command(container, f'rpm -q {agent}', True)
+            if re.search(f'package {agent} is not installed', command_output):
+                logger.warn(f"base version of {agent} package missed(because of timeout) on "
+                            f"{container} so installing it separately")
+                docker_execute_command(container, f'yum install -y {agent}', True)
+                command_output = docker_execute_command(container, f'rpm -q {agent}', True)
+                if re.search(f'package {agent} is not installed', command_output):
+                    logger.warn(f"failed to install package {agent} on {container}")
+                else:
+                    logger.info(f"base version of {agent} package {command_output} installed "
+                                f"successfully on {container}")
+            else:
+                logger.info(f"{agent} package {command_output} is available before "
+                            f"upgrade on {container}")
+        except Exception as ex:
+            logger.warn(ex)

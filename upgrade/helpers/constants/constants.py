@@ -47,6 +47,14 @@ RHEL_CONTENTS = {
         'repo': f'Red Hat Satellite Maintenance 6 for RHEL {os_ver} Server RPMs {arch}',
         'label': f"rhel-{os_ver}-server-satellite-maintenance-6-rpms"
     },
+    'ansible': {
+        'prod': 'Red Hat Ansible Engine',
+        'repofull': f'Red Hat Ansible Engine {settings.upgrade.ansible_repo_version} RPMs for Red '
+                    f'Hat Enterprise Linux {os_ver} Server {arch}',
+        'repo': f'Red Hat Ansible Engine {settings.upgrade.ansible_repo_version} RPMs for Red Hat '
+                f'Enterprise Linux {os_ver} Server',
+        'label': f'rhel-{os_ver}-server-ansible-{settings.upgrade.ansible_repo_version}-rpms'
+    },
 }
 
 CUSTOM_CONTENTS = {

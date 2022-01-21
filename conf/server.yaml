@@ -5,11 +5,11 @@ SERVER:
   #  - replace-with-satellite-hostname
   VERSION:
     # The full release version (6.9.2)
-    RELEASE: "'6.10'"
+    RELEASE: "'7.0'"
     # The snap version currently testing (if applicable)
     SNAP: ''
     # The source of Satellite packages. Can be one of:
     # internal, ga, beta
     SOURCE: internal
     # The base os rhel version where the satellite installed
-    RHEL_RELEASE: '7'
+    RHEL_VERSION: '7'

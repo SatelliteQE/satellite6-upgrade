@@ -6,7 +6,6 @@ from automation_tools.utils import update_packages
 from fabric.api import env
 from fabric.api import execute
 from fabric.api import run
-from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers import settings
 from upgrade.helpers.constants.constants import CUSTOM_SAT_REPO
@@ -101,7 +100,7 @@ def satellite_upgrade(zstream=False):
         RHEL_CONTENTS["rhscl"]["label"],
         RHEL_CONTENTS["server"]["label"]
     ]
-    if settings.upgrade.downstream_fm_upgrade:
+    if settings.upgrade.downstream_fm_upgrade or settings.upgrade.to_version == "7.0":
         settings.upgrade.whitelist_param = ", repositories-validate, repositories-setup"
 
     # disable all the repos
@@ -120,7 +119,10 @@ def satellite_upgrade(zstream=False):
         )
     else:
         for repo in CUSTOM_SAT_REPO:
-            if repo == "sattools" and bz_bug_is_open(1980798):
+            if float(settings.upgrade.to_version) >= 7.0 and repo == "sattools":
+                continue
+            if float(settings.upgrade.to_version) < 7.0 and \
+                    (repo == "satutils" or repo == "satclient"):
                 continue
             repository_setup(
                 CUSTOM_SAT_REPO[repo]["repository"],
@@ -130,9 +132,6 @@ def satellite_upgrade(zstream=False):
                 CUSTOM_SAT_REPO[repo]["gpg"]
             )
         foreman_maintain_package_update()
-
-    if bz_bug_is_open(1995650) and settings.upgrade.to_version == '6.10':
-        run("yum remove -y rubygem-passenger")
 
     if settings.upgrade.to_version == '6.10':
         # To fix the memory related issues for BZ#1989378

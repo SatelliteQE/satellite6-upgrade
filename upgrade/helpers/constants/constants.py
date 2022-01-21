@@ -70,9 +70,21 @@ CUSTOM_CONTENTS = {
         'prod': 'tools_latest_{client_os}',
         'repo': 'tools_latest_repo_{client_os}',
     },
+    'capsule_client': {
+        'prod': 'capsuleclient_product',
+        'repo': 'capsuleclient_repo',
+    },
+    'capsule_utils': {
+        'prod': 'capsuleutils_product',
+        'repo': 'capsuleutils_repo',
+    },
     'maintenance': {
         'prod': f'maintenance_latest_{os_ver}',
         'repo': 'maintenance_repo',
+    },
+    'client': {
+        'prod': 'client_latest_{client_os}',
+        'repo': 'client_repo',
     },
 }
 
@@ -98,7 +110,21 @@ CUSTOM_SAT_REPO = {
         "base_url": f"{settings.repos.satmaintenance_repo}",
         "enable": 1,
         "gpg": 0,
-    }
+    },
+    "satutils": {
+        "repository": "satutils",
+        "repository_name": "sat-utils",
+        "base_url": f"{settings.repos.satutils_repo}",
+        "enable": 1,
+        "gpg": 0,
+    },
+    "satclient": {
+        "repository": "satclient",
+        "repository_name": "sat-client",
+        "base_url": f"{settings.repos.satclient_repo}",
+        "enable": 1,
+        "gpg": 0,
+    },
 }
 
 

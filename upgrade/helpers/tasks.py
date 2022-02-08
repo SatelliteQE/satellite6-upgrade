@@ -987,7 +987,7 @@ def add_subscription_for_capsule(ak, org):
                         f"capsule content_label {satutils_repo.name}")
         else:
             caputils_sub = entities.Subscription(nailgun_conf, organization=org).search(
-                query={'search': f'name={CUSTOM_CONTENTS["utils"]["prod"]}'})[0]
+                query={'search': f'name={CUSTOM_CONTENTS["capsule_utils"]["prod"]}'})[0]
             try:
                 ak.add_subscriptions(data={
                     'quantity': 1,

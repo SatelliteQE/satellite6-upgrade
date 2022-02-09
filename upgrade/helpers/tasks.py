@@ -2325,10 +2325,18 @@ def satellite_restore():
         logger.highlight(f'Time taken by satellite restore - '
                          f'{str(postrestore_time - prerestore_time)}')
         run(f"umount {settings.clone.backup_dir}")
-        if restore_output.return_code != 0:
-            logger.highlight("Satellite restore completed with some error. "
-                             "Aborting...")
-            sys.exit(1)
+        # Remove the workaround once the Bugzilla 1829115 gets fixed.
+        for line in restore_output.split('\n'):
+            if re.search(r'some executors are not responding, '
+                         r'check /foreman_tasks/dynflow/status', line):
+                upgrade_validation(upgrade_type="satellite",
+                                   satellite_services_action="restart")
+                break
+        else:
+            if restore_output.return_code != 0:
+                logger.highlight("Satellite restore completed with some error. "
+                                 "Aborting...")
+                sys.exit(1)
 
 
 def satellite_backup():

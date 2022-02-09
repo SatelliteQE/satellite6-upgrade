@@ -100,12 +100,13 @@ def satellite_upgrade(zstream=False):
         RHEL_CONTENTS["rhscl"]["label"],
         RHEL_CONTENTS["server"]["label"]
     ]
-    if settings.upgrade.downstream_fm_upgrade or settings.upgrade.to_version == "7.0":
-        settings.upgrade.whitelist_param = ", repositories-validate, repositories-setup"
 
     # disable all the repos
     enable_disable_repo(disable_repos_name=["*"])
 
+    if settings.upgrade.downstream_fm_upgrade or settings.upgrade.to_version == "7.0":
+        settings.upgrade.whitelist_param = ", repositories-validate, repositories-setup"
+        enable_disable_repo(enable_repos_name=common_sat_cap_repos)
     # maintenance repository update for satellite upgrade
     maintenance_repo_update()
 

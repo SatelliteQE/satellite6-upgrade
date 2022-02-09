@@ -121,7 +121,7 @@ CUSTOM_SAT_REPO = {
     "satclient": {
         "repository": "satclient",
         "repository_name": "sat-client",
-        "base_url": f"{settings.repos.satclient_repo}",
+        "base_url": f"{settings.repos.satclient_repo[settings.upgrade.os]}",
         "enable": 1,
         "gpg": 0,
     },

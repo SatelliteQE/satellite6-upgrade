@@ -211,8 +211,8 @@ def sync_capsule_repos_to_satellite(capsules):
         sys.exit(1)
     org = entities.Organization(nailgun_conf, id=1).read()
     logger.info("Refreshing the attached manifest")
-    entities.Subscription(nailgun_conf).refresh_manifest(data={'organization_id': org.id},
-                                                         timeout=5000)
+    entities.Subscription(nailgun_conf, organization=org).\
+        refresh_manifest(data={'organization_id': org.id}, timeout=5000)
     ak = entities.ActivationKey(nailgun_conf, organization=org).search(
         query={'search': f'name={capsule_ak}'})[0]
     add_satellite_subscriptions_in_capsule_ak(ak, org)
@@ -248,10 +248,10 @@ def sync_capsule_repos_to_satellite(capsules):
     # Add capsule and tools custom prod subscription to capsules
     if capsule_repo:
         add_custom_product_subscription_to_hosts(
-            CUSTOM_CONTENTS['capsule']['prod'], capsules)
+            CUSTOM_CONTENTS['capsule']['prod'], capsules, org)
     if sat_tools_repo:
         add_custom_product_subscription_to_hosts(
-            CUSTOM_CONTENTS['capsule_tools']['prod'], capsules)
+            CUSTOM_CONTENTS['capsule_tools']['prod'], capsules, org)
 
 
 def sync_capsule_subscription_to_capsule_ak(org):
@@ -315,7 +315,8 @@ def sync_capsule_subscription_to_capsule_ak(org):
         logger.info(f"rhel capsule product {RHEL_CONTENTS['capsule']['prod']} is "
                     f"found enabled.")
         cap_reposet = entities.RepositorySet(
-            nailgun_conf, name=RHEL_CONTENTS['capsule']['repofull'], product=cap_product
+            nailgun_conf, name=RHEL_CONTENTS['capsule']['repofull'],
+            product=cap_product, organization=org
         ).search()[0]
         logger.info("entities of repository {} search completed successfully".
                     format(RHEL_CONTENTS['capsule']['repofull']))
@@ -327,7 +328,7 @@ def sync_capsule_subscription_to_capsule_ak(org):
         except requests.exceptions.HTTPError as exp:
             logger.warn(exp)
         cap_repo = entities.Repository(
-            nailgun_conf, name=RHEL_CONTENTS['capsule']['repo']).search(
+            nailgun_conf, name=RHEL_CONTENTS['capsule']['repo'], organization=org).search(
             query={'organization_id': org.id, 'per_page': 100}
         )[0]
         logger.info(f"capsule repository's repofull {RHEL_CONTENTS['capsule']['repofull']} "
@@ -339,7 +340,9 @@ def sync_capsule_subscription_to_capsule_ak(org):
     # Expected value 2500
     try:
         call_entity_method_with_timeout(
-            entities.Repository(nailgun_conf, id=cap_repo.id).sync, timeout=4000)
+            entities.Repository(
+                nailgun_conf, id=cap_repo.id, organization=org
+            ).sync, timeout=4000)
         job_execution_time(
             f"entity repository {cap_repo.name} sync (In past time-out value was "
             f"2500 but in current execution we set it 4000)", start_time)
@@ -371,8 +374,8 @@ def sync_rh_repos_to_satellite(org):
     logger.info(f"red hat software collection for product "
                 f"{RHEL_CONTENTS['rhscl_sat64']['prod']} is enabled")
     scl_reposet = entities.RepositorySet(
-        nailgun_conf, name=RHEL_CONTENTS['rhscl']['repo'], product=scl_product
-    ).search()[0]
+        nailgun_conf, name=RHEL_CONTENTS['rhscl']['repo'], product=scl_product,
+        organization=org).search()[0]
     logger.info(f"red hat software collection repo "
                 f"{RHEL_CONTENTS['rhscl']['repo']} is enabled")
     try:
@@ -384,13 +387,14 @@ def sync_rh_repos_to_satellite(org):
     time.sleep(20)
     # Sync enabled Repo from cdn
     scl_repo = entities.Repository(
-        nailgun_conf, name=RHEL_CONTENTS['rhscl']['repofull']).search(
+        nailgun_conf, name=RHEL_CONTENTS['rhscl']['repofull'], organization=org).search(
         query={'organization_id': org.id, 'per_page': 100}
     )[0]
     start_time = job_execution_time("Repository sync")
     try:
         call_entity_method_with_timeout(
-            entities.Repository(nailgun_conf, id=scl_repo.id).sync, timeout=3500
+            entities.Repository(
+                nailgun_conf, id=scl_repo.id).sync, timeout=3500, organization=org
         )
     except Exception as exp:
         logger.warn(f"RHCL repository sync failed with exception: {exp}")
@@ -404,7 +408,9 @@ def sync_rh_repos_to_satellite(org):
         search(query={'per_page': 100})[0]
     logger.info(f"product {RHEL_CONTENTS['server']['prod']} is enable")
     server_reposet = entities.RepositorySet(
-        nailgun_conf, name=RHEL_CONTENTS['server']['repo'], product=server_product).search()[0]
+        nailgun_conf, name=RHEL_CONTENTS['server']['repo'],
+        product=server_product, organization=org
+    ).search()[0]
     logger.info(f"repository {RHEL_CONTENTS['server']['repo']} is enabled")
     try:
         server_reposet.enable(
@@ -415,14 +421,17 @@ def sync_rh_repos_to_satellite(org):
     time.sleep(20)
     # Sync enabled Repo from cdn
     server_repo = entities.Repository(
-        nailgun_conf, name=RHEL_CONTENTS['server']['repofull']
+        nailgun_conf, name=RHEL_CONTENTS['server']['repofull'],
+        organization=org
     ).search(query={'organization_id': org.id, 'per_page': 100})[0]
     logger.info(f"entities repository sync operation started successfully"
                 f" for name {server_repo.name}")
     start_time = job_execution_time("Repository sync")
     try:
         call_entity_method_with_timeout(
-            entities.Repository(nailgun_conf, id=server_repo.id).sync, timeout=6000)
+            entities.Repository(
+                nailgun_conf, id=server_repo.id, organization=org
+            ).sync, timeout=6000)
     except Exception as exp:
         logger.warn(f"RH Server repository sync failed with exception: {exp}")
         repos_sync_failure_remiediation(org, server_repo, timeout=6000)
@@ -446,7 +455,8 @@ def sync_ansible_repo_to_satellite(org):
         nailgun_conf, name=RHEL_CONTENTS['ansible']['prod'], organization=org
     ).search(query={'per_page': 100})[0]
     ansible_reposet = entities.RepositorySet(
-        nailgun_conf, name=RHEL_CONTENTS['ansible']['repo'], product=ansible_product
+        nailgun_conf, name=RHEL_CONTENTS['ansible']['repo'],
+        product=ansible_product, organization=org
     ).search()[0]
     try:
         ansible_reposet.enable(
@@ -457,12 +467,15 @@ def sync_ansible_repo_to_satellite(org):
     time.sleep(20)
     # Sync the repo from CDN
     ansible_repo = entities.Repository(
-        nailgun_conf, name=RHEL_CONTENTS['ansible']['repofull']).search(
+        nailgun_conf, name=RHEL_CONTENTS['ansible']['repofull'],
+        organization=org).search(
         query={'organization_id': org.id, 'per_page': 100}
     )[0]
     try:
         call_entity_method_with_timeout(
-            entities.Repository(nailgun_conf, id=ansible_repo.id).sync, timeout=600)
+            entities.Repository(
+                nailgun_conf, id=ansible_repo.id, organization=org
+            ).sync, timeout=600)
         logger.info("RH Ansible Engine repository synced successfully")
     except requests.exceptions.HTTPError as exp:
         logger.warn(f"RH Ansible engine repository sync failed with exception: {exp}")
@@ -531,7 +544,8 @@ def sync_sattools_repos_to_satellite_for_capsule(org):
             nailgun_conf, name=RHEL_CONTENTS['tools']['prod'], organization=org
         ).search(query={'per_page': 100})[0]
         sat_reposet = entities.RepositorySet(
-            nailgun_conf, name=RHEL_CONTENTS['tools']['repofull'], product=sattools_product
+            nailgun_conf, name=RHEL_CONTENTS['tools']['repofull'],
+            product=sattools_product, organization=org
         ).search()[0]
         logger.info(f"check the capsule tool's product"
                     f" {RHEL_CONTENTS['tools']['prod']} and"
@@ -545,7 +559,8 @@ def sync_sattools_repos_to_satellite_for_capsule(org):
             logger.warn(exp)
         time.sleep(5)
         sattools_repo = entities.Repository(
-            nailgun_conf, name=RHEL_CONTENTS['tools']['repo']
+            nailgun_conf, name=RHEL_CONTENTS['tools']['repo'],
+            organization=org
         ).search(query={'organization_id': org.id, 'per_page': 100})[0]
         logger.info(f"entities repository search completed successfully for sattools "
                     f"repo {RHEL_CONTENTS['tools']['repofull']}")
@@ -554,7 +569,9 @@ def sync_sattools_repos_to_satellite_for_capsule(org):
     start_time = job_execution_time("Entities repository sync")
     try:
         call_entity_method_with_timeout(
-            entities.Repository(nailgun_conf, id=sattools_repo.id).sync, timeout=5000)
+            entities.Repository(
+                nailgun_conf, id=sattools_repo.id, organization=org
+            ).sync, timeout=5000)
     except Exception as exp:
         logger.warn(f"RH Satellite tool repository sync failed with exception: {exp}")
         repos_sync_failure_remiediation(org, sattools_repo, timeout=5000)
@@ -627,7 +644,8 @@ def sync_maintenance_repos_to_satellite_for_capsule(org):
         maintenance_reposet = entities.RepositorySet(
             nailgun_conf,
             name=RHEL_CONTENTS['maintenance']['repofull'],
-            product=maintenance_product
+            product=maintenance_product,
+            organization=org
         ).search()[0]
         logger.info(f"maintenance product {RHEL_CONTENTS['maintenance']['prod']} and "
                     f"repository {RHEL_CONTENTS['maintenance']['repo']} searched complete "
@@ -641,7 +659,7 @@ def sync_maintenance_repos_to_satellite_for_capsule(org):
             logger.warn(exp)
         time.sleep(5)
         maintenance_repo = entities.Repository(
-            nailgun_conf, name=RHEL_CONTENTS['maintenance']['repo']).search(
+            nailgun_conf, name=RHEL_CONTENTS['maintenance']['repo'], organization=org).search(
             query={'organization_id': org.id, 'per_page': 100}
         )[0]
         logger.info(f"entities repository search completed successfully for maintenance "
@@ -651,7 +669,9 @@ def sync_maintenance_repos_to_satellite_for_capsule(org):
     start_time = job_execution_time("Entities repository sync")
     try:
         call_entity_method_with_timeout(
-            entities.Repository(nailgun_conf, id=maintenance_repo.id).sync, timeout=5000)
+            entities.Repository(
+                nailgun_conf, id=maintenance_repo.id, organization=org
+            ).sync, timeout=5000)
     except Exception as exp:
         logger.warn(f"RH Maintenance repository sync failed with exception: {exp}")
         repos_sync_failure_remiediation(org, maintenance_repo, timeout=5000)
@@ -705,7 +725,7 @@ def add_subscription_for_capsule(ak, org):
         logger.info(f"activation key content override successfully for "
                     f"content label:{cap_repo.name}")
     else:
-        cap_sub = entities.Subscription(nailgun_conf).search(
+        cap_sub = entities.Subscription(nailgun_conf, organization=org).search(
             query={'search': 'name={0}'.format(CUSTOM_CONTENTS['capsule']['prod'])})[0]
         ak.add_subscriptions(data={
             'quantity': 1,
@@ -722,7 +742,7 @@ def add_subscription_for_capsule(ak, org):
         logger.info(f"cdn activation key successfully override for maintenance content_label"
                     f" {maintenance_repo.name}")
     else:
-        maintenance_sub = entities.Subscription(nailgun_conf).search(
+        maintenance_sub = entities.Subscription(nailgun_conf, organization=org).search(
             query={'search': 'name={0}'.format(
                 CUSTOM_CONTENTS['maintenance']['prod'])
             }
@@ -742,7 +762,7 @@ def add_subscription_for_capsule(ak, org):
         logger.info(f"cdn activation key successfully override) for "
                     f"capsule content_label {sattools_repo.name}")
     else:
-        captools_sub = entities.Subscription(nailgun_conf).search(
+        captools_sub = entities.Subscription(nailgun_conf, organization=org).search(
             query={'search': f'name={CUSTOM_CONTENTS["capsule_tools"]["prod"]}'})[0]
         ak.add_subscriptions(data={
             'quantity': 1,
@@ -799,17 +819,27 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     lenv = ak.environment.read()
     toolsproduct_name = CUSTOM_CONTENTS['tools']['prod'].format(client_os=client_os)
     toolsrepo_name = CUSTOM_CONTENTS['tools']['repo'].format(client_os=client_os)
-    # adding sleeps in between to avoid race conditions
+    try:
+        tools_product = entities.Product(
+            nailgun_conf, name=toolsproduct_name, organization=org).create()
+    except Exception as exp:
+        logger.warning(exp)
+        tools_product = entities.Product(nailgun_conf, organization=org).search(
+            query={'search': f'name={toolsproduct_name}'})[0]
+    try:
+        tools_repo = entities.Repository(
+            nailgun_conf, name=toolsrepo_name, product=tools_product, url=tools_repo_url,
+            organization=org, content_type='yum').create()
+    except Exception as exp:
+        logger.warning(exp)
+        tools_repo = entities.Repository(
+            nailgun_conf, organization=org).search(
+            query={'search': f'name={toolsrepo_name}'})[0]
 
-    tools_product = entities.Product(
-        nailgun_conf, name=toolsproduct_name, organization=org).create()
-    tools_repo = entities.Repository(
-        nailgun_conf, name=toolsrepo_name, product=tools_product, url=tools_repo_url,
-        organization=org, content_type='yum').create()
     logger.info(f"entities product {tools_product} and repository {toolsrepo_name} "
                 f"created successfully")
     start_time = job_execution_time("tools repo sync operation")
-    entities.Repository(nailgun_conf, id=tools_repo.id).sync()
+    entities.Repository(nailgun_conf, id=tools_repo.id, organization=org).sync()
     job_execution_time(f"tools repo {toolsrepo_name} sync operation", start_time)
     logger.info(f"entities repository sync operation completed successfully "
                 f"for tool repos name {tools_repo.name}")
@@ -839,7 +869,7 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     published_ver.promote(data={'environment_ids': [lenv.id], 'force': False})
     job_execution_time(f"content view {cv.name} promotion ", start_time)
     logger.info(f"published cv {cv.name} version has promoted successfully")
-    tools_sub = entities.Subscription(nailgun_conf).search(
+    tools_sub = entities.Subscription(nailgun_conf, organization=org).search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
     ak.add_subscriptions(data={
         'quantity': 1,
@@ -848,10 +878,12 @@ def sync_tools_repos_to_upgrade(client_os, hosts, ak_name):
     logger.info(f"subscription added successfully in capsule "
                 f"activation key for name {tools_sub.name}")
     # Add this latest tools repo to hosts to upgrade
-    sub = entities.Subscription(nailgun_conf).search(
+    sub = entities.Subscription(nailgun_conf, organization=org).search(
         query={'search': 'name={0}'.format(toolsproduct_name)})[0]
     for host in hosts:
-        host = entities.Host(nailgun_conf).search(query={'search': 'name={}'.format(host)})[0]
+        host = entities.Host(nailgun_conf, organization=org).search(
+            query={'search': 'name={}'.format(host)}
+        )[0]
         logger.info(f"Adding the Subscription {sub.name} on host {host.name}")
         entities.HostSubscription(nailgun_conf, host=host).add_subscriptions(
             data={'subscriptions': [{'id': sub.id, 'quantity': 1}]})
@@ -911,7 +943,7 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     # logger.info("Removing the Original Manifest from Default Organization")
     # execute(hammer, 'subscription delete-manifest --organization-id 1',
     #         host=sat_host)
-    os.environ['HTTP_SERVER_HOSTNAME'] = settings.repos.rhel_repo_host
+    os.environ['HTTP_SERVER_HOSTNAME'] = settings.repos.rhel_os_repo_host
     # Run Avahi Task on upgrade boxes for REX tests to run
     execute(foreman_packages_installation_check, state="unlock", non_upgrade_task=True,
             host=sat_host)
@@ -1249,20 +1281,23 @@ def generate_custom_certs():
     run("sh /root/certs_script.sh")
 
 
-def add_custom_product_subscription_to_hosts(product, hosts):
+def add_custom_product_subscription_to_hosts(product, hosts, org):
     """Adds custom product subscription to given list of hosts
 
     :param str product: The custom product name
     :param list hosts: List of content host names
+    :param org `nailgun.entities.org` for capsules
     """
     for host in hosts:
-        sub = entities.Subscription(nailgun_conf).search(
+        sub = entities.Subscription(nailgun_conf, organization=org).search(
             query={'search': f'name={product}'})[0]
         if float(settings.upgrade.from_version) <= 6.1:
             execute(
                 attach_subscription_to_host_from_content_host, sub.cp_id, host=host)
         else:
-            host = entities.Host(nailgun_conf).search(query={'search': f'name={host}'})[0]
+            host = entities.Host(nailgun_conf, organization=org).search(
+                query={'search': f'name={host}'}
+            )[0]
             entities.HostSubscription(nailgun_conf, host=host).add_subscriptions(
                 data={'subscriptions': [{'id': sub.id, 'quantity': 1}]})
 
@@ -1517,8 +1552,9 @@ def repos_sync_failure_remiediation(org, repo_object, timeout=3000):
     """
     try:
         logger.info(f'Run the {repo_object.name} repository sync again after manifest refresh')
-        entities.Subscription(nailgun_conf).refresh_manifest(data={'organization_id': org.id},
-                                                             timeout=5000)
+        entities.Subscription(nailgun_conf, organization=org).refresh_manifest(
+            data={'organization_id': org.id}, timeout=5000
+        )
     except Exception as exp:
         logger.warn(f'manifst refresh failed due to {exp}')
     # To handle HTTPError: 404 Client Error: Not Found for url:
@@ -1984,12 +2020,14 @@ def create_capsule_ak():
         manifest_name = settings.fake_manifest.url.default.split('/')[-1]
         try:
             with open(f'{manifest_name}', 'rb') as manifest:
-                entities.Subscription(nailgun_conf).upload(data={'organization_id': org.id},
-                                                           files={'content': manifest})
+                entities.Subscription(nailgun_conf, organization=org).upload(
+                    data={'organization_id': org.id}, files={'content': manifest}
+                )
         except Exception as ex:
             logger.warn(ex)
-        entities.Subscription(nailgun_conf).refresh_manifest(data={'organization_id': org.id},
-                                                             timeout=5000)
+        entities.Subscription(nailgun_conf, organization=org).refresh_manifest(
+            data={'organization_id': org.id}, timeout=5000
+        )
 
     def repos_sync(org):
         """
@@ -2137,7 +2175,7 @@ def ak_add_subscription(org, ak, sub_name):
     :param ak: Activation Key to be changed
     :param sub_name: Name of the subscription to be added
     """
-    sub = entities.Subscription(nailgun_conf).search(
+    sub = entities.Subscription(nailgun_conf, organization=org).search(
         query={'organization_id': f'{org.id}',
                'search': f'name={sub_name}'})[0]
     ak.add_subscriptions(data={

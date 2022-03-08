@@ -2313,7 +2313,7 @@ def satellite_restore():
         logger.highlight(f'Time taken by satellite restore - '
                          f'{str(postrestore_time - prerestore_time)}')
         run(f"umount {settings.clone.backup_dir}")
-        # Remove the workaround once the Bugzilla 1829115 gets fixed.
+        # Remove the workaround once BZ 2051912 gets fixed.
         for line in restore_output.split('\n'):
             if re.search(r'some executors are not responding, '
                          r'check /foreman_tasks/dynflow/status', line):

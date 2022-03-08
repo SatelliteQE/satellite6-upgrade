@@ -22,7 +22,6 @@ from upgrade.helpers.tasks import update_capsules_to_satellite
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
 from upgrade.helpers.tasks import wait_untill_capsule_sync
-from upgrade.helpers.tasks import workaround_1829115
 from upgrade.helpers.tasks import yum_repos_cleanup
 from upgrade.helpers.tools import copy_ssh_key
 from upgrade.helpers.tools import host_pings
@@ -56,10 +55,6 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
             non_responsive_host.append(cap_host)
         else:
             execute(host_ssh_availability_check, cap_host)
-        # Update the template once 1829115 gets fixed.
-        execute(workaround_1829115, host=cap_host)
-        if not bz_bug_is_open(1829115):
-            logger.warn("Please update the capsule template for fixed capsule version")
         execute(foreman_service_restart, host=cap_host)
         if non_responsive_host:
             logger.highlight(str(non_responsive_host) + ' these are non-responsive hosts. '

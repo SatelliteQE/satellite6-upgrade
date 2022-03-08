@@ -1599,18 +1599,6 @@ def yum_repos_cleanup():
             logger.warn(result)
 
 
-def workaround_1829115():
-    """
-    Replacing the /usr/share/katello/hostname-change.rb with their original file before
-    starting the upgrade.
-    """
-    file_name = "/usr/share/katello/hostname-change.rb"
-    file_backup = '/usr/share/katello/hostname-change.rb.backup'
-    output = run(f"if [ -f {file_backup} ]; then mv {file_backup} {file_name}; fi")
-    if output.return_code > 0:
-        logger.warn("Failed to update the file")
-
-
 def add_satellite_subscriptions_in_capsule_ak(ak, org, custom_repo=None):
     """
     Use to add the satellite subscriptions in capsule activation key, it helps to enable the

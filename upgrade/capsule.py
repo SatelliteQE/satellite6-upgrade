@@ -9,6 +9,7 @@ from upgrade.helpers import settings
 from upgrade.helpers.constants.constants import RHEL_CONTENTS
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import add_baseOS_repo
+from upgrade.helpers.tasks import capsule_certs_update
 from upgrade.helpers.tasks import capsule_sync
 from upgrade.helpers.tasks import create_capsule_ak
 from upgrade.helpers.tasks import enable_disable_repo
@@ -136,9 +137,11 @@ def satellite_capsule_upgrade(cap_host, sat_host):
 
     if settings.upgrade.foreman_maintain_capsule_upgrade:
         foreman_maintain_package_update()
-        # pulp2 removal required prior 7.0 ystream upgrade BZ#2054182
         if settings.upgrade.from_version == '6.10':
+            # pulp2 removal required prior 7.0 ystream upgrade BZ#2054182
             pulp2_removal()
+            # capsule certs regeneration required prior 7.0 ystream capsule upgrade BZ#2049893
+            execute(capsule_certs_update, cap_host, host=sat_host)
         upgrade_using_foreman_maintain(sat_host=False)
     else:
         nonfm_upgrade(satellite_upgrade=False,

@@ -4,7 +4,6 @@ from automation_tools import setup_capsule_firewall
 from fabric.api import execute
 from fabric.api import run
 from fabric.api import settings as fabric_settings
-from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers import settings
 from upgrade.helpers.constants.constants import RHEL_CONTENTS
@@ -22,7 +21,6 @@ from upgrade.helpers.tasks import update_capsules_to_satellite
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
 from upgrade.helpers.tasks import wait_untill_capsule_sync
-from upgrade.helpers.tasks import workaround_1829115
 from upgrade.helpers.tasks import yum_repos_cleanup
 from upgrade.helpers.tools import copy_ssh_key
 from upgrade.helpers.tools import host_pings
@@ -56,10 +54,6 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
             non_responsive_host.append(cap_host)
         else:
             execute(host_ssh_availability_check, cap_host)
-        # Update the template once 1829115 gets fixed.
-        execute(workaround_1829115, host=cap_host)
-        if not bz_bug_is_open(1829115):
-            logger.warn("Please update the capsule template for fixed capsule version")
         execute(foreman_service_restart, host=cap_host)
         if non_responsive_host:
             logger.highlight(str(non_responsive_host) + ' these are non-responsive hosts. '
@@ -140,12 +134,7 @@ def satellite_capsule_upgrade(cap_host, sat_host):
             f"rhel-{major_ver}-server-ansible-{settings.upgrade.ansible_repo_version}-rpms"])
 
     if settings.upgrade.foreman_maintain_capsule_upgrade:
-        if bz_bug_is_open("1967685") and settings.upgrade.to_version == '6.10':
-            run("yum install -y http://download.eng.bos.redhat.com/brewroot/"
-                "vol/rhel-7/packages/rubygem-foreman_maintain/0.8.3/1.el7sat/noarch/"
-                "rubygem-foreman_maintain-0.8.3-1.el7sat.noarch.rpm -y")
-        else:
-            foreman_maintain_package_update()
+        foreman_maintain_package_update()
         upgrade_using_foreman_maintain(sat_host=False)
     else:
         nonfm_upgrade(satellite_upgrade=False,

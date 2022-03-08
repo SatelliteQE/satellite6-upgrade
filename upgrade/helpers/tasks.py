@@ -1352,6 +1352,16 @@ def capsule_sync(cap_host):
     job_execution_time("Capsule content sync operation", start_time)
 
 
+def capsule_certs_update(cap_host):
+    """
+    Use to generate the capsule certificate on the satellite and upload it on
+    the capsule
+    """
+    tar_path = generate_capsule_certs(cap_host, True)
+    scp_opts = '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+    run(f"scp {scp_opts} {tar_path} root@{cap_host}:/root")
+
+
 def foreman_service_restart():
     """Restarts the foreman-maintain services"""
     services = run('foreman-maintain service restart')

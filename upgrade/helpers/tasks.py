@@ -2167,6 +2167,15 @@ def pulp2_pulp3_migration():
     return False
 
 
+def pulp2_removal():
+    """
+    Use to perform the pulp2 removal before running the upgrade.
+    :return: removal status code
+    """
+    output = run('satellite-maintain content remove-pulp2 -y --plaintext')
+    return output.return_code
+
+
 def bg_orphaned_task_monitor():
     """
     Use to monitor the background orphaned cleanup task.

@@ -16,6 +16,7 @@ from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import foreman_service_restart
 from upgrade.helpers.tasks import http_proxy_config
 from upgrade.helpers.tasks import nonfm_upgrade
+from upgrade.helpers.tasks import pulp2_removal
 from upgrade.helpers.tasks import sync_capsule_repos_to_satellite
 from upgrade.helpers.tasks import update_capsules_to_satellite
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
@@ -135,6 +136,9 @@ def satellite_capsule_upgrade(cap_host, sat_host):
 
     if settings.upgrade.foreman_maintain_capsule_upgrade:
         foreman_maintain_package_update()
+        # pulp2 removal required prior 7.0 ystream upgrade BZ#2054182
+        if settings.upgrade.from_version == '6.10':
+            pulp2_removal()
         upgrade_using_foreman_maintain(sat_host=False)
     else:
         nonfm_upgrade(satellite_upgrade=False,

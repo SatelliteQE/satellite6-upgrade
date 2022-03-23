@@ -907,7 +907,7 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     # logger.info("Removing the Original Manifest from Default Organization")
     # execute(hammer, 'subscription delete-manifest --organization-id 1',
     #         host=sat_host)
-    os.environ['HTTP_SERVER_HOSTNAME'] = settings.repos.rhel_repo_host
+    os.environ['HTTP_SERVER_HOSTNAME'] = settings.repos.rhel_os_repo_host
     # Run Avahi Task on upgrade boxes for REX tests to run
     execute(foreman_packages_installation_check, state="unlock", non_upgrade_task=True,
             host=sat_host)

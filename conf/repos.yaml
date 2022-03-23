@@ -6,7 +6,7 @@ REPOS:
   # Set maintenance repos tag to distinguish the old and new maintenance repos structure
   MAINTENANCE_REPOS_TAG: '@jinja {{"Satellite_Maintenance_Composes/Satellite_Maintenance_RHEL" + this.repos.rhel_major_version if this.robottelo.satellite_version in ["6.9", "6.10"] else "Satellite_Maintenance_" + this.repos.satellite_version_undr + "_Composes/Satellite_Maintenance_" + this.repos.satellite_version_undr + "_RHEL" + this.repos.rhel_major_version }}'
   # RHEL 6,7 and 8 repos for RHAI, OSCAP etc
-  RHEL_REPO_HOST:
+  RHEL_OS_REPO_HOST:
   # Capsule repository
   CAPSULE_REPO:
   # rhel6 custom repo

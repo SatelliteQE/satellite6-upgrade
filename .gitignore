@@ -26,5 +26,29 @@ satellite6_upgrade.egg-info/
 .eggs/
 __pycache__/
 
+# Test results
+logs/**
+/.coverage
+
+# For Eclipse
+/.metadata/
+/.project
+/.pydevproject
+/.settings/
+
 # For Pycharm
 /.idea
+
+# For VS Code
+/.vscode/
+
+# broker local files
+/broker_settings.yaml
+/inventory.yaml
+
+# Dynaconf local files
+/.secrets.yaml
+/.secrets_*.yaml
+/settings.local.yaml
+/settings*.local.yaml
+/conf/*.yaml

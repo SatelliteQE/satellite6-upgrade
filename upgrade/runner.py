@@ -4,10 +4,10 @@ Many commands are affected by environment variables. Unless stated otherwise,
 all environment variables are required.
 """
 import sys
-from distutils.version import LooseVersion
 
 from automation_tools import foreman_debug
 from automation_tools.satellite6.log import LogAnalyzer
+from distutils.version import LooseVersion
 from fabric.api import env
 from fabric.api import execute
 

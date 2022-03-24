@@ -3,7 +3,6 @@
 Many commands are affected by environment variables. Unless stated otherwise,
 all environment variables are required.
 """
-import os
 import re
 import socket
 import sys
@@ -13,11 +12,9 @@ from random import randrange
 
 import requests
 from automation_tools import setup_alternate_capsule_ports
-from automation_tools import setup_avahi_discovery
 from automation_tools import setup_capsule_firewall
 from automation_tools import setup_fake_manifest_certificate
 from automation_tools import setup_foreman_discovery
-from automation_tools import setup_rhv_ca
 from automation_tools.repository import disable_repos
 from automation_tools.repository import enable_repos
 from automation_tools.satellite6.capsule import generate_capsule_certs
@@ -907,16 +904,6 @@ def post_upgrade_test_tasks(sat_host, cap_host=None):
     # logger.info("Removing the Original Manifest from Default Organization")
     # execute(hammer, 'subscription delete-manifest --organization-id 1',
     #         host=sat_host)
-    os.environ['HTTP_SERVER_HOSTNAME'] = settings.repos.rhel_os_repo_host
-    # Run Avahi Task on upgrade boxes for REX tests to run
-    execute(foreman_packages_installation_check, state="unlock", non_upgrade_task=True,
-            host=sat_host)
-    execute(lambda: run('yum remove -y epel*'), host=sat_host)
-    execute(setup_avahi_discovery, host=sat_host)
-    execute(foreman_packages_installation_check, state="lock", non_upgrade_task=True,
-            host=sat_host)
-    # setup RHEV certificate so it can be added as a CR
-    execute(setup_rhv_ca, host=sat_host)
 
 
 def capsule_sync(cap_host):

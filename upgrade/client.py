@@ -102,56 +102,29 @@ def satellite6_client_setup():
             settings.repos.sattools_repo.rhel7
         ]):
             time.sleep(10)
-            vers = ['6.0', '6.1']
             logger.info('Syncing Tools repos of rhel7 in Satellite..')
-            if from_version in vers:
-                all_clients7 = list(clients7.values()) + list(puppet_clients7.values())
-                all_clients6 = list(clients6.values()) + list(puppet_clients6.values())
+            all_clients7 = list(clients7.keys()) + list(puppet_clients7.keys())
+            all_clients6 = list(clients6.keys()) + list(puppet_clients6.keys())
+            if float(settings.upgrade.to_version) >= 6.11:
+                sync_task = sync_client_repos_to_upgrade
             else:
-                all_clients7 = list(clients7.keys()) + list(puppet_clients7.keys())
-                all_clients6 = list(clients6.keys()) + list(puppet_clients6.keys())
-            if float(settings.upgrade.to_version) >= 7.0:
-                execute(
-                    sync_client_repos_to_upgrade,
-                    'rhel7',
-                    # Containers_ids are not required from sat version > 6.1 to
-                    # attach the subscription to client
-                    all_clients7,
-                    settings.upgrade.client_ak.rhel7,
-                    host=sat_host
-                )
-            else:
-                execute(
-                    sync_tools_repos_to_upgrade,
-                    'rhel7',
-                    # Containers_ids are not required from sat version > 6.1 to
-                    # attach the subscription to client
-                    all_clients7,
-                    settings.upgrade.client_ak.rhel7,
-                    host=sat_host
-                )
+                sync_task = sync_tools_repos_to_upgrade
+            execute(
+                sync_task,
+                'rhel7',
+                all_clients7,
+                settings.upgrade.client_ak.rhel7,
+                host=sat_host
+            )
             time.sleep(10)
             logger.info('Syncing Tools repos of rhel6 in Satellite..')
-            if float(settings.upgrade.to_version) >= 7.0:
-                execute(
-                    sync_client_repos_to_upgrade,
-                    'rhel6',
-                    # Containers_ids are not requied from sat version > 6.1 to
-                    # attach the subscriprion to client
-                    all_clients6,
-                    settings.upgrade.client_ak.rhel6,
-                    host=sat_host
-                )
-            else:
-                execute(
-                    sync_tools_repos_to_upgrade,
-                    'rhel6',
-                    # Containers_ids are not required from sat version > 6.1 to
-                    # attach the subscription to client
-                    all_clients6,
-                    settings.upgrade.client_ak.rhel6,
-                    host=sat_host
-                )
+            execute(
+                sync_task,
+                'rhel6',
+                all_clients6,
+                settings.upgrade.client_ak.rhel6,
+                host=sat_host
+            )
         # Refresh subscriptions on clients
         time.sleep(30)
         execute(

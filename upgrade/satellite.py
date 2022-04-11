@@ -105,7 +105,7 @@ def satellite_upgrade(zstream=False):
     # disable all the repos
     enable_disable_repo(disable_repos_name=["*"])
 
-    if settings.upgrade.downstream_fm_upgrade or settings.upgrade.to_version == "7.0":
+    if settings.upgrade.downstream_fm_upgrade or settings.upgrade.to_version == "6.11":
         settings.upgrade.whitelist_param = ", repositories-validate, repositories-setup"
         enable_disable_repo(enable_repos_name=common_sat_cap_repos)
     # maintenance repository update for satellite upgrade
@@ -121,9 +121,9 @@ def satellite_upgrade(zstream=False):
         )
     else:
         for repo in CUSTOM_SAT_REPO:
-            if float(settings.upgrade.to_version) >= 7.0 and repo == "sattools":
+            if float(settings.upgrade.to_version) >= 6.11 and repo == "sattools":
                 continue
-            if float(settings.upgrade.to_version) < 7.0 and \
+            if float(settings.upgrade.to_version) < 6.11 and \
                     (repo == "satutils" or repo == "satclient"):
                 continue
             repository_setup(
@@ -142,7 +142,7 @@ def satellite_upgrade(zstream=False):
         if not pulp_migration_status:
             logger.highlight("Pulp migration failed. Aborting")
             sys.exit(1)
-    # pulp2 removal required prior 7.0 ystream upgrade BZ#2054182
+    # pulp2 removal required prior 6.11 ystream upgrade BZ#2054182
     if settings.upgrade.from_version == '6.10':
         pulp2_removal()
     if settings.upgrade.foreman_maintain_satellite_upgrade:

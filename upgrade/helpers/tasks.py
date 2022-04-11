@@ -250,7 +250,7 @@ def sync_capsule_repos_to_satellite(capsules):
         add_custom_product_subscription_to_hosts(
             org, CUSTOM_CONTENTS['capsule']['prod'], capsules
         )
-    if sat_tools_repo and float(settings.upgrade.to_version) < 7.0:
+    if sat_tools_repo and float(settings.upgrade.to_version) < 6.11:
         add_custom_product_subscription_to_hosts(
             org, CUSTOM_CONTENTS['capsule_tools']['prod'], capsules
         )
@@ -881,7 +881,7 @@ def add_subscription_for_capsule(ak, org):
     cap_repo = sync_capsule_subscription_to_capsule_ak(org)
     scl_repo, server_repo = sync_rh_repos_to_satellite(org)
     maintenance_repo = sync_maintenance_repos_to_satellite_for_capsule(org)
-    if float(settings.upgrade.to_version) >= 7.0:
+    if float(settings.upgrade.to_version) >= 6.11:
         satclient_repo = sync_satclients_repos_to_satellite_for_capsule(org)
         satutils_repo = sync_utils_repos_to_satellite_for_capsule(org)
         sattools_repo = ""
@@ -955,7 +955,7 @@ def add_subscription_for_capsule(ak, org):
         except Exception as err:
             logger.warn(err)
 
-    if float(settings.upgrade.to_version) >= 7.0:
+    if float(settings.upgrade.to_version) >= 6.11:
         if settings.repos.satclient_repo[settings.upgrade.os] is None:
             ak.content_override(
                 data={
@@ -1402,7 +1402,7 @@ def maintenance_repo_update():
     Use to update the maintenance repo url for downstream y-stream version
     """
     os_version = settings.upgrade.os.upper()
-    if float(settings.upgrade.to_version) < float('7.0') or settings.upgrade.downstream_fm_upgrade:
+    if float(settings.upgrade.to_version) < 6.11 or settings.upgrade.downstream_fm_upgrade:
         maintenance_repo = settings.repos.satmaintenance_repo
         settings.repos.satmaintenance_repo = re.sub(
             f'Satellite_Maintenance_{settings.repos.satellite_version_undr}_Composes',
@@ -1505,8 +1505,8 @@ def upgrade_using_foreman_maintain(sat_host=True):
                 f'--whitelist="disk-performance" '
                 f'--target-version {settings.upgrade.to_version}.z -y')
         else:
-            # use beta until 7.0 becomes GA
-            if settings.upgrade.to_version == '7.0':
+            # use Beta until becomes GA
+            if settings.upgrade.to_version == '6.11':
                 with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
                     run(f'foreman-maintain upgrade run --whitelist="disk-performance'
                         f'{settings.upgrade.whitelist_param}" --target-version '

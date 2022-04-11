@@ -784,7 +784,7 @@ _depreciated = {
                      'satellite_default_pxelinux', 'pulp_sync_node_action_finish_timeout',
                      'satellite_default_ipxe']
     },
-    '7.0': {
+    '6.11': {
         'settings': ['db_pending_migration', 'default_location_puppet_content',
                      'erratum_install_batch_size', 'max_trend', 'satellite_default_provision',
                      'satellite_default_finish', 'foreman_tasks_proxy_action_start_timeout',

@@ -43,7 +43,11 @@ def test_positive_capsules_by_features(pre, post):
     :expectedresults: All features of all capsules should be retained post
         upgrade
     """
-    assert existence(pre, post, component)
+    assert existence(
+        list(map(str.strip, pre.split(','))),
+        list(map(str.strip, post.split(','))),
+        component
+    )
 
 
 @pytest.mark.parametrize("pre,post", cap_name, ids=pytest_ids(cap_name))

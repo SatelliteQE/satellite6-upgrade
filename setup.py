@@ -37,15 +37,17 @@ setup(
         'Natural Language :: English',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.8',
     ),
     packages=find_packages(),
     # some requirements are also in requirements*.txt files
     # Its assumed this is installed as a dependency of robottelo, frozen packages are defined there
     install_requires=[
+        'broker',
+        'dynaconf[vault]',
         'Fabric3',
         'fauxfactory',
+        'jinja2',
         'ovirt-engine-sdk-python',
         'pycurl',
         'pytest',
@@ -54,6 +56,6 @@ setup(
         'python-bugzilla==1.2.2',
         'requests',
         'robozilla',
-        'shade'
+        'shade',
     ],
 )

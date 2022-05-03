@@ -41,6 +41,7 @@ logs/**
 
 # For VS Code
 /.vscode/
+*.code-workspace
 
 # broker local files
 /broker_settings.yaml
@@ -52,3 +53,4 @@ logs/**
 /settings.local.yaml
 /settings*.local.yaml
 /conf/*.yaml
+.env

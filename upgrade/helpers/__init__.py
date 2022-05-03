@@ -21,6 +21,7 @@ settings = Dynaconf(
     preload=["conf/*.yaml"],
     envless_mode=True,
     lowercase_read=True,
+    load_dotenv=True,
 )
 
 # Use to create the variant based on the supported satellite version list

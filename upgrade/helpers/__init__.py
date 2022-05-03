@@ -21,4 +21,5 @@ settings = Dynaconf(
     preload=["conf/*.yaml"],
     envless_mode=True,
     lowercase_read=True,
+    load_dotenv=True,
 )

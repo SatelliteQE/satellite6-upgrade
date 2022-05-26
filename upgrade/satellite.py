@@ -21,7 +21,6 @@ from upgrade.helpers.tasks import mongo_db_engine_upgrade
 from upgrade.helpers.tasks import nonfm_upgrade
 from upgrade.helpers.tasks import post_migration_failure_fix
 from upgrade.helpers.tasks import pulp2_pulp3_migration
-from upgrade.helpers.tasks import pulp2_removal
 from upgrade.helpers.tasks import repository_setup
 from upgrade.helpers.tasks import satellite_backup
 from upgrade.helpers.tasks import setup_satellite_repo
@@ -142,9 +141,6 @@ def satellite_upgrade(zstream=False):
         if not pulp_migration_status:
             logger.highlight("Pulp migration failed. Aborting")
             sys.exit(1)
-    # pulp2 removal required prior 6.11 ystream upgrade BZ#2054182
-    if settings.upgrade.from_version == '6.10':
-        pulp2_removal()
     if settings.upgrade.foreman_maintain_satellite_upgrade:
         upgrade_using_foreman_maintain()
     else:

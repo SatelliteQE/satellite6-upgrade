@@ -30,8 +30,6 @@ UPGRADE:
     - "n-1"
   # Upgrade codebase select the repository based on the distribution.
   DISTRIBUTION: "downstream"
-  # By default Satellite upgrade perform by foreman-maintain.
-  FOREMAN_MAINTAIN_SATELLITE_UPGRADE: true
   # Satellite hostname.
   SATELLITE_HOSTNAME:
   # capsule hostname
@@ -40,8 +38,6 @@ UPGRADE:
   DOWNSTREAM_FM_UPGRADE: false
   # Used to whitelist the mentioned params in the foreman-maintain upgrade.
   WHITELIST_PARAM: ""
-  # Capsule upgrade via foreman-maintain, due to limited version support, we keep it as false.
-  FOREMAN_MAINTAIN_CAPSULE_UPGRADE: false
   # User Defined clients, we use it for content host upgrade.
   USER_DEFINED_CLIENT_HOSTS:
     RHEL6:

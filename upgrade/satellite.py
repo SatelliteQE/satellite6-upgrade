@@ -1,12 +1,8 @@
 import sys
 
 from automation_tools import install_prerequisites
-from automation_tools import setup_satellite_firewall
-from automation_tools.utils import update_packages
 from fabric.api import env
 from fabric.api import execute
-from fabric.api import run
-from robozilla.decorators import bz_bug_is_open
 
 from upgrade.helpers import settings
 from upgrade.helpers.constants.constants import CUSTOM_SAT_REPO
@@ -14,17 +10,14 @@ from upgrade.helpers.constants.constants import RHEL_CONTENTS
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
-from upgrade.helpers.tasks import foreman_packages_installation_check
 from upgrade.helpers.tasks import foreman_service_restart
 from upgrade.helpers.tasks import hammer_config
 from upgrade.helpers.tasks import maintenance_repo_update
 from upgrade.helpers.tasks import mongo_db_engine_upgrade
-from upgrade.helpers.tasks import nonfm_upgrade
 from upgrade.helpers.tasks import post_migration_failure_fix
 from upgrade.helpers.tasks import pulp2_pulp3_migration
 from upgrade.helpers.tasks import repository_setup
 from upgrade.helpers.tasks import satellite_backup
-from upgrade.helpers.tasks import setup_satellite_repo
 from upgrade.helpers.tasks import subscribe
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
@@ -75,8 +68,6 @@ def satellite_upgrade(zstream=False):
             TO_VERSION
                 Satellite version to upgrade to and enable repos while upgrading.
                 e.g '6.1','6.2', '6.3'
-            FOREMAN_MAINTAIN_SATELLITE_UPGRADE
-                use foreman-maintain for satellite upgrade
 
     else:
         - Upgrades Satellite Server to its latest zStream version
@@ -86,8 +77,6 @@ def satellite_upgrade(zstream=False):
                 Current satellite version which will be upgraded to latest version
             TO_VERSION
                 Next satellite version to which satellite will be upgraded
-            FOREMAN_MAINTAIN_SATELLITE_UPGRADE
-                use foreman-maintain for satellite upgrade
 
     """
     logger.highlight('\n========== SATELLITE UPGRADE =================\n')
@@ -101,27 +90,23 @@ def satellite_upgrade(zstream=False):
         RHEL_CONTENTS["rhscl"]["label"],
         RHEL_CONTENTS["server"]["label"]
     ]
-    if settings.upgrade.downstream_fm_upgrade:
-        settings.upgrade.whitelist_param = ", repositories-validate, repositories-setup"
 
     # disable all the repos
     enable_disable_repo(disable_repos_name=["*"])
 
+    if settings.upgrade.downstream_fm_upgrade:
+        settings.upgrade.whitelist_param = ", repositories-validate, repositories-setup"
+        enable_disable_repo(enable_repos_name=common_sat_cap_repos)
+
     # maintenance repository update for satellite upgrade
     maintenance_repo_update()
 
-    # It is required to enable the tools and server for non-fm upgrade because in
-    # fm both the repos enabled by the fm tool.
-    if not settings.upgrade.foreman_maintain_satellite_upgrade:
-        enable_disable_repo(enable_repos_name=common_sat_cap_repos)
     if settings.upgrade.distribution == 'cdn':
         enable_disable_repo(
             enable_repos_name=[f'rhel-{major_ver}-server-satellite-maintenance-6-rpms']
         )
     else:
         for repo in CUSTOM_SAT_REPO:
-            if repo == "sattools" and bz_bug_is_open(1980798):
-                continue
             repository_setup(
                 CUSTOM_SAT_REPO[repo]["repository"],
                 CUSTOM_SAT_REPO[repo]["repository_name"],
@@ -139,25 +124,8 @@ def satellite_upgrade(zstream=False):
             logger.highlight("Pulp migration failed. Aborting")
             sys.exit(1)
 
-    if settings.upgrade.foreman_maintain_satellite_upgrade:
-        upgrade_using_foreman_maintain()
-    else:
-        # To install the package using foreman-maintain and it is applicable
-        # above 6.7 version.
-        setup_satellite_firewall()
-        if not zstream:
-            run('rm -rf /etc/yum.repos.d/rhel-{optional,released}.repo')
-            logger.info('Updating system packages ... ')
-            foreman_packages_installation_check(state="unlock")
-            setup_satellite_repo()
-            foreman_maintain_package_update()
-            update_packages(quiet=True)
+    upgrade_using_foreman_maintain()
 
-        if settings.upgrade.distribution == "cdn":
-            enable_disable_repo(enable_repos_name=[f'rhel-{major_ver}-server-satellite'
-                                                   f'-{settings.upgrade.to_version}-rpms'])
-        nonfm_upgrade()
-        foreman_packages_installation_check(state="lock")
     # Rebooting the satellite for kernel update if any
     if settings.upgrade.satellite_capsule_setup_reboot:
         reboot(180)

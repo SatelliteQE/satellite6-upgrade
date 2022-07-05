@@ -12,14 +12,11 @@ from random import randrange
 
 import requests
 from automation_tools import setup_alternate_capsule_ports
-from automation_tools import setup_capsule_firewall
 from automation_tools import setup_fake_manifest_certificate
 from automation_tools import setup_foreman_discovery
 from automation_tools.repository import disable_repos
 from automation_tools.repository import enable_repos
-from automation_tools.satellite6.capsule import generate_capsule_certs
 from automation_tools.utils import get_discovery_image
-from automation_tools.utils import update_packages
 from fabric import exceptions
 from fabric.api import env
 from fabric.api import execute
@@ -1323,55 +1320,6 @@ def enable_disable_repo(disable_repos_name=None, enable_repos_name=None):
         [enable_repos(f'{repo}') for repo in enable_repos_name]
 
 
-def nonfm_upgrade(satellite_upgrade=True,
-                  cap_host=None, sat_host=None):
-    """
-    The purpose of this module to perform the upgrade task without foreman-maintain.
-    In this function we setup the repository, stop the foreman-maintain services,
-    cleanup, and execute satellite upgrade task"
-    :param bool satellite_upgrade: If satellite_upgrade is True then upgrade
-    type satellite otherwise capsule
-    :param bool zstream: Capsule zStream upgrade
-    :param str cap_host: hostname of capsule it used to generate certificate for
-    capsules major version upgrade.
-    :param str sat_host: hostname of satellite used to generate certificate for
-    capsules major version upgrade.
-    :
-    """
-    # Check what repos are set
-    upgrade_type = "satellite" if satellite_upgrade else "capsule"
-    run('yum repolist')
-    # Stop foreman-maintain services
-    run('foreman-maintain service stop')
-    run('yum clean all', warn_only=True)
-    # Updating the packages again after setting sat repo
-    logger.info(f'Updating system and {upgrade_type} packages... ')
-    preyum_time = datetime.now().replace(microsecond=0)
-    update_packages(quiet=False)
-    postyum_time = datetime.now().replace(microsecond=0)
-    logger.highlight(f'Time taken for system and {upgrade_type} packages update'
-                     f' - {str(postyum_time - preyum_time)}')
-    # non zStream capsule upgrade
-    if sat_host and cap_host:
-        execute(
-            generate_capsule_certs,
-            cap_host,
-            True,
-            host=sat_host
-        )
-        execute(lambda: run(f"scp -o 'StrictHostKeyChecking no' {cap_host}-certs.tar "
-                            f"root@{cap_host}:/home/"), host=sat_host)
-        setup_capsule_firewall()
-        preup_time = datetime.now().replace(microsecond=0)
-        upgrade_task(upgrade_type, cap_host)
-    else:
-        preup_time = datetime.now().replace(microsecond=0)
-        upgrade_task(upgrade_type)
-    postup_time = datetime.now().replace(microsecond=0)
-    logger.highlight('Time taken for satellite upgrade - {}'.format(
-        str(postup_time - preup_time)))
-
-
 def upgrade_task(upgrade_type, cap_host=None):
     """
     :param string upgrade_type: upgrade type would be an string either it is
@@ -1476,24 +1424,6 @@ def mongo_db_engine_upgrade(upgrade_type="satellite"):
     logger.info("MongoDB DataBase Engine Upgraded Successfully")
     logger.highlight('Time taken by MongoDB DataBase Engine Upgrade - {}'.format(
         str(postup_time - preup_time)))
-
-
-def foreman_packages_installation_check(state="unlock", non_upgrade_task=False):
-    """
-    This function is used to change the state of the foreman-package installation method,
-    And it will be applicable only if the FOREMAN_MAINTAIN_SATELLITE_UPGRADE is False.
-
-    :param str state: To perform the installation using foreman-maintain the state will be
-    "lock" otherwise "unlock"
-    :param bool non_upgrade_task: to unlock the packages for non_upgrade_task
-
-    """
-    if not settings.upgrade.foreman_maintain_satellite_upgrade or non_upgrade_task:
-        logger.info("{} the foreman-maintain packages".format(state))
-        run("foreman-maintain packages {} -y".format(state))
-    else:
-        logger.info("Failed to apply the {} state on foreman-maintain packages , "
-                    "because FOREMAN_MAINTAIN_SATELLITE_UPGRADE is true")
 
 
 def job_execution_time(task_name, start_time=None):

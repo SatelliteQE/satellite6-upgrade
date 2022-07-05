@@ -15,7 +15,6 @@ from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import foreman_service_restart
 from upgrade.helpers.tasks import http_proxy_config
-from upgrade.helpers.tasks import nonfm_upgrade
 from upgrade.helpers.tasks import sync_capsule_repos_to_satellite
 from upgrade.helpers.tasks import update_capsules_to_satellite
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
@@ -133,13 +132,8 @@ def satellite_capsule_upgrade(cap_host, sat_host):
         enable_disable_repo(enable_repos_name=[
             f"rhel-{major_ver}-server-ansible-2.9-rpms"])
 
-    if settings.upgrade.foreman_maintain_capsule_upgrade:
-        foreman_maintain_package_update()
-        upgrade_using_foreman_maintain(sat_host=False)
-    else:
-        nonfm_upgrade(satellite_upgrade=False,
-                      cap_host=cap_host,
-                      sat_host=sat_host)
+    foreman_maintain_package_update()
+    upgrade_using_foreman_maintain(sat_host=False)
     # Rebooting the capsule for kernel update if any
     reboot(160)
     host_ssh_availability_check(cap_host)
@@ -191,10 +185,7 @@ def satellite_capsule_zstream_upgrade(cap_host):
         enable_disable_repo(enable_repos_name=ansible_repos)
     # Check what repos are set
     # setup_foreman_maintain_repo()
-    if settings.upgrade.foreman_maintain_capsule_upgrade:
-        upgrade_using_foreman_maintain(sat_host=False)
-    else:
-        nonfm_upgrade(satellite_upgrade=False)
+    upgrade_using_foreman_maintain(sat_host=False)
     # Rebooting the capsule for kernel update if any
     if settings.upgrade.satellite_capsule_setup_reboot:
         reboot(160)

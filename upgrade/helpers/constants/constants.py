@@ -49,11 +49,11 @@ RHEL_CONTENTS = {
     },
     'ansible': {
         'prod': 'Red Hat Ansible Engine',
-        'repofull': f'Red Hat Ansible Engine {settings.upgrade.ansible_repo_version} RPMs for Red '
+        'repofull': f'Red Hat Ansible Engine 2.9 RPMs for Red '
                     f'Hat Enterprise Linux {os_ver} Server {arch}',
-        'repo': f'Red Hat Ansible Engine {settings.upgrade.ansible_repo_version} RPMs for Red Hat '
+        'repo': f'Red Hat Ansible Engine 2.9 RPMs for Red Hat '
                 f'Enterprise Linux {os_ver} Server',
-        'label': f'rhel-{os_ver}-server-ansible-{settings.upgrade.ansible_repo_version}-rpms'
+        'label': f'rhel-{os_ver}-server-ansible-2.9-rpms'
     },
 }
 

@@ -131,7 +131,7 @@ def satellite_capsule_upgrade(cap_host, sat_host):
             enable_disable_repo(disable_repos_name=capsule_repos)
     with fabric_settings(warn_only=True):
         enable_disable_repo(enable_repos_name=[
-            f"rhel-{major_ver}-server-ansible-{settings.upgrade.ansible_repo_version}-rpms"])
+            f"rhel-{major_ver}-server-ansible-2.9-rpms"])
 
     if settings.upgrade.foreman_maintain_capsule_upgrade:
         foreman_maintain_package_update()
@@ -187,8 +187,7 @@ def satellite_capsule_zstream_upgrade(cap_host):
             enable_disable_repo(enable_repos_name=capsule_repos)
         else:
             enable_disable_repo(disable_repos_name=capsule_repos)
-        ansible_repos = [f"rhel-{major_ver}-server-ansible-"
-                         f"{settings.upgrade.ansible_repo_version}-rpms"]
+        ansible_repos = [f"rhel-{major_ver}-server-ansible-2.9-rpms"]
         enable_disable_repo(enable_repos_name=ansible_repos)
     # Check what repos are set
     # setup_foreman_maintain_repo()

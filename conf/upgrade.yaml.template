@@ -30,8 +30,6 @@ UPGRADE:
     - "n-1"
   # Upgrade codebase select the repository based on the distribution.
   DISTRIBUTION: "downstream"
-  # Ansible repo version
-  ANSIBLE_REPO_VERSION: "2.9"
   # By default Satellite upgrade perform by foreman-maintain.
   FOREMAN_MAINTAIN_SATELLITE_UPGRADE: true
   # Satellite hostname.

@@ -1835,8 +1835,7 @@ def satellite_restore_setup():
             f"mount -o v3 {settings.clone.db_server}:"
             f"/root/customer-dbs {settings.clone.backup_dir}")
         enable_disable_repo(enable_repos_name=[
-            f"rhel-{settings.upgrade.os[-1]}-server-ansible-"
-            f"{settings.upgrade.ansible_repo_version}-rpms"])
+            f"rhel-{settings.upgrade.os[-1]}-server-ansible-2.9-rpms"])
         run("yum install -y ansible")
 
     if settings.clone.clone_rpm:

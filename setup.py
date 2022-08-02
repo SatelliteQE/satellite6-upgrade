@@ -43,7 +43,7 @@ setup(
     # some requirements are also in requirements*.txt files
     # Its assumed this is installed as a dependency of robottelo, frozen packages are defined there
     install_requires=[
-        'broker==0.2.0',
+        'broker',
         'dynaconf[vault]',
         'Fabric3',
         'fauxfactory',

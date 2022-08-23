@@ -13,8 +13,8 @@ from ovirtsdk4 import types
 from upgrade.helpers import settings
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import capsule_sync
-from upgrade.helpers.tasks import check_necessary_env_variables_for_upgrade
 from upgrade.helpers.tasks import check_ntpd
+from upgrade.helpers.tasks import check_settings_for_upgrade
 from upgrade.helpers.tasks import foreman_service_restart
 
 
@@ -287,7 +287,7 @@ def validate_and_create_rhevm4_templates(product):
         new_sat_template = settings.upgrade_old_infra.rhevm.rhev_sat_image + "_new"
         cap_host = settings.upgrade_old_infra.rhevm.rhev_cap_host
         new_cap_template = settings.upgrade_old_infra.rhevm.rhev_cap_image + "_new"
-        if check_necessary_env_variables_for_upgrade('capsule'):
+        if check_settings_for_upgrade('capsule'):
             execute(check_ntpd, host=sat_host)
             execute(foreman_service_restart, host=sat_host)
             execute(capsule_sync, cap_host, host=sat_host)

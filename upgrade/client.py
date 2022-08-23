@@ -13,8 +13,7 @@ from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
 from upgrade.helpers.docker import refresh_subscriptions_on_docker_clients
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import puppet_autosign_hosts
-from upgrade.helpers.tasks import sync_client_repos_to_upgrade
-from upgrade.helpers.tasks import sync_tools_repos_to_upgrade
+from upgrade.helpers.tasks import sync_client_repo_to_upgrade
 from upgrade.helpers.tools import version_filter
 
 logger = logger()
@@ -38,7 +37,6 @@ def satellite6_client_setup():
     puppet_clients6 = puppet_clients7 = None
     docker_vm = settings.upgrade.docker_vm
     clients_count = settings.upgrade.clients_count
-    from_version = settings.upgrade.from_version
     sat_host = env.get('satellite_host')
     if clients6:
         clients6 = [client.strip() for client in str(clients6).split(',')]
@@ -46,7 +44,7 @@ def satellite6_client_setup():
         if settings.repos.sattools_repo.rhel6:
             logger.info('Syncing Tools repos of rhel6 in Satellite:')
             execute(
-                sync_tools_repos_to_upgrade, 'rhel6', clients6,
+                sync_client_repo_to_upgrade, 'rhel6', clients6,
                 settings.upgrade.client_ak.rhel6,
                 host=sat_host)
     if clients7:
@@ -55,7 +53,7 @@ def satellite6_client_setup():
         if settings.repos.sattools_repo.rhel7:
             logger.info('Syncing Tools repos of rhel7 in Satellite:')
             execute(
-                sync_tools_repos_to_upgrade, 'rhel7', clients7,
+                sync_client_repo_to_upgrade, 'rhel7', clients7,
                 settings.upgrade.client_ak.rhel7,
                 host=sat_host)
 
@@ -84,8 +82,7 @@ def satellite6_client_setup():
             host=docker_vm
         )[docker_vm]
         # Allow all puppet clients to be signed automatically
-        execute(
-            puppet_autosign_hosts, from_version, ['*'], host=sat_host)
+        execute(puppet_autosign_hosts, ['*'], host=sat_host)
         puppet_clients7 = execute(
             generate_satellite_docker_clients_on_rhevm, 'rhel7', 2,
             puppet=True,
@@ -105,12 +102,8 @@ def satellite6_client_setup():
             logger.info('Syncing Tools repos of rhel7 in Satellite..')
             all_clients7 = list(clients7.keys()) + list(puppet_clients7.keys())
             all_clients6 = list(clients6.keys()) + list(puppet_clients6.keys())
-            if float(settings.upgrade.to_version) >= 6.11:
-                sync_task = sync_client_repos_to_upgrade
-            else:
-                sync_task = sync_tools_repos_to_upgrade
             execute(
-                sync_task,
+                sync_client_repo_to_upgrade,
                 'rhel7',
                 all_clients7,
                 settings.upgrade.client_ak.rhel7,
@@ -119,7 +112,7 @@ def satellite6_client_setup():
             time.sleep(10)
             logger.info('Syncing Tools repos of rhel6 in Satellite..')
             execute(
-                sync_task,
+                sync_client_repo_to_upgrade,
                 'rhel6',
                 all_clients6,
                 settings.upgrade.client_ak.rhel6,
@@ -137,8 +130,7 @@ def satellite6_client_setup():
             list(clients7.values()) + list(puppet_clients7.values()),
             host=docker_vm)
         # Resetting autosign conf
-        execute(
-            puppet_autosign_hosts, from_version, [''], False, host=sat_host)
+        execute(puppet_autosign_hosts, [''], False, host=sat_host)
         time.sleep(400)
         logger.info("wait for all the running yum command's completions")
         for agent in puppet_clients7, puppet_clients6:
@@ -246,7 +238,7 @@ def docker_clients_agent_version(clients, agent):
             pst = version_filter(command_output)
             clients_dict[hostname] = pst
         except Exception as ex:
-            logger.warn(ex)
+            logger.warning(ex)
             clients_dict[hostname] = f"{agent} package not updated"
     return clients_dict
 
@@ -269,12 +261,12 @@ def docker_client_missing_package_installation(clients, agent):
                 time.sleep(60)
             command_output = docker_execute_command(container, f'rpm -q {agent}', True)
             if re.search(f'package {agent} is not installed', command_output):
-                logger.warn(f"base version of {agent} package missed(because of timeout) on "
-                            f"{container} so installing it separately")
+                logger.warning(f'base version of {agent} package missed(because of timeout) on '
+                               f'{container} so installing it separately')
                 docker_execute_command(container, f'yum install -y {agent}', True)
                 command_output = docker_execute_command(container, f'rpm -q {agent}', True)
                 if re.search(f'package {agent} is not installed', command_output):
-                    logger.warn(f"failed to install package {agent} on {container}")
+                    logger.warning(f"failed to install package {agent} on {container}")
                 else:
                     logger.info(f"base version of {agent} package {command_output} installed "
                                 f"successfully on {container}")
@@ -282,4 +274,4 @@ def docker_client_missing_package_installation(clients, agent):
                 logger.info(f"{agent} package {command_output} is available before "
                             f"upgrade on {container}")
         except Exception as ex:
-            logger.warn(ex)
+            logger.warning(ex)

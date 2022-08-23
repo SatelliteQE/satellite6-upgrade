@@ -18,7 +18,6 @@
 """
 import pytest
 
-from upgrade_tests.helpers.common import dont_run_to_upgrade
 from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade
 from upgrade_tests.helpers.existence import pytest_ids
@@ -31,7 +30,6 @@ sett_desc = compare_postupgrade(component, 'description')
 
 
 # Tests
-@dont_run_to_upgrade('6.1')
 @pytest.mark.parametrize("pre,post", sett_name, ids=pytest_ids(sett_name))
 def test_positive_settings_by_name(pre, post):
     """Test all settings are existing post upgrade by their names
@@ -43,7 +41,6 @@ def test_positive_settings_by_name(pre, post):
     assert existence(pre, post)
 
 
-@dont_run_to_upgrade('6.1')
 @pytest.mark.parametrize("pre,post", sett_value, ids=pytest_ids(sett_value))
 def test_positive_settings_by_value(pre, post):
     """Test all settings value are preserved post upgrade
@@ -55,7 +52,6 @@ def test_positive_settings_by_value(pre, post):
     assert existence(pre, post, component=component)
 
 
-@dont_run_to_upgrade('6.1')
 @pytest.mark.parametrize("pre,post", sett_desc, ids=pytest_ids(sett_desc))
 def test_positive_settings_by_description(pre, post):
     """Test all settings descriptions are existing post upgrade

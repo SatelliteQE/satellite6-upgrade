@@ -32,11 +32,9 @@ def generate_satellite_docker_clients_on_rhevm(
 
     Environment Variables:
 
-    RHEV_SAT_HOST
+    SATELLITE_HOSTNAME
         The satellite hostname for which clients to be generated and
         registered
-    RHEV_CLIENT_AK
-        The AK using which client will be registered to satellite
     """
     if int(clients_count) == 0:
         logger.warning(

@@ -19,7 +19,6 @@ associations post upgrade
 """
 import pytest
 
-from upgrade_tests.helpers.common import dont_run_to_upgrade
 from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade
 from upgrade_tests.helpers.existence import pytest_ids
@@ -32,7 +31,6 @@ cap_url = compare_postupgrade(component, 'url')
 
 
 # Tests
-@dont_run_to_upgrade('6.1')
 @pytest.mark.parametrize(
     "pre,post", cap_features, ids=pytest_ids(cap_features))
 def test_positive_capsules_by_features(pre, post):

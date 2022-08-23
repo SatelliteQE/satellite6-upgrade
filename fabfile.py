@@ -15,7 +15,6 @@ from upgrade.helpers.tasks import create_capsule_ak
 from upgrade.helpers.tasks import generate_custom_certs
 from upgrade.helpers.tasks import job_execution_time
 from upgrade.helpers.tasks import sync_capsule_repos_to_satellite
-from upgrade.helpers.tasks import sync_tools_repos_to_upgrade
 from upgrade.helpers.tasks import update_scap_content
 from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tools import copy_ssh_key

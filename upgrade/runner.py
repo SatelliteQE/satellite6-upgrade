@@ -1,8 +1,4 @@
-"""A set of upgrade tasks for upgrading Satellite, Capsule and Client.
-
-Many commands are affected by environment variables. Unless stated otherwise,
-all environment variables are required.
-"""
+"""A set of upgrade tasks for upgrading Satellite, Capsule and Client."""
 import sys
 
 from automation_tools import foreman_debug
@@ -18,7 +14,7 @@ from upgrade.client import satellite6_client_setup
 from upgrade.client import satellite6_client_upgrade
 from upgrade.helpers import settings
 from upgrade.helpers.logger import logger
-from upgrade.helpers.tasks import check_necessary_env_variables_for_upgrade
+from upgrade.helpers.tasks import check_settings_for_upgrade
 from upgrade.helpers.tasks import maintenance_repo_update
 from upgrade.helpers.tasks import post_upgrade_test_tasks
 from upgrade.helpers.tasks import pre_upgrade_system_checks
@@ -53,7 +49,7 @@ def product_setup_for_upgrade_on_brokers_machine(product, os_version, satellite,
     cap_hosts = None
     clients6 = clients7 = puppet_clients7 = puppet_clients6 = None
     env.disable_known_hosts = True
-    check_necessary_env_variables_for_upgrade(product)
+    check_settings_for_upgrade(product)
 
     clients6 = clients7 = puppet_clients7 = puppet_clients6 = None
     logger.info('Setting up Satellite ....')
@@ -176,7 +172,7 @@ def product_upgrade(product, upgrade_type, satellite=None):
             execute(unsubscribe, host=sat_host)
 
     env.disable_known_hosts = True
-    check_necessary_env_variables_for_upgrade(product)
+    check_settings_for_upgrade(product)
     logger.info(f'performing upgrade from {settings.upgrade.from_version} TO '
                 f'{settings.upgrade.to_version}')
     # Get the setup dict returned by setup_products_for_upgrade

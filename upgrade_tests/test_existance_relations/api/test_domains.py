@@ -18,7 +18,6 @@
 """
 import pytest
 
-from upgrade.helpers import settings
 from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade
 from upgrade_tests.helpers.existence import pytest_ids
@@ -37,7 +36,4 @@ def test_positive_domains_by_subnet(pre, post):
 
     :expectedresults: Subnets of all domains should be retained post upgrade
     """
-    if settings.upgrade.to_version == '6.4':
-        if post:
-            [subnet.pop('description') for subnet in post]
     assert existence(pre, post)

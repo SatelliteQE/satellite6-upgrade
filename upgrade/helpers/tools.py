@@ -212,23 +212,13 @@ def get_sat_cap_version(product):
     :return string: Satellite/Capsule version
     """
     if 'sat' in product.lower():
-        _6_2_VERSION_COMMAND = 'rpm -q satellite'
-        _LT_6_2_VERSION_COMMAND = (
-            'grep "VERSION" /usr/share/foreman/lib/satellite/version.rb'
-        )
+        VERSION_COMMAND = 'rpm -q satellite'
     if 'cap' in product.lower():
-        _6_2_VERSION_COMMAND = 'rpm -q satellite-capsule'
-        _LT_6_2_VERSION_COMMAND = 'None'
-    results = (
-        _extract_sat_cap_version(cmd) for cmd in
-        (_6_2_VERSION_COMMAND, _LT_6_2_VERSION_COMMAND)
-    )
-    for version, cmd_result in results:
-        if version:
-            return version
-    logger.warning('Unable to detect installed version due to:\n{}'.format(
-        cmd_result
-    ))
+        VERSION_COMMAND = 'rpm -q satellite-capsule'
+    version, cmd_result = _extract_sat_cap_version(VERSION_COMMAND)
+    if version:
+        return version
+    logger.warning('Unable to detect installed version due to:\n{}'.format(cmd_result))
 
 
 def create_setup_dict(setups_dict):

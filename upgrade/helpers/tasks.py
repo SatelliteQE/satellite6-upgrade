@@ -1361,8 +1361,7 @@ def satellite_backup():
     preyum_time = datetime.now().replace(microsecond=0)
     with fabric_settings(warn_only=True):
         output = run(f"satellite-maintain backup {satellite_backup_type} "
-                     f"--skip-pulp-content -y {settings.clone.backup_dir}"
-                     f"_{satellite_backup_type}")
+                     f"--skip-pulp-content -y /tmp")
         postyum_time = datetime.now().replace(microsecond=0)
         logger.highlight(f'Time taken by {satellite_backup_type} satellite backup - '
                          f'{str(postyum_time - preyum_time)}')

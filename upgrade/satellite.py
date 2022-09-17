@@ -12,7 +12,6 @@ from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import foreman_service_restart
 from upgrade.helpers.tasks import hammer_config
-from upgrade.helpers.tasks import maintenance_repo_update
 from upgrade.helpers.tasks import mongo_db_engine_upgrade
 from upgrade.helpers.tasks import post_migration_failure_fix
 from upgrade.helpers.tasks import pulp2_pulp3_migration
@@ -40,7 +39,6 @@ def satellite_setup(satellite_host):
     execute(install_prerequisites, host=satellite_host)
     execute(subscribe, host=satellite_host)
     execute(foreman_service_restart, host=satellite_host)
-    maintenance_repo_update()
     env['satellite_host'] = satellite_host
     settings.upgrade.satellite_hostname = satellite_host
     execute(hammer_config, host=satellite_host)
@@ -94,12 +92,9 @@ def satellite_upgrade(zstream=False):
     # disable all the repos
     enable_disable_repo(disable_repos_name=["*"])
 
-    if settings.upgrade.downstream_fm_upgrade:
+    if settings.upgrade.distribution != 'cdn':
         settings.upgrade.whitelist_param = ", repositories-validate, repositories-setup"
         enable_disable_repo(enable_repos_name=common_sat_cap_repos)
-
-    # maintenance repository update for satellite upgrade
-    maintenance_repo_update()
 
     if settings.upgrade.distribution == 'cdn':
         enable_disable_repo(

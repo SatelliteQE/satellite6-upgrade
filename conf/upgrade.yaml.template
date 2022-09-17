@@ -34,8 +34,6 @@ UPGRADE:
   SATELLITE_HOSTNAME:
   # capsule hostname
   CAPSULE_HOSTNAME:
-  # This statement will true until downstream release not become beta.
-  DOWNSTREAM_FM_UPGRADE: false
   # Used to whitelist the mentioned params in the foreman-maintain upgrade.
   WHITELIST_PARAM: ""
   # User Defined clients, we use it for content host upgrade.

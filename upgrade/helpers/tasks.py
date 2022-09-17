@@ -1011,27 +1011,6 @@ def setup_satellite_repo():
                 )
 
 
-def maintenance_repo_update():
-    """
-    Use to update the maintenance repo url for downstream y-stream version
-    """
-    os_version = settings.upgrade.os.upper()
-    if settings.upgrade.to_version == '7.0' or settings.upgrade.downstream_fm_upgrade:
-        maintenance_repo = settings.repos.satmaintenance_repo
-        settings.repos.satmaintenance_repo = re.sub(
-            f'Satellite_Maintenance_Next_{os_version}|Satellite_Maintenance_{os_version}',
-            f'Satellite_{settings.repos.satellite_version_undr}_with_{os_version}_Server',
-            settings.repos.satmaintenance_repo, 1)
-        logger.info(f"updated maintenance repo for downstream y stream upgrade "
-                    f"{settings.repos.satmaintenance_repo}")
-        if requests.get(f"{settings.repos.satmaintenance_repo }").status_code != 200:
-            settings.repos.satmaintenance_repo = maintenance_repo
-            logger.warn(f"updated downstream y-stream repo did not work "
-                        f"so we rollbacked to the stable maintenance repo "
-                        f"{settings.repos.satmaintenance_repo}")
-        CUSTOM_SAT_REPO["foreman-maintain"]["base_url"] = settings.repos.satmaintenance_repo
-
-
 def setup_foreman_maintain_repo():
     """Task which setup repo for foreman-maintain.
 
@@ -1342,9 +1321,13 @@ def upgrade_validation(upgrade_type="satellite", satellite_services_action="stat
     """
     with fabric_settings(warn_only=True):
         if upgrade_type == "satellite":
-            result = run('hammer ping', warn_only=True)
-            if result.return_code != 0:
-                logger.warn("hammer ping: some of satellite services in the failed state")
+            for i in range(1, 6):
+                result = run('hammer ping', warn_only=True)
+                if result.succeeded:
+                    break
+                else:
+                    logger.warning("hammer ping: try {i}: some components are in failed state")
+                time.sleep(30 * i)
         for action in set(["status -b", satellite_services_action]):
             result = run(f'foreman-maintain service {action}', warn_only=True)
             if result.return_code != 0:

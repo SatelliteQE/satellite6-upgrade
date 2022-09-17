@@ -12,7 +12,6 @@ from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
 from upgrade.helpers.tasks import hammer_config
-from upgrade.helpers.tasks import maintenance_repo_update
 from upgrade.helpers.tasks import repository_setup
 from upgrade.helpers.tasks import satellite_backup
 from upgrade.helpers.tasks import subscribe
@@ -34,7 +33,6 @@ def satellite_setup(satellite_host):
     execute(host_ssh_availability_check, satellite_host)
     execute(yum_repos_cleanup, host=satellite_host)
     execute(subscribe, host=satellite_host)
-    maintenance_repo_update()
     env['satellite_host'] = satellite_host
     settings.upgrade.satellite_hostname = satellite_host
     execute(hammer_config, host=satellite_host)
@@ -58,10 +56,8 @@ def satellite_upgrade(zstream=False):
     enable_disable_repo(disable_repos_name=['*'])
     enable_disable_repo(enable_repos_name=[repo['label'] for repo in OS_REPOS.values()])
 
-    if settings.upgrade.downstream_fm_upgrade or settings.upgrade.to_version == '6.12':
+    if settings.upgrade.distribution != 'cdn':
         settings.upgrade.whitelist_param = ', repositories-validate, repositories-setup'
-    # maintenance repository update for satellite upgrade
-    maintenance_repo_update()
 
     if settings.upgrade.distribution == 'cdn':
         enable_disable_repo(enable_repos_name=[RH_CONTENT['maintenance']['label']])

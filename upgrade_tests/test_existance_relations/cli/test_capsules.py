@@ -42,8 +42,8 @@ def test_positive_capsules_by_features(pre, post):
         upgrade
     """
     assert existence(
-        list(map(str.strip, pre.split(','))),
-        list(map(str.strip, post.split(','))),
+        set(map(str.strip, pre.split(','))),
+        set(map(str.strip, post.split(','))),
         component
     )
 

@@ -45,7 +45,6 @@ setup(
     install_requires=[
         'broker',
         'dynaconf[vault]',
-        'hvac<1.0.0',
         'Fabric3',
         'fauxfactory',
         'jinja2',

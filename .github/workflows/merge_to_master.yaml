@@ -32,7 +32,7 @@ jobs:
             for config in conf/*.yaml.template; do mv -- "$config" "${config%.template}"; done
 
       - name: Pre Commit Checks
-        uses: pre-commit/action@v2.0.0
+        uses: pre-commit/action@v3.0.0
 
       - name: Upgrade Test Coverage (Existence Test)
         run: py.test --cov=upgrade_tests/helpers upgrade_tests/helpers/coverme.py

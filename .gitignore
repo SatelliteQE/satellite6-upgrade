@@ -23,6 +23,7 @@ product_setup
 
 # Distribution / packaging
 satellite6_upgrade.egg-info/
+/build/
 .eggs/
 __pycache__/
 

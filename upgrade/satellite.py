@@ -56,12 +56,10 @@ def satellite_upgrade(zstream=False):
     enable_disable_repo(disable_repos_name=['*'])
     enable_disable_repo(enable_repos_name=[repo['label'] for repo in OS_REPOS.values()])
 
-    if settings.upgrade.distribution != 'cdn':
-        settings.upgrade.whitelist_param = ', repositories-validate, repositories-setup'
-
     if settings.upgrade.distribution == 'cdn':
         enable_disable_repo(enable_repos_name=[RH_CONTENT['maintenance']['label']])
     else:
+        settings.set('upgrade.whitelist_param', 'repositories-validate, repositories-setup')
         for repo, repodata in CUSTOM_SAT_REPO.items():
             if Version(settings.upgrade.to_version) < Version('6.11'):
                 if repo == 'satclient':
@@ -70,7 +68,9 @@ def satellite_upgrade(zstream=False):
                 if repo == 'sattools':
                     continue
             repository_setup(**repodata)
-        foreman_maintain_package_update()
+
+    # Update foreman_maintain package using self-upgrade
+    foreman_maintain_package_update(zstream=zstream)
 
     upgrade_using_foreman_maintain()
 

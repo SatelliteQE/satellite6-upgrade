@@ -73,7 +73,7 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
         return capsule_hosts
 
 
-def satellite_capsule_upgrade(cap_host, sat_host):
+def satellite_capsule_upgrade(cap_host, sat_host, zstream=False):
     """Upgrades capsule from existing version to latest version.
 
     :param string cap_host: Capsule hostname onto which the capsule upgrade
@@ -83,35 +83,41 @@ def satellite_capsule_upgrade(cap_host, sat_host):
 
     """
     logger.highlight('\n========== CAPSULE UPGRADE =================\n')
+    if zstream:
+        if not settings.upgrade.from_version == settings.upgrade.to_version:
+            logger.highlight('Z-Stream Capsule Upgrade cannot be performed '
+                             'when FROM and TO versions differ. Aborting...')
+            sys.exit(1)
     # Check the capsule sync before upgrade.
-    logger.info("Check the capsule sync after satellite upgrade to verify sync operation "
-                "with n-1 combination")
-    execute(capsule_sync, cap_host, host=sat_host)
-    wait_untill_capsule_sync(cap_host)
-    setup_capsule_firewall()
+    if not zstream:
+        logger.info("Checking the capsule sync after satellite upgrade to verify sync operation "
+                    "with n-1 combination")
+        execute(capsule_sync, cap_host, host=sat_host)
+        wait_untill_capsule_sync(cap_host)
+        setup_capsule_firewall()
     os_ver = int(settings.upgrade.os.strip('rhel'))
     ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
     run(f'subscription-manager register '
         f'--org="Default_Organization" --activationkey={ak_name} --force')
     logger.info(f'Activation key {ak_name} enabled all capsule repositories')
     run('subscription-manager repos --list')
-    maintenance_repo = RH_CONTENT['maintenance']['label']
-    capsule_repo = RH_CONTENT['capsule']['label']
     client = 'client' if Version(settings.upgrade.to_version) > Version('6.10') else 'tools'
-    client_repo = RH_CONTENT[client]['label']
-
+    capsule_repos = [
+        RH_CONTENT['capsule']['label'],
+        RH_CONTENT['maintenance']['label'],
+        RH_CONTENT[client]['label']
+    ]
     with fabric_settings(warn_only=True):
-        if os_ver == 7:
-            enable_disable_repo(enable_repos_name=[RH_CONTENT['ansible']['label']])
-        if settings.upgrade.distribution == 'cdn':
-            enable_disable_repo(enable_repos_name=[capsule_repo, maintenance_repo, client_repo])
+        if settings.upgrade.distribution == "cdn":
+            enable_disable_repo(enable_repos_name=capsule_repos)
+            if os_ver == 7:
+                enable_disable_repo(enable_repos_name=[RH_CONTENT['ansible']['label']])
         else:
-            enable_disable_repo(disable_repos_name=[maintenance_repo])
+            enable_disable_repo(disable_repos_name=capsule_repos)
 
-        if settings.upgrade.from_version != settings.upgrade.to_version:
-            enable_disable_repo(disable_repos_name=[capsule_repo])
+    # Update foreman_maintain package using self-upgrade
+    foreman_maintain_package_update(zstream=zstream)
 
-    foreman_maintain_package_update()
     if settings.upgrade.from_version == '6.10':
         # capsule certs regeneration required prior 6.11 ystream capsule upgrade BZ#2049893
         execute(capsule_certs_update, cap_host, host=sat_host)
@@ -122,49 +128,7 @@ def satellite_capsule_upgrade(cap_host, sat_host):
     # Check if Capsule upgrade is success
     upgrade_validation(upgrade_type="capsule", satellite_services_action="restart")
     # Check the capsule sync after upgrade.
-    logger.info("check the capsule sync after capsule upgrade")
-    execute(capsule_sync, cap_host, host=sat_host)
-    wait_untill_capsule_sync(cap_host)
-
-
-def satellite_capsule_zstream_upgrade(cap_host):
-    """Upgrades Capsule to its latest zStream version
-
-    :param string cap_host: Capsule hostname onto which the capsule upgrade
-    will run
-
-    """
-    logger.highlight('\n========== CAPSULE UPGRADE =================\n')
-    if settings.upgrade.from_version != settings.upgrade.to_version:
-        logger.highlight('Z-stream Capsule Upgrade cannot be performed '
-                         'when FROM and TO versions differ. Aborting...')
-        sys.exit(1)
-    os_ver = int(settings.upgrade.os.strip('rhel'))
-    ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
-    run(f'subscription-manager register --org="Default_Organization" --activationkey={ak_name} '
-        '--force')
-    logger.info(f'Activation key {ak_name} enabled all capsule repositories')
-    run('subscription-manager repos --list')
-
-    client = 'client' if Version(settings.upgrade.to_version) > Version('6.10') else 'tools'
-    capsule_repos = [
-        RH_CONTENT[client]['label'],
-        RH_CONTENT['capsule']['label'],
-        RH_CONTENT['maintenance']['label']
-    ]
-    with fabric_settings(warn_only=True):
-        if os_ver == 7:
-            enable_disable_repo(enable_repos_name=[RH_CONTENT['ansible']['label']])
-        if settings.upgrade.distribution == "cdn":
-            enable_disable_repo(enable_repos_name=capsule_repos)
-        else:
-            enable_disable_repo(disable_repos_name=capsule_repos)
-    # Check what repos are set
-    # setup_foreman_maintain_repo()
-    upgrade_using_foreman_maintain(satellite=False)
-    # Rebooting the capsule for kernel update if any
-    if settings.upgrade.satellite_capsule_setup_reboot:
-        reboot(160)
-    host_ssh_availability_check(cap_host)
-    # Check if Capsule upgrade is success
-    upgrade_validation(upgrade_type="capsule", satellite_services_action="restart")
+    if not zstream:
+        logger.info("Checking the capsule sync after capsule upgrade")
+        execute(capsule_sync, cap_host, host=sat_host)
+        wait_untill_capsule_sync(cap_host)

@@ -9,7 +9,6 @@ from fabric.api import execute
 
 from upgrade.capsule import satellite_capsule_setup
 from upgrade.capsule import satellite_capsule_upgrade
-from upgrade.capsule import satellite_capsule_zstream_upgrade
 from upgrade.client import satellite6_client_setup
 from upgrade.client import satellite6_client_upgrade
 from upgrade.helpers import settings
@@ -120,8 +119,7 @@ def product_upgrade(product, upgrade_type, satellite=None):
                     execute(satellite_upgrade, host=sat_host)
                 else:
                     execute(satellite_upgrade, True, host=sat_host)
-                upgraded = execute(
-                    get_sat_cap_version, 'sat', host=sat_host)[sat_host]
+                upgraded = execute(get_sat_cap_version, 'sat', host=sat_host)[sat_host]
                 check_upgrade_compatibility(upgrade_type, current, upgraded)
                 execute(foreman_debug, f'satellite_{sat_host}', host=sat_host)
                 if product in ['satellite', 'n-1']:
@@ -135,13 +133,10 @@ def product_upgrade(product, upgrade_type, satellite=None):
             with LogAnalyzer(cap_host):
                 current = execute(get_sat_cap_version, 'cap', host=cap_host)[cap_host]
                 if settings.upgrade.from_version != settings.upgrade.to_version:
-                    execute(satellite_capsule_upgrade,
-                            cap_host, sat_host, host=cap_host)
-                elif settings.upgrade.from_version == settings.upgrade.to_version:
-                    execute(satellite_capsule_zstream_upgrade,
-                            cap_host, host=cap_host)
-                upgraded = execute(
-                    get_sat_cap_version, 'cap', host=cap_host)[cap_host]
+                    execute(satellite_capsule_upgrade, cap_host, sat_host, host=cap_host)
+                else:
+                    execute(satellite_capsule_upgrade, cap_host, True, host=cap_host)
+                upgraded = execute(get_sat_cap_version, 'cap', host=cap_host)[cap_host]
                 check_upgrade_compatibility(upgrade_type, current, upgraded)
                 # Generate foreman debug on capsule postupgrade
                 execute(foreman_debug, f'capsule_{cap_host}', host=cap_host)

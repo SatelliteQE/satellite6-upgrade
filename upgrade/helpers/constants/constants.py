@@ -9,10 +9,7 @@ target_cap_version = settings.upgrade.to_version \
     if settings.upgrade.from_version != settings.upgrade.to_version and \
     settings.upgrade.distribution == 'cdn' else settings.upgrade.from_version
 maintenance_ver = target_cap_version if Version(target_cap_version) > Version('6.10') else '6'
-
-# Workaround for BZ#2121689 (remove once 6.11.z clone is fixed)
-os_repo_tags = ['server', 'rhscl', 'ansible'] if os_ver < 8 else ['baseos', 'appstream', 'ansible']
-# os_repo_tags = ['server', 'rhscl', 'ansible'] if os_ver < 8 else ['baseos', 'appstream']
+os_repo_tags = ['server', 'rhscl', 'ansible'] if os_ver < 8 else ['baseos', 'appstream']
 
 RH_CONTENT = {
     # RHEL7 repos
@@ -36,13 +33,6 @@ RH_CONTENT = {
         'repo': f'Red Hat Ansible Engine 2.9 RPMs for Red Hat Enterprise Linux {os_ver} Server '
         f'{arch}',
         'label': f'rhel-{os_ver}-server-ansible-2.9-rpms'
-    # Workaround for BZ#2121689 (remove once 6.11.z clone is fixed) # noqa
-    } if os_ver < 8 else {
-        'prod': 'Red Hat Ansible Engine',
-        'reposet': f'Red Hat Ansible Engine 2.9 for RHEL {os_ver} {arch} (RPMs)',
-        'repo': f'Red Hat Ansible Engine 2.9 for RHEL {os_ver} {arch} RPMs',
-        'label': f'ansible-2.9-for-rhel-{os_ver}-{arch}-rpms'
-    # EOW # noqa
     },
     # RHEL8+ repos
     'baseos': {

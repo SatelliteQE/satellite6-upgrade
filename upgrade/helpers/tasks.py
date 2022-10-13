@@ -866,7 +866,7 @@ def upgrade_using_foreman_maintain(satellite=True):
         version_suffix = '.z' if zstream else ''
         command = (
             f'foreman-maintain upgrade run --plaintext '
-            f'--whitelist="disk-performance{settings.upgrade.whitelist_param}" '
+            f'--whitelist="{settings.upgrade.whitelist_param}" '
             f'--target-version {settings.upgrade.to_version}{version_suffix} -y'
         )
         # use Beta until becomes GA
@@ -1290,11 +1290,6 @@ def satellite_restore_setup():
     else:
         run('yum -d1 repolist')
         run('yum -d1 install -y satellite-clone')
-    # Workaround for BZ#2121689 (remove once 6.11.z clone is fixed)
-    # at this point ansible is installed from AppStream so it's safe to enable old 2.9 repo
-    if os_ver == 8:
-        enable_disable_repo(enable_repos_name=[f'ansible-2.9-for-rhel-{os_ver}-x86_64-rpms'])
-    # EOW
     run(
         f'echo "satellite_version: {settings.upgrade.from_version}">>{answer_file};'
         f'echo "backup_dir: {backup_dir}">>{answer_file};'

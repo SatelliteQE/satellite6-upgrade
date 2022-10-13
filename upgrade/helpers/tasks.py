@@ -851,13 +851,14 @@ def upgrade_using_foreman_maintain(satellite=True):
         with warn_only():
             version_suffix = '.z' if zstream else ''
             run(f'foreman-maintain upgrade check --plaintext '
+                f'--whitelist="repositories-validate" '
                 f'--target-version {settings.upgrade.to_version}{version_suffix} -y')
 
     def capsule_upgrade_check(zstream=False):
         with warn_only():
             version_suffix = '.z' if zstream else ''
             run(f'foreman-maintain upgrade check --plaintext '
-                f'--whitelist="repositories-validate,repositories-setup" '
+                f'--whitelist="repositories-validate" '
                 f'--target-version {settings.upgrade.to_version}{version_suffix} -y')
 
     def satellite_upgrade(zstream=False):
@@ -1207,16 +1208,21 @@ def repos_sync_failure_remiediation(org, repo_object, timeout=3000):
             logger.warning(f'Retry:{attempt} Repos sync remediation failed due to {exp}')
 
 
-def foreman_maintain_package_update():
+def foreman_maintain_package_update(zstream=False):
     """
     Install the latest fm rubygem-foreman_maintain to get the latest y-stream upgrade path.
     """
-    # Remove the old repos detail
-    run("yum clean all")
-    # repolist
-    run('yum repolist')
-    # install foreman-maintain
-    run('yum install rubygem-foreman_maintain -y')
+    if zstream:
+        with warn_only():
+            run('foreman-maintain upgrade list-versions')
+    else:
+        if settings.upgrade.distribution == 'cdn':
+            run('foreman-maintain self-upgrade')
+        else:
+            maintenance_repo = CUSTOM_SAT_REPO['maintenance']['repository']
+
+            run(f'foreman-maintain self-upgrade --maintenance-repo-label {maintenance_repo}')
+    run('rpm -qa rubygem-foreman_maintain')
 
 
 def yum_repos_cleanup():

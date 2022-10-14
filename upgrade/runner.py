@@ -135,7 +135,7 @@ def product_upgrade(product, upgrade_type, satellite=None):
                 if settings.upgrade.from_version != settings.upgrade.to_version:
                     execute(satellite_capsule_upgrade, cap_host, sat_host, host=cap_host)
                 else:
-                    execute(satellite_capsule_upgrade, cap_host, True, host=cap_host)
+                    execute(satellite_capsule_upgrade, cap_host, sat_host, True, host=cap_host)
                 upgraded = execute(get_sat_cap_version, 'cap', host=cap_host)[cap_host]
                 check_upgrade_compatibility(upgrade_type, current, upgraded)
                 # Generate foreman debug on capsule postupgrade

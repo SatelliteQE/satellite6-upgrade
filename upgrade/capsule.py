@@ -116,7 +116,7 @@ def satellite_capsule_upgrade(cap_host, sat_host, zstream=False):
             enable_disable_repo(disable_repos_name=capsule_repos)
 
     # Update foreman_maintain package using self-upgrade
-    foreman_maintain_package_update(zstream=zstream)
+    foreman_maintain_package_update(zstream=zstream, fetch_content_from_sat=True)
 
     if settings.upgrade.from_version == '6.10':
         # capsule certs regeneration required prior 6.11 ystream capsule upgrade BZ#2049893

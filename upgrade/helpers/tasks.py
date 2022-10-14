@@ -225,7 +225,7 @@ def sync_capsule_subscription_to_capsule_ak(org):
     arch = 'x86_64'
     # If custom capsule repo is not given then
     # enable capsule repo from Redhat Repositories
-    if settings.repos.capsule_repo:
+    if settings.upgrade.distribution != 'cdn':
         try:
             cap_product = entities.Product(
                 nailgun_conf, name=CUSTOM_CONTENT['capsule']['prod'], organization=org).create()
@@ -309,7 +309,7 @@ def sync_capsule_subscription_to_capsule_ak(org):
                        f"2500 but in current execution we set it 4000)", start_time)
     logger.info(f"entities repository sync operation completed successfully "
                 f"for name {cap_repo.name}")
-    if settings.repos.capsule_repo:
+    if settings.upgrade.distribution != 'cdn':
         cap_repo.repo_id = CUSTOM_CONTENT['capsule']['reposet']
     else:
         cap_repo.repo_id = RH_CONTENT['capsule']['label']
@@ -440,7 +440,7 @@ def sync_maintenance_repo_to_satellite_for_capsule(org):
     """
     arch = 'x86_64'
     relver = str(os_ver) if os_ver > 7 else f'{os_ver}Server'
-    if settings.repos.satmaintenance_repo:
+    if settings.upgrade.distribution != 'cdn':
         repo = CUSTOM_CONTENT['maintenance']
         try:
             ent_product = entities.Product(
@@ -1208,7 +1208,7 @@ def repos_sync_failure_remiediation(org, repo_object, timeout=3000):
             logger.warning(f'Retry:{attempt} Repos sync remediation failed due to {exp}')
 
 
-def foreman_maintain_package_update(zstream=False):
+def foreman_maintain_package_update(zstream=False, fetch_content_from_sat=False):
     """
     Install the latest fm rubygem-foreman_maintain to get the latest y-stream upgrade path.
     """
@@ -1219,8 +1219,13 @@ def foreman_maintain_package_update(zstream=False):
         if settings.upgrade.distribution == 'cdn':
             run('foreman-maintain self-upgrade')
         else:
-            maintenance_repo = CUSTOM_SAT_REPO['maintenance']['repository']
-
+            product_label = CUSTOM_CONTENT['maintenance']['prod']
+            repo_label = CUSTOM_CONTENT['maintenance']['reposet']
+            maintenance_repo = (
+                f'Default_Organization_{product_label}_{repo_label}'
+                if fetch_content_from_sat
+                else CUSTOM_SAT_REPO['maintenance']['repository']
+            )
             run(f'foreman-maintain self-upgrade --maintenance-repo-label {maintenance_repo}')
     run('rpm -qa rubygem-foreman_maintain')
 

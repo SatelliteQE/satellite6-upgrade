@@ -113,12 +113,9 @@ def product_upgrade(product, upgrade_type, satellite=None):
     def product_upgrade_satellite(sat_host):
         try:
             with LogAnalyzer(sat_host):
-                current = execute(
-                    get_sat_cap_version, 'sat', host=sat_host)[sat_host]
-                if settings.upgrade.from_version != settings.upgrade.to_version:
-                    execute(satellite_upgrade, host=sat_host)
-                else:
-                    execute(satellite_upgrade, True, host=sat_host)
+                current = execute(get_sat_cap_version, 'sat', host=sat_host)[sat_host]
+                zstream = settings.upgrade.from_version == settings.upgrade.to_version
+                execute(satellite_upgrade, zstream, host=sat_host)
                 upgraded = execute(get_sat_cap_version, 'sat', host=sat_host)[sat_host]
                 check_upgrade_compatibility(upgrade_type, current, upgraded)
                 execute(foreman_debug, f'satellite_{sat_host}', host=sat_host)
@@ -132,10 +129,8 @@ def product_upgrade(product, upgrade_type, satellite=None):
         try:
             with LogAnalyzer(cap_host):
                 current = execute(get_sat_cap_version, 'cap', host=cap_host)[cap_host]
-                if settings.upgrade.from_version != settings.upgrade.to_version:
-                    execute(satellite_capsule_upgrade, cap_host, sat_host, host=cap_host)
-                else:
-                    execute(satellite_capsule_upgrade, cap_host, sat_host, True, host=cap_host)
+                zstream = settings.upgrade.from_version == settings.upgrade.to_version
+                execute(satellite_capsule_upgrade, cap_host, sat_host, zstream, host=cap_host)
                 upgraded = execute(get_sat_cap_version, 'cap', host=cap_host)[cap_host]
                 check_upgrade_compatibility(upgrade_type, current, upgraded)
                 # Generate foreman debug on capsule postupgrade

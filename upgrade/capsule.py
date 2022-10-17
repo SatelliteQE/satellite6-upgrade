@@ -89,12 +89,10 @@ def satellite_capsule_upgrade(cap_host, sat_host, zstream=False):
                              'when FROM and TO versions differ. Aborting...')
             sys.exit(1)
     # Check the capsule sync before upgrade.
-    if not zstream:
-        logger.info("Checking the capsule sync after satellite upgrade to verify sync operation "
-                    "with n-1 combination")
-        execute(capsule_sync, cap_host, host=sat_host)
-        wait_untill_capsule_sync(cap_host)
-        setup_capsule_firewall()
+    logger.info("Checking the capsule sync after satellite upgrade to verify sync operation ")
+    execute(capsule_sync, cap_host, host=sat_host)
+    wait_untill_capsule_sync(cap_host)
+    setup_capsule_firewall()
     os_ver = int(settings.upgrade.os.strip('rhel'))
     ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
     run(f'subscription-manager register '
@@ -107,11 +105,12 @@ def satellite_capsule_upgrade(cap_host, sat_host, zstream=False):
         RH_CONTENT['maintenance']['label'],
         RH_CONTENT[client]['label']
     ]
+
     with fabric_settings(warn_only=True):
-        if settings.upgrade.distribution == "cdn":
+        if os_ver == 7:
+            enable_disable_repo(enable_repos_name=[RH_CONTENT['ansible']['label']])
+        if settings.upgrade.distribution == 'cdn':
             enable_disable_repo(enable_repos_name=capsule_repos)
-            if os_ver == 7:
-                enable_disable_repo(enable_repos_name=[RH_CONTENT['ansible']['label']])
         else:
             enable_disable_repo(disable_repos_name=capsule_repos)
 
@@ -128,7 +127,6 @@ def satellite_capsule_upgrade(cap_host, sat_host, zstream=False):
     # Check if Capsule upgrade is success
     upgrade_validation(upgrade_type="capsule", satellite_services_action="restart")
     # Check the capsule sync after upgrade.
-    if not zstream:
-        logger.info("Checking the capsule sync after capsule upgrade")
-        execute(capsule_sync, cap_host, host=sat_host)
-        wait_untill_capsule_sync(cap_host)
+    logger.info("Checking the capsule sync after capsule upgrade")
+    execute(capsule_sync, cap_host, host=sat_host)
+    wait_untill_capsule_sync(cap_host)

@@ -10,9 +10,7 @@ from upgrade.helpers.constants.constants import RHEL_CONTENTS
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
-from upgrade.helpers.tasks import foreman_service_restart
 from upgrade.helpers.tasks import hammer_config
-from upgrade.helpers.tasks import mongo_db_engine_upgrade
 from upgrade.helpers.tasks import post_migration_failure_fix
 from upgrade.helpers.tasks import pulp2_pulp3_migration
 from upgrade.helpers.tasks import repository_setup
@@ -38,7 +36,6 @@ def satellite_setup(satellite_host):
     execute(yum_repos_cleanup, host=satellite_host)
     execute(install_prerequisites, host=satellite_host)
     execute(subscribe, host=satellite_host)
-    execute(foreman_service_restart, host=satellite_host)
     env['satellite_host'] = satellite_host
     settings.upgrade.satellite_hostname = satellite_host
     execute(hammer_config, host=satellite_host)
@@ -127,7 +124,5 @@ def satellite_upgrade(zstream=False):
     host_ssh_availability_check(env.get('satellite_host'))
     # Test the Upgrade is successful
     upgrade_validation()
-    if settings.upgrade.mongodb_upgrade:
-        mongo_db_engine_upgrade()
     if settings.upgrade.satellite_backup:
         satellite_backup()

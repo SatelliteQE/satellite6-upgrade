@@ -13,7 +13,6 @@ from upgrade.helpers.tasks import capsule_sync
 from upgrade.helpers.tasks import create_capsule_ak
 from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_package_update
-from upgrade.helpers.tasks import foreman_service_restart
 from upgrade.helpers.tasks import http_proxy_config
 from upgrade.helpers.tasks import sync_capsule_repos_to_satellite
 from upgrade.helpers.tasks import update_capsules_to_satellite
@@ -53,7 +52,6 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
             non_responsive_host.append(cap_host)
         else:
             execute(host_ssh_availability_check, cap_host)
-        execute(foreman_service_restart, host=cap_host)
         if non_responsive_host:
             logger.highlight(str(non_responsive_host) + ' these are non-responsive hosts. '
                                                         'Aborting...')

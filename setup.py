@@ -30,7 +30,7 @@ setup(
     author_email='jyejare@redhat.com',
     url='https://github.com/SatelliteQE/satellite6-upgrade',
     license='GNU GPL v3.0',
-    classifiers=(
+    classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Intended Audience :: Testers',
@@ -38,7 +38,7 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.8',
-    ),
+    ],
     packages=find_packages(),
     # some requirements are also in requirements*.txt files
     # Its assumed this is installed as a dependency of robottelo, frozen packages are defined there

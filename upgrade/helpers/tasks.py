@@ -870,7 +870,7 @@ def upgrade_using_foreman_maintain(satellite=True):
             f'--target-version {settings.upgrade.to_version}{version_suffix} -y'
         )
         # use Beta until becomes GA
-        if settings.upgrade.to_version == '6.12':
+        if settings.upgrade.to_version == '6.15':
             with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
                 run(command)
         else:

@@ -59,7 +59,6 @@ def satellite_upgrade(zstream=False):
     if settings.upgrade.distribution == 'cdn':
         enable_disable_repo(enable_repos_name=[RH_CONTENT['maintenance']['label']])
     else:
-        settings.set('upgrade.whitelist_param', 'repositories-validate, repositories-setup')
         for repo, repodata in CUSTOM_SAT_REPO.items():
             if Version(settings.upgrade.to_version) < Version('6.11'):
                 if repo == 'satclient':

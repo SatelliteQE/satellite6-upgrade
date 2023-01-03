@@ -36,8 +36,8 @@ setup(
         'Intended Audience :: Testers',
         'Natural Language :: English',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.11',
     ],
     packages=find_packages(),
     # some requirements are also in requirements*.txt files

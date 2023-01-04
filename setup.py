@@ -45,7 +45,6 @@ setup(
     install_requires=[
         'broker',
         'dynaconf[vault]',
-        'Fabric3',
         'fauxfactory',
         'jinja2',
         'ovirt-engine-sdk-python',

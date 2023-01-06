@@ -2,7 +2,7 @@
 git+https://github.com/SatelliteQE/automation-tools@master#egg=automation-tools
 
 # Get nailgun from master
-git+https://github.com/SatelliteQE/nailgun.git@master#egg=nailgun
+git+https://github.com/SatelliteQE/nailgun.git@6.11.z#egg=nailgun
 
 # Once https://github.com/mathiasertl/fabric/pull/57 gets merged put 'Fabric3' in setup.py
 git+https://github.com/wmorgan6796/fabric.git@add_python3.10_compat#egg=Fabric3

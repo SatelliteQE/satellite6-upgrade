@@ -1,6 +1,5 @@
 import sys
 
-from automation_tools import setup_capsule_firewall
 from fabric.api import execute
 from fabric.api import run
 from fabric.api import settings as fabric_settings
@@ -92,7 +91,6 @@ def satellite_capsule_upgrade(cap_host, sat_host, zstream=False):
     logger.info("Checking the capsule sync after satellite upgrade to verify sync operation ")
     execute(capsule_sync, cap_host, host=sat_host)
     wait_untill_capsule_sync(cap_host)
-    setup_capsule_firewall()
     os_ver = int(settings.upgrade.os.strip('rhel'))
     ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
     run(f'subscription-manager register '

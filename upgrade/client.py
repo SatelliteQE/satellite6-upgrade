@@ -9,7 +9,7 @@ from fabric.api import run
 
 from upgrade.helpers import settings
 from upgrade.helpers.docker import docker_execute_command
-from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
+from upgrade.helpers.docker import generate_satellite_docker_clients
 from upgrade.helpers.docker import refresh_subscriptions_on_docker_clients
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import puppet_autosign_hosts
@@ -70,13 +70,13 @@ def satellite6_client_setup():
                     'Please wait .....'.format(clients_count))
         # Generate Clients on RHEL 7 and RHEL 6
         clients6 = execute(
-            generate_satellite_docker_clients_on_rhevm,
+            generate_satellite_docker_clients,
             'rhel6',
             int(clients_count) / 2,
             host=docker_vm
         )[docker_vm]
         clients7 = execute(
-            generate_satellite_docker_clients_on_rhevm,
+            generate_satellite_docker_clients,
             'rhel7',
             int(clients_count) / 2,
             host=docker_vm
@@ -84,12 +84,12 @@ def satellite6_client_setup():
         # Allow all puppet clients to be signed automatically
         execute(puppet_autosign_hosts, ['*'], host=sat_host)
         puppet_clients7 = execute(
-            generate_satellite_docker_clients_on_rhevm, 'rhel7', 2,
+            generate_satellite_docker_clients, 'rhel7', 2,
             puppet=True,
             host=docker_vm
         )[docker_vm]
         puppet_clients6 = execute(
-            generate_satellite_docker_clients_on_rhevm, 'rhel6', 2,
+            generate_satellite_docker_clients, 'rhel6', 2,
             puppet=True,
             host=docker_vm
         )[docker_vm]

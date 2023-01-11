@@ -12,7 +12,7 @@ from upgrade.helpers.logger import logger
 logger = logger()
 
 
-def generate_satellite_docker_clients_on_rhevm(
+def generate_satellite_docker_clients(
         client_os,
         clients_count,
         custom_ak=None,

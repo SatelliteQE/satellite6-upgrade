@@ -1,7 +1,0 @@
-LIBVIRT:
-  # External Libvirt Hostname
-  LIBVIRT_HOSTNAME:
-  LIBVIRT_URL:
-  # Path on the Libvirt host, where the virtual images will be stored.
-  # The default libvirt image dir will be used i.e., "/var/lib/libvirt/images/".
-  LIBVIRT_IMAGE_DIR:

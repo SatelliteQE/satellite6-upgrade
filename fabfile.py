@@ -1,16 +1,9 @@
 """Module which publish all satellite6 upgrade tasks"""
 # flake8:noqa pylint:disable=F401
-from automation_tools import partition_disk
-from automation_tools import product_install
-from automation_tools import vm_create
-from automation_tools import vm_destroy
-
 from upgrade.helpers.docker import docker_cleanup_containers
 from upgrade.helpers.docker import docker_execute_command
-from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
+from upgrade.helpers.docker import generate_satellite_docker_clients
 from upgrade.helpers.docker import refresh_subscriptions_on_docker_clients
-from upgrade.helpers.openstack import create_openstack_instance
-from upgrade.helpers.openstack import delete_openstack_instance
 from upgrade.helpers.tasks import create_capsule_ak
 from upgrade.helpers.tasks import generate_custom_certs
 from upgrade.helpers.tasks import job_execution_time

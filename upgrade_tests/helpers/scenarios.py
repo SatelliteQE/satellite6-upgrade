@@ -4,17 +4,13 @@ import json
 import os
 import time
 
-from automation_tools import manage_daemon
 from automation_tools.satellite6 import hammer
 from fabric.api import execute
 from fabric.api import run
 
 from upgrade.helpers import settings
-from upgrade.helpers.docker import generate_satellite_docker_clients_on_rhevm
+from upgrade.helpers.docker import generate_satellite_docker_clients
 from upgrade.helpers.logger import logger
-from upgrade.helpers.rhevm4 import create_rhevm4_instance
-from upgrade.helpers.rhevm4 import get_rhevm4_client
-from upgrade.helpers.rhevm4 import wait_till_rhevm4_instance_status
 
 rpm1 = 'https://inecas.fedorapeople.org/fakerepos/zoo3/bear-4.1-1.noarch.rpm'
 rpm2 = 'https://inecas.fedorapeople.org/fakerepos/zoo3/camel-0.1-1.noarch.rpm'
@@ -75,28 +71,11 @@ def dockerize(ak_name=None, distro=None, org_label=None):
     """
     ak_name = settings.upgrade.client_ak[settings.upgrade.os]
     docker_vm = settings.upgrade.docker_vm
-    # Check if the VM containing docker images is up, else turn on
-    with get_rhevm4_client().build() as rhevm_client:
-        instance_name = 'sat6-docker-upgrade'
-        template_name = 'sat6-docker-upgrade-template'
-        vm = rhevm_client.system_service().vms_service().list(search=f'name={instance_name}')
-        if not vm:
-            logger.info('Docker VM for generating Content Host is not created.'
-                        'Creating it, please wait..')
-            create_rhevm4_instance(instance_name, template_name)
-            execute(manage_daemon, 'restart', 'docker', host=docker_vm)
-        elif vm[0].status.name.lower() == 'down':
-            logger.info('Docker VM for generating Content Host is not up. '
-                        'Turning on, please wait ....')
-            rhevm_client.vms.get(name=instance_name).start()
-            wait_till_rhevm4_instance_status(instance_name, 'up', 5)
-            execute(manage_daemon, 'restart', 'docker', host=docker_vm)
-    logger.info('Generating katello client on RHEL7 on Docker. '
-                'Please wait .....')
+    logger.info('Generating katello client on RHEL7 on Docker. Please wait .....')
     # Generate Clients on RHEL 7
     time.sleep(40)
     clients = execute(
-        generate_satellite_docker_clients_on_rhevm,
+        generate_satellite_docker_clients,
         distro,
         1,
         ak_name,

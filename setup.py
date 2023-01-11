@@ -48,7 +48,6 @@ setup(
         'fabric<2',
         'fauxfactory',
         'jinja2',
-        'ovirt-engine-sdk-python',
         'pycurl',
         'pytest',
         # python-bugzilla is on 3.x, and this package is about 5 years old
@@ -56,6 +55,5 @@ setup(
         'python-bugzilla==1.2.2',
         'requests',
         'robozilla',
-        'shade',
     ],
 )

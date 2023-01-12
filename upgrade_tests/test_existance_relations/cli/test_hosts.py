@@ -18,7 +18,6 @@ associations post upgrade
 :Upstream: No
 """
 import pytest
-from robozilla.decorators import pytest_skip_if_bug_open
 
 from upgrade_tests.helpers.common import existence
 from upgrade_tests.helpers.existence import compare_postupgrade
@@ -46,7 +45,6 @@ def test_positive_hosts_by_ip(pre, post):
     assert existence(pre, post)
 
 
-@pytest_skip_if_bug_open('bugzilla', 1289510)
 @pytest.mark.parametrize("pre,post", host_mac, ids=pytest_ids(host_mac))
 def test_positive_hosts_by_mac(pre, post):
     """Test mac associations of all hosts post upgrade

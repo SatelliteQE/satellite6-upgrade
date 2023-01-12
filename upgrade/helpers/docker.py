@@ -2,7 +2,6 @@ import os
 import sys
 import time
 
-from automation_tools.bz import bz_bug_is_open
 from fabric.api import run
 from fauxfactory import gen_string
 
@@ -53,8 +52,6 @@ def generate_satellite_docker_clients_on_rhevm(
             gen_string('alpha')) if custom_ak else 'dockerpuppetclient'
         image = 'upgrade:puppet-{}'
     for count in range(int(clients_count)):
-        if bz_bug_is_open('1405085'):
-            time.sleep(5)
         # If custom activation key is passed, it will be used to create custom
         # docker clients for scenario tests and we will require to set distinct
         # hostname for those content hosts

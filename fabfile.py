@@ -1,5 +1,5 @@
 """Module which publish all satellite6 upgrade tasks"""
-# flake8:noqa pylint:disable=F401
+# pylint:disable=F401
 from upgrade.helpers.docker import docker_cleanup_containers
 from upgrade.helpers.docker import docker_execute_command
 from upgrade.helpers.docker import generate_satellite_docker_clients

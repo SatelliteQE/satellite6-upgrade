@@ -889,8 +889,13 @@ def upgrade_using_foreman_maintain(satellite=True):
         # z capsule stream upgrade, If we do not whitelist the repos setup then cdn
         # repos of target version gets enabled.
         whitelist_param = ''
+        if settings.upgrade.whitelist_param:
+            whitelist_param = f'--whitelist={settings.upgrade.whitelist_param}'
         if settings.upgrade.distribution != 'cdn':
-            whitelist_param = '--whitelist="repositories-validate,repositories-setup"'
+            whitelist_param = (
+                f'--whitelist=repositories-validate,repositories-setup,'
+                f'{settings.upgrade.whitelist_param}'
+            )
         run(f'foreman-maintain upgrade run --plaintext {whitelist_param} '
             f'--target-version {settings.upgrade.to_version}{version_suffix} -y')
 

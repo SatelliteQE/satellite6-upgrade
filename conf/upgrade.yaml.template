@@ -59,6 +59,9 @@ UPGRADE:
     - '6.9'
     - '6.10'
     - '6.11'
+    - '6.12'
+    - '6.13'
+    - '6.14'
   # These environment variable used for existence test cases execution.
   EXISTENCE_TEST:
     ALLOWED_ENDS:

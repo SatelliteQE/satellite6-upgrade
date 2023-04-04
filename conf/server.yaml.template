@@ -5,7 +5,7 @@ SERVER:
   #  - replace-with-satellite-hostname
   VERSION:
     # The full release version (6.9.2)
-    RELEASE: "'6.11'"
+    RELEASE: "'6.14'"
     # The snap version currently testing (if applicable)
     SNAP: ''
     # The source of Satellite packages. Can be one of:

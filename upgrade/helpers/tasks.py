@@ -1302,7 +1302,7 @@ def satellite_restore_setup():
     else:
         run('yum -d1 repolist')
         if os_ver > 7:
-            run(f'yum -d1 module enable satellite-maintenance:el{os_ver}')
+            run(f'yum -d1 module enable -y satellite-maintenance:el{os_ver}')
         run('yum -d1 install -y satellite-clone')
     run(
         f'echo "satellite_version: {settings.upgrade.from_version}">>{answer_file};'

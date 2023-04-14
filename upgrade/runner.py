@@ -18,7 +18,7 @@ from upgrade.helpers.tasks import post_upgrade_test_tasks
 from upgrade.helpers.tasks import pre_upgrade_system_checks
 from upgrade.helpers.tasks import satellite_restore
 from upgrade.helpers.tasks import satellite_restore_setup
-from upgrade.helpers.tasks import setup_foreman_maintain_repo
+from upgrade.helpers.tasks import setup_maintenance_repo
 from upgrade.helpers.tasks import subscribe
 from upgrade.helpers.tasks import unsubscribe
 from upgrade.helpers.tools import create_setup_dict
@@ -87,7 +87,7 @@ def product_setup_for_db_upgrade(satellite):
     settings.upgrade.satellite_hostname = satellite
     execute(unsubscribe, host=satellite)
     execute(subscribe, host=satellite)
-    execute(setup_foreman_maintain_repo, host=satellite)
+    execute(setup_maintenance_repo, host=satellite)
     execute(satellite_restore_setup, host=satellite)
     execute(satellite_restore, host=satellite)
 

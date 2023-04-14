@@ -2,8 +2,6 @@ import sys
 
 from fabric.api import execute
 from fabric.api import run
-from fabric.api import settings as fabric_settings
-from packaging.version import Version
 
 from upgrade.helpers import settings
 from upgrade.helpers.constants.constants import RH_CONTENT
@@ -13,11 +11,13 @@ from upgrade.helpers.tasks import capsule_certs_update
 from upgrade.helpers.tasks import capsule_sync
 from upgrade.helpers.tasks import create_capsule_ak
 from upgrade.helpers.tasks import enable_disable_repo
-from upgrade.helpers.tasks import foreman_maintain_package_update
+from upgrade.helpers.tasks import foreman_maintain_self_upgrade
+from upgrade.helpers.tasks import foreman_maintain_upgrade
 from upgrade.helpers.tasks import http_proxy_config
+from upgrade.helpers.tasks import setup_capsule_maintenance_repo
+from upgrade.helpers.tasks import setup_capsule_repo
 from upgrade.helpers.tasks import sync_capsule_repos_to_satellite
 from upgrade.helpers.tasks import update_capsules_to_satellite
-from upgrade.helpers.tasks import upgrade_using_foreman_maintain
 from upgrade.helpers.tasks import upgrade_validation
 from upgrade.helpers.tasks import wait_untill_capsule_sync
 from upgrade.helpers.tasks import yum_repos_cleanup
@@ -91,34 +91,28 @@ def satellite_capsule_upgrade(cap_host, sat_host, zstream=False):
     logger.info("Checking the capsule sync after satellite upgrade to verify sync operation ")
     execute(capsule_sync, cap_host, host=sat_host)
     wait_untill_capsule_sync(cap_host)
+
     os_ver = int(settings.upgrade.os.strip('rhel'))
     ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
     run(f'subscription-manager register '
         f'--org="Default_Organization" --activationkey={ak_name} --force')
     logger.info(f'Activation key {ak_name} enabled all capsule repositories')
     run('subscription-manager repos --list')
-    client = 'client' if Version(settings.upgrade.to_version) > Version('6.10') else 'tools'
-    capsule_repos = [
-        RH_CONTENT['capsule']['label'],
-        RH_CONTENT['maintenance']['label'],
-        RH_CONTENT[client]['label']
-    ]
 
-    with fabric_settings(warn_only=True):
-        if os_ver == 7:
-            enable_disable_repo(enable_repos_name=[RH_CONTENT['ansible']['label']])
-        if settings.upgrade.distribution == 'cdn':
-            enable_disable_repo(enable_repos_name=capsule_repos)
-        else:
-            enable_disable_repo(disable_repos_name=capsule_repos)
+    if os_ver == 7:
+        enable_disable_repo(enable_repos_name=[RH_CONTENT['ansible']['label']])
 
-    # Update foreman_maintain package using self-upgrade
-    foreman_maintain_package_update(zstream=zstream, fetch_content_from_sat=True)
+    # Update foreman_maintain by self-upgrade
+    setup_capsule_maintenance_repo()
+    foreman_maintain_self_upgrade(zstream=zstream, fetch_content_from_sat=True)
 
+    # Upgrade the Capsule
+    setup_capsule_repo()
     if settings.upgrade.from_version == '6.10':
         # capsule certs regeneration required prior 6.11 ystream capsule upgrade BZ#2049893
         execute(capsule_certs_update, cap_host, host=sat_host)
-    upgrade_using_foreman_maintain(satellite=False)
+    foreman_maintain_upgrade(satellite=False)
+
     # Rebooting the capsule for kernel update if any
     reboot(160)
     host_ssh_availability_check(cap_host)

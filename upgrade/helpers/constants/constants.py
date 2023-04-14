@@ -132,24 +132,24 @@ CUSTOM_CONTENT = {
 
 
 CUSTOM_SAT_REPO = {
-    "sat": {
-        "repository": "sat",
-        "repository_name": "satellite",
+    "satellite": {
+        "repository": "satellite",
+        "repository_name": "Satellite",
         "base_url": f"{settings.repos.satellite_repo}",
-    },
-    "sattools": {
-        "repository": "sattools",
-        "repository_name": "satellite-tools",
-        "base_url": f"{settings.repos.sattools_repo[settings.upgrade.os]}",
     },
     "maintenance": {
         "repository": "maintenance",
-        "repository_name": "satellite-maintenance",
+        "repository_name": "Satellite Maintenance",
         "base_url": f"{settings.repos.satmaintenance_repo}",
+    },
+    "capsule": {
+        "repository": "capsule",
+        "repository_name": "Capsule",
+        "base_url": f"{settings.repos.capsule_repo}",
     },
     "satclient": {
         "repository": "satclient",
-        "repository_name": "sat-client",
+        "repository_name": "Satellite Client",
         "base_url": f"{settings.repos.satclient_repo[settings.upgrade.os]}",
     },
 }

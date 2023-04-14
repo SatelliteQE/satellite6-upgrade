@@ -7,6 +7,7 @@ import re
 import socket
 import sys
 import time
+from contextlib import nullcontext
 from datetime import datetime
 from io import StringIO
 from random import randrange
@@ -25,7 +26,6 @@ from fabric.api import hide
 from fabric.api import put
 from fabric.api import run
 from fabric.api import settings as fabric_settings
-from fabric.api import warn_only
 from fabric.context_managers import shell_env
 from fauxfactory import gen_string
 from nailgun import entities
@@ -801,30 +801,6 @@ def check_ntpd():
         run("chkconfig ntpd on")
 
 
-def setup_satellite_repo():
-    """
-    Task which install foreman-maintain tool.
-    """
-    env.disable_known_hosts = True
-    # setting up foreman-maintain repo
-    setup_foreman_maintain_repo()
-    if settings.upgrade.distribution != 'cdn':
-        for repo, repodata in CUSTOM_SAT_REPO.items():
-            if repo != 'maintenance':
-                repository_setup(**repodata)
-
-
-def setup_foreman_maintain_repo():
-    """
-    Task which setup repo for foreman-maintain.
-    """
-    # setting up foreman-maintain repo
-    if settings.upgrade.distribution == 'cdn':
-        enable_repos(RH_CONTENT['maintenance']['label'])
-    else:
-        repository_setup(**CUSTOM_SAT_REPO['maintenance'])
-
-
 def hammer_config():
     """
     Use to update the hammer config file on the satellite
@@ -840,28 +816,96 @@ def hammer_config():
     hammer_file.close()
 
 
-def upgrade_using_foreman_maintain(satellite=True):
+def setup_satellite_repo():
+    """
+    Task which setups internal satellite repo.
+    """
+    if settings.upgrade.distribution != 'cdn':
+        repository_setup(**CUSTOM_SAT_REPO['satellite'])
+
+
+def setup_maintenance_repo():
+    """
+    Task which setups maintenance repo.
+    """
+    if settings.upgrade.distribution == 'cdn':
+        enable_repos(RH_CONTENT['maintenance']['label'])
+    else:
+        repository_setup(**CUSTOM_SAT_REPO['maintenance'])
+
+
+def setup_capsule_repo(fetch_content_from_sat=True):
+    """
+    Task which setups capsule repo.
+    """
+    if settings.upgrade.distribution != 'cdn':
+        if fetch_content_from_sat:
+            product_label = CUSTOM_CONTENT['capsule']['prod']
+            repo_label = CUSTOM_CONTENT['capsule']['reposet']
+            enable_repos(f'Default_Organization_{product_label}_{repo_label}')
+        else:
+            repository_setup(**CUSTOM_SAT_REPO['capsule'])
+
+
+def setup_capsule_maintenance_repo(fetch_content_from_sat=True):
+    """
+    Task which setups maintenance repo on capsule.
+    """
+    if settings.upgrade.distribution == 'cdn':
+        enable_disable_repo(
+            enable_repos_name=RH_CONTENT['maintenance']['label'],
+            disable_repos_name=RH_CONTENT['capsule']['label'],
+        )
+    elif fetch_content_from_sat:
+        maintenance_product = CUSTOM_CONTENT['maintenance']['prod']
+        maintenance_repo = CUSTOM_CONTENT['maintenance']['reposet']
+        capsule_product = CUSTOM_CONTENT['capsule']['prod']
+        capsule_repo = CUSTOM_CONTENT['capsule']['reposet']
+        enable_disable_repo(
+            enable_repos_name=f'Default_Organization_{maintenance_product}_{maintenance_repo}',
+            disable_repos_name=f'Default_Organization_{capsule_product}_{capsule_repo}',
+        )
+    else:
+        repository_setup(**CUSTOM_SAT_REPO['maintenance'])
+
+
+def foreman_maintain_self_upgrade(zstream=False, fetch_content_from_sat=False):
+    """
+    Install the latest fm rubygem-foreman_maintain to get the latest y-stream upgrade path.
+    """
+    if zstream:
+        run('foreman-maintain upgrade list-versions', warn_only=True)
+    else:
+        command = 'foreman-maintain self-upgrade'
+        if settings.upgrade.distribution != 'cdn':
+            if fetch_content_from_sat:
+                product_label = CUSTOM_CONTENT['maintenance']['prod']
+                repo_label = CUSTOM_CONTENT['maintenance']['reposet']
+                maintenance_repo = f'Default_Organization_{product_label}_{repo_label}'
+            else:
+                maintenance_repo = CUSTOM_SAT_REPO['maintenance']['repository']
+            command += f' --maintenance-repo-label {maintenance_repo}'
+        run(command)
+
+    run('rpm -qa rubygem-foreman_maintain')
+
+
+def foreman_maintain_upgrade(satellite=True):
     """Task which upgrades the product using foreman-maintain tool.
 
     :param bool satellite: True (=satellite upgrade) or False (=capsule upgrade)
     """
     env.disable_known_hosts = True
 
-    def satellite_upgrade_check(zstream=False):
-        with warn_only():
-            version_suffix = '.z' if zstream else ''
-            run(f'foreman-maintain upgrade check --plaintext '
-                f'--whitelist="repositories-validate" '
-                f'--target-version {settings.upgrade.to_version}{version_suffix} -y')
+    def upgrade_check(zstream=False):
+        version_suffix = '.z' if zstream else ''
+        run(
+            f'foreman-maintain upgrade check --plaintext --whitelist="repositories-validate" '
+            f'--target-version {settings.upgrade.to_version}{version_suffix} -y',
+            warn_only=True
+        )
 
-    def capsule_upgrade_check(zstream=False):
-        with warn_only():
-            version_suffix = '.z' if zstream else ''
-            run(f'foreman-maintain upgrade check --plaintext '
-                f'--whitelist="repositories-validate" '
-                f'--target-version {settings.upgrade.to_version}{version_suffix} -y')
-
-    def satellite_upgrade(zstream=False):
+    def upgrade_run(zstream=False):
         """ This inner function is used to perform Y & Z satellite stream upgrade"""
         version_suffix = '.z' if zstream else ''
         whitelist_param = ''
@@ -876,46 +920,24 @@ def upgrade_using_foreman_maintain(satellite=True):
             f'foreman-maintain upgrade run --plaintext {whitelist_param} '
             f'--target-version {settings.upgrade.to_version}{version_suffix} -y'
         )
-        # use Beta until becomes GA
-        if settings.upgrade.to_version == '6.13':
-            with shell_env(FOREMAN_MAINTAIN_USE_BETA='1'):
-                run(command)
-        else:
+        with (
+            shell_env(FOREMAN_MAINTAIN_USE_BETA='1')
+            if satellite and settings.upgrade.use_beta
+            else nullcontext()
+        ):
             run(command)
 
-    def capsule_upgrade(zstream=False):
-        """ This inner function is used to perform Y & Z stream Capsule upgrade"""
-        version_suffix = '.z' if zstream else ''
-        # z capsule stream upgrade, If we do not whitelist the repos setup then cdn
-        # repos of target version gets enabled.
-        whitelist_param = ''
-        if settings.upgrade.whitelist_param:
-            whitelist_param = f'--whitelist={settings.upgrade.whitelist_param}'
-        if settings.upgrade.distribution != 'cdn':
-            whitelist_param = (
-                f'--whitelist=repositories-validate,repositories-setup,'
-                f'{settings.upgrade.whitelist_param}'
-            )
-        run(f'foreman-maintain upgrade run --plaintext {whitelist_param} '
-            f'--target-version {settings.upgrade.to_version}{version_suffix} -y')
+    run('foreman-maintain upgrade list-versions', warn_only=True)
 
-    with warn_only():
-        run('foreman-maintain upgrade list-versions')  # we usually trigger self-upgrade here
     zstream = settings.upgrade.from_version == settings.upgrade.to_version
-    if satellite:
-        satellite_upgrade_check(zstream)
-        preup_time = datetime.now().replace(microsecond=0)
-        satellite_upgrade(zstream)
-    else:
-        capsule_upgrade_check(zstream)
-        preup_time = datetime.now().replace(microsecond=0)
-        capsule_upgrade(zstream)
-    postup_time = datetime.now().replace(microsecond=0)
+    upgrade_check(zstream)
 
-    if satellite:
-        logger.highlight(f'Time taken for satellite upgrade - {str(postup_time - preup_time)}')
-    else:
-        logger.highlight(f'Time taken for capsule upgrade - {str(postup_time - preup_time)}')
+    preup_time = datetime.now().replace(microsecond=0)
+    upgrade_run(zstream)
+    postup_time = datetime.now().replace(microsecond=0)
+    delta_time = postup_time - preup_time
+
+    logger.highlight(f"{'Satellite' if satellite else 'Capsule'} upgrade has taken - {delta_time}")
 
 
 def get_osp_hostname(ipaddr):
@@ -1055,9 +1077,13 @@ def enable_disable_repo(disable_repos_name=None, enable_repos_name=None):
     repository which you are going to enable
     """
     if disable_repos_name:
-        [disable_repos(f'{repo}', silent=True) for repo in disable_repos_name]
+        disable_repos(
+            * disable_repos_name if isinstance(disable_repos_name, list) else [disable_repos_name]
+        )
     if enable_repos_name:
-        [enable_repos(f'{repo}') for repo in enable_repos_name]
+        enable_repos(
+            * enable_repos_name if isinstance(enable_repos_name, list) else [enable_repos_name]
+        )
 
 
 def upgrade_task(upgrade_type, cap_host=None):
@@ -1218,28 +1244,6 @@ def repos_sync_failure_remiediation(org, repo_object, timeout=3000):
             upgrade_validation(upgrade_type="satellite",
                                satellite_services_action="start")
             logger.warning(f'Retry:{attempt} Repos sync remediation failed due to {exp}')
-
-
-def foreman_maintain_package_update(zstream=False, fetch_content_from_sat=False):
-    """
-    Install the latest fm rubygem-foreman_maintain to get the latest y-stream upgrade path.
-    """
-    if zstream:
-        with warn_only():
-            run('foreman-maintain upgrade list-versions')
-    else:
-        if settings.upgrade.distribution == 'cdn':
-            run('foreman-maintain self-upgrade')
-        else:
-            product_label = CUSTOM_CONTENT['maintenance']['prod']
-            repo_label = CUSTOM_CONTENT['maintenance']['reposet']
-            maintenance_repo = (
-                f'Default_Organization_{product_label}_{repo_label}'
-                if fetch_content_from_sat
-                else CUSTOM_SAT_REPO['maintenance']['repository']
-            )
-            run(f'foreman-maintain self-upgrade --maintenance-repo-label {maintenance_repo}')
-    run('rpm -qa rubygem-foreman_maintain')
 
 
 def yum_repos_cleanup():

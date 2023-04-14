@@ -30,6 +30,8 @@ UPGRADE:
     - "n-1"
   # Upgrade codebase select the repository based on the distribution.
   DISTRIBUTION: "downstream"
+  # Use beta repositories for CDN distribution
+  USE_BETA: false
   # Satellite hostname.
   SATELLITE_HOSTNAME:
   # capsule hostname

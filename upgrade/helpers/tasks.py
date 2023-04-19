@@ -3,7 +3,6 @@
 Many commands are affected by environment variables. Unless stated otherwise,
 all environment variables are required.
 """
-import re
 import socket
 import sys
 import time
@@ -811,8 +810,7 @@ def hammer_config():
     hammer_file.write(' :foreman: \n')
     hammer_file.write('  :username: admin\n')
     hammer_file.write('  :password: changeme \n')
-    put(local_path=hammer_file,
-        remote_path='/root/.hammer/cli.modules.d/foreman.yml')
+    put(local_path=hammer_file, remote_path='/root/.hammer/cli.modules.d/foreman.yml')
     hammer_file.close()
 
 
@@ -1298,15 +1296,12 @@ def satellite_restore_setup():
         run(f"yum -d1 install -y nfs-utils; mkdir -p {settings.clone.mount_dir}")
     run(f'mount {settings.clone.db_server}:/root/customer-dbs {settings.clone.mount_dir}')
 
-    if os_ver == 7:
-        enable_disable_repo(enable_repos_name=[f'rhel-{os_ver}-server-ansible-2.9-rpms'])
     if settings.clone.upstream:
-        run(f"yum -d1 install -y ansible{'-core' if os_ver > 7 else ''}")
-        run(f"cd /usr/share; git clone -q {settings.clone.satellite_clone_upstream_repos}")
+        run('yum -d1 install -y ansible-core')
+        run(f'cd /usr/share; git clone -q {settings.clone.satellite_clone_upstream_repos}')
     else:
         run('yum -d1 repolist')
-        if os_ver > 7:
-            run(f'yum -d1 module enable -y satellite-maintenance:el{os_ver}')
+        run(f'yum -d1 module enable -y satellite-maintenance:el{os_ver}')
         run('yum -d1 install -y satellite-clone')
     run(
         f'echo "satellite_version: {settings.upgrade.from_version}">>{answer_file};'
@@ -1333,28 +1328,13 @@ def satellite_restore():
     prerestore_time = datetime.now().replace(microsecond=0)
     with fabric_settings(warn_only=True):
         restore_output = run(clone_cmd)
-        # Workaround for BZ#2109608 (remove once fixed in 6.11.z)
-        if restore_output.return_code != 0:
-            if settings.upgrade.from_version == '6.11' and os_ver == 8:
-                run('echo "skip_satellite_rpm_check: true">>'
-                    '/usr/share/satellite-clone/satellite-clone-vars.yml')
-                run('yum -d1 --disableplugin foreman-protector distro-sync -y')
-                restore_output = run(clone_cmd)
-        # EOW
         postrestore_time = datetime.now().replace(microsecond=0)
         logger.highlight(f'Time taken by satellite restore - '
                          f'{str(postrestore_time - prerestore_time)}')
         run(f"umount {settings.clone.mount_dir}")
-        # Remove the workaround once BZ 2051912 gets fixed.
-        for line in restore_output.split('\n'):
-            if re.search(r'some executors are not responding, '
-                         r'check /foreman_tasks/dynflow/status', line):
-                upgrade_validation(upgrade_type="satellite", satellite_services_action="restart")
-                break
-        else:
-            if restore_output.return_code != 0:
-                logger.highlight("Satellite restore completed with some error. Aborting...")
-                sys.exit(1)
+        if restore_output.return_code != 0:
+            logger.highlight("Satellite restore completed with some error. Aborting...")
+            sys.exit(1)
 
 
 def satellite_backup():

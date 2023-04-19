@@ -1,39 +1,14 @@
 """Upgrade needed Constants"""
-from packaging.version import Version
-
 from upgrade.helpers import settings
 
 os_ver = int(settings.upgrade.os.strip('rhel'))
 arch = 'x86_64'
-target_cap_version = settings.upgrade.to_version \
+target_version = settings.upgrade.to_version \
     if settings.upgrade.from_version != settings.upgrade.to_version and \
     settings.upgrade.distribution == 'cdn' else settings.upgrade.from_version
-maintenance_ver = target_cap_version if Version(target_cap_version) > Version('6.10') else '6'
-os_repo_tags = ['server', 'rhscl', 'ansible'] if os_ver < 8 else ['baseos', 'appstream']
+os_repo_tags = ['baseos', 'appstream']
 
 RH_CONTENT = {
-    # RHEL7 repos
-    'server': {
-        'prod': 'Red Hat Enterprise Linux Server',
-        'reposet': f'Red Hat Enterprise Linux {os_ver} Server (RPMs)',
-        'repo': f'Red Hat Enterprise Linux {os_ver} Server RPMs {arch} {os_ver}Server',
-        'label': f'rhel-{os_ver}-server-rpms',
-    },
-    'rhscl': {
-        'prod': 'Red Hat Software Collections (for RHEL Server)',
-        'reposet': f'Red Hat Software Collections RPMs for Red Hat Enterprise Linux {os_ver} '
-        'Server',
-        'repo': f'Red Hat Software Collections RPMs for Red Hat Enterprise Linux {os_ver} '
-        f'Server x86_64 {os_ver}Server',
-        'label': f'rhel-server-rhscl-{os_ver}-rpms'
-    },
-    'ansible': {
-        'prod': 'Red Hat Ansible Engine',
-        'reposet': f'Red Hat Ansible Engine 2.9 RPMs for Red Hat Enterprise Linux {os_ver} Server',
-        'repo': f'Red Hat Ansible Engine 2.9 RPMs for Red Hat Enterprise Linux {os_ver} Server '
-        f'{arch}',
-        'label': f'rhel-{os_ver}-server-ansible-2.9-rpms'
-    },
     # RHEL8+ repos
     'baseos': {
         'prod': f'Red Hat Enterprise Linux for {arch}',
@@ -49,51 +24,24 @@ RH_CONTENT = {
     },
     # PRODUCT repos
     'client': {
-        'prod': 'Red Hat Enterprise Linux Server',
-        'reposet': f'Red Hat Satellite Client 6 (for RHEL {os_ver} Server) (RPMs)',
-        'repo': f'Red Hat Satellite Client 6 for RHEL {os_ver} Server RPMs {arch}',
-        'label': f'rhel-{os_ver}-server-satellite-client-6-rpms'
-    } if os_ver < 8 else {
         'prod': f'Red Hat Enterprise Linux for {arch}',
         'reposet': f'Red Hat Satellite Client 6 for RHEL {os_ver} {arch} (RPMs)',
         'repo': f'Red Hat Satellite Client 6 for RHEL {os_ver} {arch} RPMs',
         'label': f'satellite-client-6-for-rhel-{os_ver}-{arch}-rpms'
     },
-    'tools': {
-        'prod': 'Red Hat Enterprise Linux Server',
-        'reposet': f'Red Hat Satellite Tools {target_cap_version} (for RHEL {os_ver} Server) '
-        '(RPMs)',
-        'repo': f'Red Hat Satellite Tools {target_cap_version} for RHEL {os_ver} Server RPMs '
-        f'{arch}',
-        'label': f'rhel-{os_ver}-server-satellite-tools-{target_cap_version}-rpms',
-    },
     'capsule': {
         'prod': 'Red Hat Satellite Capsule',
-        'reposet': f'Red Hat Satellite Capsule {target_cap_version} (for RHEL {os_ver} Server) '
+        'reposet': f'Red Hat Satellite Capsule {target_version} for RHEL {os_ver} {arch} '
         '(RPMs)',
-        'repo': f'Red Hat Satellite Capsule {target_cap_version} for RHEL {os_ver} Server RPMs '
-        f'{arch}',
-        'label': f'rhel-{os_ver}-server-satellite-capsule-{target_cap_version}-rpms'
-    } if os_ver < 8 else {
-        'prod': 'Red Hat Satellite Capsule',
-        'reposet': f'Red Hat Satellite Capsule {target_cap_version} for RHEL {os_ver} {arch} '
-        '(RPMs)',
-        'repo': f'Red Hat Satellite Capsule {target_cap_version} for RHEL {os_ver} {arch} RPMs',
-        'label': f'satellite-capsule-{target_cap_version}-for-rhel-{os_ver}-{arch}-rpms'
+        'repo': f'Red Hat Satellite Capsule {target_version} for RHEL {os_ver} {arch} RPMs',
+        'label': f'satellite-capsule-{target_version}-for-rhel-{os_ver}-{arch}-rpms'
     },
     'maintenance': {
-        'prod': 'Red Hat Enterprise Linux Server',
-        'reposet': f'Red Hat Satellite Maintenance {maintenance_ver} (for RHEL {os_ver} Server) '
-        '(RPMs)',
-        'repo': f'Red Hat Satellite Maintenance {maintenance_ver} for RHEL {os_ver} Server RPMs '
-        f'{arch}',
-        'label': f'rhel-{os_ver}-server-satellite-maintenance-{maintenance_ver}-rpms'
-    } if os_ver < 8 else {
         'prod': f'Red Hat Enterprise Linux for {arch}',
-        'reposet': f'Red Hat Satellite Maintenance {maintenance_ver} for RHEL {os_ver} {arch} '
+        'reposet': f'Red Hat Satellite Maintenance {target_version} for RHEL {os_ver} {arch} '
         '(RPMs)',
-        'repo': f'Red Hat Satellite Maintenance {maintenance_ver} for RHEL {os_ver} {arch} RPMs',
-        'label': f'satellite-maintenance-{maintenance_ver}-for-rhel-{os_ver}-{arch}-rpms'
+        'repo': f'Red Hat Satellite Maintenance {target_version} for RHEL {os_ver} {arch} RPMs',
+        'label': f'satellite-maintenance-{target_version}-for-rhel-{os_ver}-{arch}-rpms'
     },
 }
 

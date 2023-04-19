@@ -4,13 +4,10 @@ from fabric.api import execute
 from fabric.api import run
 
 from upgrade.helpers import settings
-from upgrade.helpers.constants.constants import RH_CONTENT
 from upgrade.helpers.logger import logger
 from upgrade.helpers.tasks import add_baseOS_repos
-from upgrade.helpers.tasks import capsule_certs_update
 from upgrade.helpers.tasks import capsule_sync
 from upgrade.helpers.tasks import create_capsule_ak
-from upgrade.helpers.tasks import enable_disable_repo
 from upgrade.helpers.tasks import foreman_maintain_self_upgrade
 from upgrade.helpers.tasks import foreman_maintain_upgrade
 from upgrade.helpers.tasks import http_proxy_config
@@ -92,15 +89,11 @@ def satellite_capsule_upgrade(cap_host, sat_host, zstream=False):
     execute(capsule_sync, cap_host, host=sat_host)
     wait_untill_capsule_sync(cap_host)
 
-    os_ver = int(settings.upgrade.os.strip('rhel'))
     ak_name = settings.upgrade.capsule_ak[settings.upgrade.os]
     run(f'subscription-manager register '
         f'--org="Default_Organization" --activationkey={ak_name} --force')
     logger.info(f'Activation key {ak_name} enabled all capsule repositories')
     run('subscription-manager repos --list')
-
-    if os_ver == 7:
-        enable_disable_repo(enable_repos_name=[RH_CONTENT['ansible']['label']])
 
     # Update foreman_maintain by self-upgrade
     setup_capsule_maintenance_repo()
@@ -108,14 +101,12 @@ def satellite_capsule_upgrade(cap_host, sat_host, zstream=False):
 
     # Upgrade the Capsule
     setup_capsule_repo()
-    if settings.upgrade.from_version == '6.10':
-        # capsule certs regeneration required prior 6.11 ystream capsule upgrade BZ#2049893
-        execute(capsule_certs_update, cap_host, host=sat_host)
     foreman_maintain_upgrade(satellite=False)
 
     # Rebooting the capsule for kernel update if any
     reboot(160)
     host_ssh_availability_check(cap_host)
+
     # Check if Capsule upgrade is success
     upgrade_validation(upgrade_type="capsule", satellite_services_action="restart")
     # Check the capsule sync after upgrade.

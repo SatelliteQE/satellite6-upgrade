@@ -43,6 +43,12 @@ RH_CONTENT = {
         'repo': f'Red Hat Satellite Maintenance {target_version} for RHEL {os_ver} {arch} RPMs',
         'label': f'satellite-maintenance-{target_version}-for-rhel-{os_ver}-{arch}-rpms'
     },
+    'satellite': {
+        'prod': 'Red Hat Satellite',
+        'reposet': f'Red Hat Satellite {target_version} for RHEL {os_ver} {arch} (RPMs)',
+        'repo': f'Red Hat Satellite {target_version} for RHEL {os_ver} {arch} RPMs',
+        'label': f'satellite-{target_version}-for-rhel-{os_ver}-{arch}-rpms'
+    },
 }
 
 OS_REPOS = dict(filter(lambda i: i[0] in os_repo_tags, RH_CONTENT.items()))

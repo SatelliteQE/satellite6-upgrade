@@ -826,10 +826,18 @@ def setup_maintenance_repo():
     """
     Task which setups maintenance repo.
     """
+    def module_not_present():
+        return run('dnf -y module list satellite-maintenance', warn_only=True).failed
     if settings.upgrade.distribution == 'cdn':
         enable_repos(RH_CONTENT['maintenance']['label'])
+        # enable satellite repo if maintenace module not yet released
+        if module_not_present():
+            enable_repos(RH_CONTENT['satellite']['label'])
     else:
         repository_setup(**CUSTOM_SAT_REPO['maintenance'])
+        # enable satellite repo if maintenace module not yet released
+        if module_not_present():
+            repository_setup(**CUSTOM_SAT_REPO['satellite'])
 
 
 def setup_capsule_repo(fetch_content_from_sat=True):
@@ -849,11 +857,16 @@ def setup_capsule_maintenance_repo(fetch_content_from_sat=True):
     """
     Task which setups maintenance repo on capsule.
     """
+    def module_not_present():
+        return run('dnf -y module list satellite-maintenance', warn_only=True).failed
     if settings.upgrade.distribution == 'cdn':
         enable_disable_repo(
             enable_repos_name=RH_CONTENT['maintenance']['label'],
             disable_repos_name=RH_CONTENT['capsule']['label'],
         )
+        # enable capsule repo if maintenace module not yet released
+        if module_not_present():
+            enable_disable_repo(enable_repos_name=RH_CONTENT['capsule']['label'])
     elif fetch_content_from_sat:
         maintenance_product = CUSTOM_CONTENT['maintenance']['prod']
         maintenance_repo = CUSTOM_CONTENT['maintenance']['reposet']
@@ -863,8 +876,16 @@ def setup_capsule_maintenance_repo(fetch_content_from_sat=True):
             enable_repos_name=f'Default_Organization_{maintenance_product}_{maintenance_repo}',
             disable_repos_name=f'Default_Organization_{capsule_product}_{capsule_repo}',
         )
+        # enable capsule repo if maintenace module not yet released
+        if module_not_present():
+            enable_disable_repo(
+                enable_repos_name=f'Default_Organization_{capsule_product}_{capsule_repo}',
+            )
     else:
         repository_setup(**CUSTOM_SAT_REPO['maintenance'])
+        # enable capsule repo if maintenace module not yet released
+        if module_not_present():
+            repository_setup(**CUSTOM_SAT_REPO['capsule'])
 
 
 def foreman_maintain_self_upgrade(zstream=False, fetch_content_from_sat=False):

@@ -1301,7 +1301,9 @@ def satellite_restore_setup():
         run(f'cd /usr/share; git clone -q {settings.clone.satellite_clone_upstream_repos}')
     else:
         run('yum -d1 repolist')
-        run(f'yum -d1 module enable -y satellite-maintenance:el{os_ver}')
+        module_name = f'satellite-maintenance:el{os_ver}'
+        if run(f'yum -d1 module list -y {module_name}', warn_only=True).suceeded:
+            run(f'yum -d1 module enable -y {module_name}')
         run('yum -d1 install -y satellite-clone')
     run(
         f'echo "satellite_version: {settings.upgrade.from_version}">>{answer_file};'

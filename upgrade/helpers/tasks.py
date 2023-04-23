@@ -833,12 +833,12 @@ def setup_maintenance_repo():
     if settings.upgrade.distribution == 'cdn':
         enable_repos(RH_CONTENT['maintenance']['label'])
         # enable satellite repo if maintenace module not yet released
-        if module_not_present():
+        if os_ver > 7 and module_not_present():
             enable_repos(RH_CONTENT['satellite']['label'])
     else:
         repository_setup(**CUSTOM_SAT_REPO['maintenance'])
         # enable satellite repo if maintenace module not yet released
-        if module_not_present():
+        if os_ver > 7 and module_not_present():
             repository_setup(**CUSTOM_SAT_REPO['satellite'])
 
 
@@ -867,7 +867,7 @@ def setup_capsule_maintenance_repo(fetch_content_from_sat=True):
             disable_repos_name=RH_CONTENT['capsule']['label'],
         )
         # enable capsule repo if maintenace module not yet released
-        if module_not_present():
+        if os_ver > 7 and module_not_present():
             enable_disable_repo(enable_repos_name=RH_CONTENT['capsule']['label'])
     elif fetch_content_from_sat:
         maintenance_product = CUSTOM_CONTENT['maintenance']['prod']
@@ -879,14 +879,14 @@ def setup_capsule_maintenance_repo(fetch_content_from_sat=True):
             disable_repos_name=f'Default_Organization_{capsule_product}_{capsule_repo}',
         )
         # enable capsule repo if maintenace module not yet released
-        if module_not_present():
+        if os_ver > 7 and module_not_present():
             enable_disable_repo(
                 enable_repos_name=f'Default_Organization_{capsule_product}_{capsule_repo}',
             )
     else:
         repository_setup(**CUSTOM_SAT_REPO['maintenance'])
         # enable capsule repo if maintenace module not yet released
-        if module_not_present():
+        if os_ver > 7 and module_not_present():
             repository_setup(**CUSTOM_SAT_REPO['capsule'])
 
 
@@ -1326,6 +1326,9 @@ def satellite_restore_setup():
         run(f"cd /usr/share; git clone -q {settings.clone.satellite_clone_upstream_repos}")
     else:
         run('yum -d1 repolist')
+        module_name = f'satellite-maintenance:el{os_ver}'
+        if os_ver > 7 and run(f'yum -d1 module list -y {module_name}', warn_only=True).suceeded:
+            run(f'yum -d1 module enable -y {module_name}')
         run('yum -d1 install -y satellite-clone')
     run(
         f'echo "satellite_version: {settings.upgrade.from_version}">>{answer_file};'

@@ -1302,7 +1302,7 @@ def satellite_restore_setup():
     else:
         run('yum -d1 repolist')
         module_name = f'satellite-maintenance:el{os_ver}'
-        if run(f'yum -d1 module list -y {module_name}', warn_only=True).suceeded:
+        if run(f'yum -d1 module list -y {module_name}', warn_only=True).succeeded:
             run(f'yum -d1 module enable -y {module_name}')
         run('yum -d1 install -y satellite-clone')
     run(

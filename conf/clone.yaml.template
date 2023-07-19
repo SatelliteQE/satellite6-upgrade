@@ -5,10 +5,8 @@ CLONE:
   SATELLITE_CLONE_UPSTREAM_REPOS: "https://github.com/RedHatSatellite/satellite-clone.git"
   # customer name
   CUSTOMER_NAME:
-  # customers database server
-  DB_SERVER:
-  # mount point of customers backup data
-  MOUNT_DIR: "/tmp/customer-dbs"
+  # customer databases NFS mount
+  CUSTOMER_DBS_MOUNT:
   # Restore selinux context across filesystem, applicable for specific database.
   RESTORECON: false
   # satellite-clone registers the target server to CDN if set true

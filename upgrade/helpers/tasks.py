@@ -1306,7 +1306,8 @@ def satellite_restore_setup():
     Use to setup the satellite restore for upstream satellite clone
     """
     answer_file = '/usr/share/satellite-clone/satellite-clone-vars.yml'
-    backup_dir = (f'{settings.clone.mount_dir}/{settings.clone.customer_name}'
+    mount_dir = '/tmp/customer-dbs'
+    backup_dir = (f'{mount_dir}/{settings.clone.customer_name}'
                   f'{settings.upgrade.from_version.replace(".", "")}')
 
     with fabric_settings(warn_only=True):
@@ -1314,8 +1315,8 @@ def satellite_restore_setup():
         if isinstance(os_repos, str):
             os_repos = {f'rhel{os_ver}': os_repos}
         add_baseOS_repos(**os_repos)
-        run(f"yum -d1 install -y nfs-utils; mkdir -p {settings.clone.mount_dir}")
-    run(f'mount {settings.clone.db_server}:/root/customer-dbs {settings.clone.mount_dir}')
+        run(f'yum -d1 install -y nfs-utils; mkdir -p {mount_dir}')
+    run(f'mount {settings.clone.customer_dbs_mount} {mount_dir}')
 
     if settings.clone.upstream:
         run('yum -d1 install -y ansible-core')
@@ -1354,7 +1355,7 @@ def satellite_restore():
         postrestore_time = datetime.now().replace(microsecond=0)
         logger.highlight(f'Time taken by satellite restore - '
                          f'{str(postrestore_time - prerestore_time)}')
-        run(f"umount {settings.clone.mount_dir}")
+        run(f'umount {settings.clone.customer_dbs_mount}')
         if restore_output.return_code != 0:
             logger.highlight("Satellite restore completed with some error. Aborting...")
             sys.exit(1)

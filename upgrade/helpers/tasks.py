@@ -29,6 +29,7 @@ from fabric.api import settings as fabric_settings
 from fabric.context_managers import shell_env
 from fauxfactory import gen_string
 from nailgun import entities
+from nailgun.entity_mixins import TaskFailedError
 from packaging.version import Version
 
 from upgrade.helpers import nailgun_conf
@@ -169,10 +170,19 @@ def sync_capsule_repos_to_satellite(capsules):
         logger.highlight("The AK name is not provided for Capsule upgrade. Aborting...")
         sys.exit(1)
     org = entities.Organization(nailgun_conf, id=1).read()
-    logger.info("Refreshing the attached manifest")
-    entities.Subscription(nailgun_conf, organization=org).refresh_manifest(
-        data={'organization_id': org.id}, timeout=5000
-    )
+    try:
+        entities.Subscription(nailgun_conf, organization=org).delete_manifest(
+            data={'organization_id': org.id},
+        )
+    except TaskFailedError as exp:
+        logger.info(f"Manifest deletion failed with {exp}")
+    finally:
+        manifest = requests.get(settings.fake_manifest.url.default, verify=False).content
+        logger.info("Uploading new manifest")
+        entities.Subscription(nailgun_conf, organization=org).upload(
+            data={'organization_id': org.id}, files={'content': manifest}
+        )
+
     ak = entities.ActivationKey(nailgun_conf, organization=org).search(
         query={'search': f'name={capsule_ak}'})[0]
     add_satellite_subscriptions_in_capsule_ak(ak, org)

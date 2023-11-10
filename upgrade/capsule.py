@@ -53,7 +53,7 @@ def satellite_capsule_setup(satellite_host, capsule_hosts, os_version,
     if upgradable_capsule:
         if settings.upgrade.distribution == "cdn":
             settings.repos.capsule_repo = None
-            settings.repos.sattools_repo[settings.upgrade.os] = None
+            settings.repos.satclient_repo[settings.upgrade.os] = None
             settings.repos.satmaintenance_repo = None
         new_ak_status = execute(create_capsule_ak, host=satellite_host)
         execute(update_capsules_to_satellite, capsule_hosts, host=satellite_host)

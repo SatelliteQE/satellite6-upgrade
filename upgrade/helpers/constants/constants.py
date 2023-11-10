@@ -52,14 +52,6 @@ CUSTOM_CONTENT = {
         'prod': 'capsule_latest',
         'reposet': 'capsule_latest_repo',
     },
-    'capsule_tools': {
-        'prod': 'capsuletools_product',
-        'reposet': 'capsuletools_repo',
-    },
-    'tools': {
-        'prod': 'tools_latest_{client_os}',
-        'reposet': 'tools_latest_repo_{client_os}',
-    },
     'capsule_client': {
         'prod': 'capsuleclient_product',
         'reposet': 'capsuleclient_repo',

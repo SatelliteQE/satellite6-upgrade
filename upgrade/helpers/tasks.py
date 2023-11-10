@@ -29,7 +29,6 @@ from fabric.context_managers import shell_env
 from fauxfactory import gen_string
 from nailgun import entities
 from nailgun.entity_mixins import TaskFailedError
-from packaging.version import Version
 
 from upgrade.helpers import nailgun_conf
 from upgrade.helpers import settings
@@ -212,11 +211,10 @@ def sync_capsule_repos_to_satellite(capsules):
     logger.info(f"content view {cv.name} promotion completed successfully")
 
     # Add capsule and satclient custom prod subscription to capsules
-    client = 'client' if Version(settings.upgrade.to_version) > Version('6.10') else 'tools'
-    client_repo = settings.repos[f'sat{client}_repo'][settings.upgrade.os]
+    client_repo = settings.repos.satclient_repo[settings.upgrade.os]
     if client_repo:
         add_custom_product_subscription_to_hosts(
-            org, CUSTOM_CONTENT[f'capsule_{client}']['prod'], capsules
+            org, CUSTOM_CONTENT['capsule_client']['prod'], capsules
         )
     if settings.repos.capsule_repo:
         add_custom_product_subscription_to_hosts(
@@ -366,18 +364,17 @@ def sync_os_repos_to_satellite(org):
     return ent_repos
 
 
-def sync_satclient_repo_to_satellite_for_capsule(org):
+def sync_client_repo_to_satellite_for_capsule(org):
     """
-    Creates custom / Enables RH satclient / tools repo on satellite and syncs for capsule upgrade
+    Creates custom / Enables RH Satellite Client repo on satellite and syncs for capsule upgrade
 
     :param org: `nailgun.entities.Organization` entity of capsule
     :return: `nailgun.entities.repository` entity for capsule
     """
     arch = 'x86_64'
-    client = 'client' if Version(settings.upgrade.to_version) > Version('6.10') else 'tools'
-    client_repo_url = settings.repos[f'sat{client}_repo'][settings.upgrade.os]
+    client_repo_url = settings.repos.satclient_repo[settings.upgrade.os]
     if client_repo_url:
-        repo = CUSTOM_CONTENT[f'capsule_{client}']
+        repo = CUSTOM_CONTENT['capsule_client']
         try:
             ent_product = entities.Product(
                 nailgun_conf, name=repo['prod'], organization=org).create()
@@ -396,11 +393,11 @@ def sync_satclient_repo_to_satellite_for_capsule(org):
                 nailgun_conf, organization=org, product=ent_product
             ).search(query={"search": f'name={repo["repo"]}'})[0]
         logger.info(f"custom product: {repo['prod']} and repository: {repo['reposet']} created"
-                    f"from satellite-{client} repo url")
+                    f"from satellite client repo url")
         ent_repo.repo_id = repo['reposet']
     else:
         if settings.upgrade.from_version != settings.upgrade.to_version:
-            repo = RH_CONTENT[client]
+            repo = RH_CONTENT['client']
             with fabric_settings(warn_only=True):
                 result = run(f"hammer repository-set enable --product \"{repo['prod']}\" "
                              f"--name \"{repo['reposet']}\" --organization-id {org.id} "
@@ -537,8 +534,8 @@ def add_subscription_for_capsule(ak, org):
     os_repos = sync_os_repos_to_satellite(org)
     cap_repo = sync_capsule_subscription_to_capsule_ak(org)
     maintenance_repo = sync_maintenance_repo_to_satellite_for_capsule(org)
-    satclient_repo = sync_satclient_repo_to_satellite_for_capsule(org)
-    sat_repos = [cap_repo, maintenance_repo, satclient_repo]
+    client_repo = sync_client_repo_to_satellite_for_capsule(org)
+    sat_repos = [cap_repo, maintenance_repo, client_repo]
 
     # to update each repos fresh content view read is required,
     # otherwise it does not consider the pending repos from the point of failure.
@@ -593,14 +590,13 @@ def add_subscription_for_capsule(ak, org):
         except Exception as err:
             logger.warning(err)
 
-    client = 'client' if Version(settings.upgrade.to_version) > Version('6.10') else 'tools'
-    client_repo_url = settings.repos[f'sat{client}_repo'][settings.upgrade.os]
+    client_repo_url = settings.repos.satclient_repo[settings.upgrade.os]
     if client_repo_url is None:
         ak.content_override(
-            data={'content_override': {'content_label': satclient_repo.repo_id, 'value': '1'}}
+            data={'content_override': {'content_label': client_repo.repo_id, 'value': '1'}}
         )
         logger.info(f"cdn activation key successfully override for "
-                    f"capsule content_label {satclient_repo.name}")
+                    f"capsule content_label {client_repo.name}")
     else:
         client_sub = entities.Subscription(nailgun_conf, organization=org).search(
             query={'search': f'name={CUSTOM_CONTENT["capsule_client"]["prod"]}'})[0]
@@ -624,8 +620,7 @@ def sync_client_repo_to_upgrade(client_os, hosts, ak_name):
     :param list hosts: The list of capsule hostnames to which new capsule
         repo subscription will be attached
     """
-    client = 'client' if Version(settings.upgrade.to_version) > Version('6.10') else 'tools'
-    client_repo_url = settings.repos[f'sat{client}_repo'][client_os]
+    client_repo_url = settings.repos.satclient_repo[client_os]
     if client_repo_url is None:
         logger.warning(f'The Client Repo URL for {client_os} is not provided.')
         logger.highlight(f"The Client Repo URL for {client_os} is not provided "
@@ -642,8 +637,8 @@ def sync_client_repo_to_upgrade(client_os, hosts, ak_name):
         query={'search': 'name={}'.format(ak_name)})[0]
     cv = ak.content_view.read()
     lenv = ak.environment.read()
-    client_product_name = CUSTOM_CONTENT[client]['prod'].format(client_os=client_os)
-    client_repo_name = CUSTOM_CONTENT[client]['reposet'].format(client_os=client_os)
+    client_product_name = CUSTOM_CONTENT['client']['prod'].format(client_os=client_os)
+    client_repo_name = CUSTOM_CONTENT['client']['reposet'].format(client_os=client_os)
     try:
         ent_product = entities.Product(
             nailgun_conf, name=client_product_name, organization=org).create()

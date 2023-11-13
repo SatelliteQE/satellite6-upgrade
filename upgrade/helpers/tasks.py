@@ -940,6 +940,10 @@ def foreman_maintain_upgrade(satellite=True):
     zstream = settings.upgrade.from_version == settings.upgrade.to_version
     upgrade_check(zstream)
 
+    # Before upgrading to 6.15 users are requested to disable katello-agent
+    if not zstream and settings.upgrade.to_version == '6.15':
+        run('satellite-installer --foreman-proxy-content-enable-katello-agent false')
+
     preup_time = datetime.now().replace(microsecond=0)
     upgrade_run(zstream)
     postup_time = datetime.now().replace(microsecond=0)

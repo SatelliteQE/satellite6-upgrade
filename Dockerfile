@@ -1,4 +1,4 @@
-FROM fedora
+FROM fedora:38
 MAINTAINER https://github.com/SatelliteQE
 
 RUN dnf install -y gcc git make cmake libffi-devel openssl-devel python3-devel \

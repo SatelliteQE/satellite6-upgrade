@@ -1,4 +1,4 @@
-FROM fedora
+FROM quay.io/fedora/python-311:latest
 MAINTAINER https://github.com/SatelliteQE
 
 RUN dnf install -y gcc git make cmake libffi-devel openssl-devel python3-devel \
